@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.AspNet.SessionState.SessionStateAsyncModule", "src\SessionStateAsyncModule\Microsoft.AspNet.SessionState.SessionStateAsyncModule.csproj", "{7238F90D-3BCE-4F40-A5BA-EA36AD484BD6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{58E8143E-86D8-4CA3-AAC3-1CF253D91207}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider", "src\SqlSessionStateAsyncProvider\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.csproj", "{493B0482-572A-4465-BD52-4094351C2647}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{93AD624B-85A6-4EE9-B40E-42914D40C0CF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.Test", "test\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.Test\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.Test.csproj", "{CBB00B6C-8A44-43F0-BE73-0B0E8565F8A2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7238F90D-3BCE-4F40-A5BA-EA36AD484BD6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7238F90D-3BCE-4F40-A5BA-EA36AD484BD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7238F90D-3BCE-4F40-A5BA-EA36AD484BD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7238F90D-3BCE-4F40-A5BA-EA36AD484BD6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{493B0482-572A-4465-BD52-4094351C2647}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{493B0482-572A-4465-BD52-4094351C2647}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{493B0482-572A-4465-BD52-4094351C2647}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{493B0482-572A-4465-BD52-4094351C2647}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBB00B6C-8A44-43F0-BE73-0B0E8565F8A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBB00B6C-8A44-43F0-BE73-0B0E8565F8A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBB00B6C-8A44-43F0-BE73-0B0E8565F8A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBB00B6C-8A44-43F0-BE73-0B0E8565F8A2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7238F90D-3BCE-4F40-A5BA-EA36AD484BD6} = {58E8143E-86D8-4CA3-AAC3-1CF253D91207}
+		{493B0482-572A-4465-BD52-4094351C2647} = {58E8143E-86D8-4CA3-AAC3-1CF253D91207}
+		{CBB00B6C-8A44-43F0-BE73-0B0E8565F8A2} = {93AD624B-85A6-4EE9-B40E-42914D40C0CF}
+	EndGlobalSection
+EndGlobal

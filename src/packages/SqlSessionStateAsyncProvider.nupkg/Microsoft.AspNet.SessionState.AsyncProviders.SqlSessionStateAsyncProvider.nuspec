@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>$NuGetPackageId$</id>
+    <version>$NuGetPackageVersion$</version>
+    <authors>Microsoft</authors>
+    <owners>Microsoft</owners>
+    <copyright>&#169; Microsoft Corporation. All rights reserved.</copyright>
+    <dependencies>
+      <dependency id="Microsoft.AspNet.SessionState.SessionStateAsyncModule" version="$SessionStateAsyncModuleNuGetPackageVersion$" />
+      <dependency id="EntityFramework" version="$EntityFrameworkNuGetPackageVersion$" />
+    </dependencies>    
+    <title>Microsoft ASP.NET SqlSessionStateAsync Providers</title>
+    <description>Async version SqlSessionState provider</description>
+    <summary>Async version SqlSessionState provider</summary>
+    <language>en-US</language>
+    <projectUrl>http://www.asp.net/</projectUrl>
+    <licenseUrl>http://www.microsoft.com/web/webpi/eula/net_library_eula_ENU.htm</licenseUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <tags>ASP.NET Async SessionState Provider</tags>
+  </metadata>
+</package>

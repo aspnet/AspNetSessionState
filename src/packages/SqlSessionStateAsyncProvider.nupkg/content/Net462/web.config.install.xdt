@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration xmlns:xdt="http://schemas.microsoft.com/XML-Document-Transform">
+  <system.web>
+    <sessionState xdt:Transform="Remove">
+    </sessionState>
+  </system.web>
+  
+  <system.web>
+    <sessionState cookieless="false" regenerateExpiredSessionId="true"
+        mode="Custom" customProvider="SqlSessionStateAsyncProvider" xdt:Transform="Insert">
+      <providers>
+        <add name="SqlSessionStateAsyncProvider" connectionStringName="DefaultConnection"
+          type="Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider, Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider, Version=1.0.0.0, Culture=neutral"
+             xdt:Transform="InsertIfMissing" />
+      </providers>
+    </sessionState>
+  </system.web>
+</configuration>

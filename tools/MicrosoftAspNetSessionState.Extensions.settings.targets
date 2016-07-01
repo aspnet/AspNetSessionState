@@ -1,0 +1,69 @@
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <RepositoryRootEx Condition="'$(RepositoryRootEx)' == ''">$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory),Microsoft.Aspnet.SessionState.sln))\</RepositoryRootEx>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+        <BinPath>$(RepositoryRootEx)bin\</BinPath>
+        <ObjPath>$(RepositoryRootEx)obj\</ObjPath>
+        <OutputPath>$(BinPath)$(Configuration)\</OutputPath>
+        <IntermediateOutputPath>$(ObjPath)$(Configuration)\$(MSBuildProjectName)\</IntermediateOutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <TestRoot>$(RepositoryRoot)\test\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.Test</TestRoot>
+        <BuildingTestProject Condition="$(MSBuildProjectDirectory.ToLower().Contains($(TestRoot.ToLower())))">true</BuildingTestProject>
+    </PropertyGroup>
+
+
+    <!-- CodeSign definitions -->
+
+    <PropertyGroup>
+        
+        <CodeSignEnabled Condition="'$(Sign)' == 'Sign'">true</CodeSignEnabled>
+        <CodeSignEnabled Condition="'$(BuildingTestProject)' == 'true'">false</CodeSignEnabled>
+        <CodeSignEnabled Condition="'$(CodeSignEnabled)' == ''">false</CodeSignEnabled>
+        <CodeSignTest Condition="'$(TestCodeSign)' != ''">$(TestCodeSign)</CodeSignTest>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(CodeSignEnabled)' == 'true'">
+        <CodeSignSnCert Condition="'$(MSBuildProjectExtension)' == '.csproj'">72</CodeSignSnCert>
+        <CodeSignDisplayName>Microsoft ASP.NET</CodeSignDisplayName>
+        <CodeSignDisplayUrl>http://www.asp.net/</CodeSignDisplayUrl>
+        <CodeSignDescription>Signing binaries for ASP.NET Async SessionState module</CodeSignDescription>
+        <CodeSignApprovers Condition="'$(CodeSignApprovers)' == ''">joeloff;elipton</CodeSignApprovers>
+        <CodeSignOutputPath Condition="'$(CodeSignOutputPath)' == ''">$(BinPath)Signed\</CodeSignOutputPath>
+        <CodeSignIntermediateOutputPath Condition="'$(CodeSignIntermediateOutputPath)' == ''">$(ObjPath)CodeSign\</CodeSignIntermediateOutputPath>
+    </PropertyGroup>
+
+  
+    <PropertyGroup>
+        <AssemblyPath Condition="'$(CodeSignEnabled)' == 'true'">$(CodeSignOutputPath)</AssemblyPath>
+        <AssemblyPath Condition="'$(AssemblyPath)' == ''">$(OutputPath)</AssemblyPath>
+    </PropertyGroup>
+
+
+    <PropertyGroup>
+        <CustomAfterProjectTargets>$(MSBuildThisFileDirectory)MicrosoftAspNetSessionState.Extensions.targets</CustomAfterProjectTargets>
+    </PropertyGroup>
+
+<!--
+    <ItemGroup>
+        <CodeSign Include="$(OutputPath)Microsoft.AspNet.SessionState.SessionStateAsyncModule.dll">
+            <AuthCodeCert>10006</AuthCodeCert>
+            <StrongNameCert>72</StrongNameCert>
+        </CodeSign>
+<CodeSign Include="$(OutputPath)Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.dll">
+            <AuthCodeCert>10006</AuthCodeCert>
+            <StrongNameCert>72</StrongNameCert>
+        </CodeSign>
+        <CodeSign Include="$(RepositoryRootEx)src\Packages\SessionStateAsyncModule.nupkg\tools\*.ps1">
+            <AuthCodeCert>10006</AuthCodeCert>
+        </CodeSign>
+ <CodeSign Include="$(RepositoryRootEx)src\Packages\SqlSessionStateAsyncProvider.nupkg\tools\*.ps1">
+            <AuthCodeCert>10006</AuthCodeCert>
+        </CodeSign>
+    </ItemGroup>  
+-->
+</Project>
