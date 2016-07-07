@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Configuration;
@@ -21,7 +24,6 @@ namespace Microsoft.AspNet.SessionState
                 {
                     if (!_settingsInitialized)
                     {
-
                         string requestQueueLimit = null;
 
                         try
@@ -30,8 +32,12 @@ namespace Microsoft.AspNet.SessionState
                         }
                         finally
                         {
-                            if (requestQueueLimit == null || !int.TryParse(requestQueueLimit, out _requestQueueLimitPerSession) || _requestQueueLimitPerSession < 0)
+                            if (requestQueueLimit == null ||
+                                !int.TryParse(requestQueueLimit, out _requestQueueLimitPerSession) ||
+                                _requestQueueLimitPerSession < 0)
+                            {
                                 _requestQueueLimitPerSession = DefaultRequestQueueLimitPerSession;
+                            }
 
                             _settingsInitialized = true;
                         }

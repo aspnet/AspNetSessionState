@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+using System;
 using System.Configuration;
 using System.Configuration.Provider;
 using System.Data.Entity;
@@ -9,11 +12,11 @@ using Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionState.Resources;
 
 namespace Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionState.Entities
 {
-    internal class ModelHelper
+    internal static class ModelHelper
     {
         private static bool s_sessionInitialized = false;
         private static bool s_dbInitialized = false;
-        private static object s_lock = new object();
+        private static readonly object s_lock = new object();
 
         public static SessionContext CreateSessionContext(ConnectionStringSettings setting)
         {

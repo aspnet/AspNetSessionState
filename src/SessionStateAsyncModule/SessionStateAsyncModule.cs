@@ -1,15 +1,5 @@
-﻿//------------------------------------------------------------------------------
-// <copyright file="SessionStateAsyncModule.cs" company="Microsoft">
-//     Copyright (c) Microsoft Corporation.  All rights reserved.
-// </copyright>
-//------------------------------------------------------------------------------
-
-/*
- * SessionStateAsyncModule
- *
- * Copyright (c) 1998-2002, Microsoft Corporation
- *
- */
+﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
 using System.Configuration;
