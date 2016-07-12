@@ -7,10 +7,6 @@
     
     <Import Project="$(MSBuildThisFileDirectory)CodeSign.targets"/>
 
-    <ItemGroup>
-      <NuGetInstallScripts Include="$(RepositoryRootEx)src\Packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform\tools\*.ps1"/>
-    </ItemGroup>
-
     <Target Name="CopyInstallScripts">
         <Copy SourceFiles="@(NuGetInstallScripts)"
               DestinationFolder="$(AssemblyPath)"

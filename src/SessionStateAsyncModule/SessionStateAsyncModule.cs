@@ -17,22 +17,13 @@ using System.Collections.Generic;
 
 namespace Microsoft.AspNet.SessionState
 {
-    /*
-     * The sesssion state module provides session state services
-     * for an application.
-     */
-
-    /// <devdoc>
-    ///     <para>[To be supplied.]</para>
-    /// </devdoc>
+    /// <summary>
+    /// Async version of SessionState module which requires .Net framework 4.6.2
+    /// </summary>
     public sealed class SessionStateAsyncModule : ISessionStateModule
     {
         internal const int TimeoutDefault = 20;
 
-        // When we are using Cache to store session state (InProc and StateServer),
-        // can't specify a timeout value larger than 1 year because CacheEntry ctor
-        // will throw an exception.
-        internal const int MaxCacheBasedTimeoutMinutes = 365 * 24 * 60;
         private static long s_lockedItemPollingInterval = 500; // in milliseconds
         private static TimeSpan s_pollingTimespan;
 
@@ -70,8 +61,7 @@ namespace Microsoft.AspNet.SessionState
         private SessionStateStoreData _rqItem;
 
         // If the ownership change hands (e.g. this ownership
-        // times out), the lockId of the item at the store
-        // will change.
+        // times out), the lockId of the item at the store will change.
         private object _rqLockId; // The id of its SessionStateItem ownership
         private bool _rqReadonly;
         private bool _rqRequiresState;
@@ -87,13 +77,9 @@ namespace Microsoft.AspNet.SessionState
         private SessionStateStoreProviderAsyncBase _store;
         private bool _supportSessionExpiry;
 
-        /// <devdoc>
-        ///     <para>
-        ///         Initializes a new instance of the <see cref='Microsoft.AspNet.SessionState.SessionStateAsyncModule' />
-        ///         class.
-        ///     </para>
-        /// </devdoc>
-        [SecurityPermission(SecurityAction.Demand, Unrestricted = true)]
+        /// <summary>
+        /// Initializes a new instance of the <see cref='Microsoft.AspNet.SessionState.SessionStateAsyncModule' />
+        /// </summary>
         public SessionStateAsyncModule()
         {
         }
@@ -109,6 +95,10 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
+        /// <summary>
+        /// Initialize the module
+        /// </summary>
+        /// <param name="app"></param>
         public void Init(HttpApplication app)
         {
             bool initModuleCalled = false;
@@ -157,9 +147,7 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
-        /// <devdoc>
-        ///     <para>[To be supplied.]</para>
-        /// </devdoc>
+        /// <inheritdoc />
         public void Dispose()
         {
             if (_store != null)
@@ -168,12 +156,14 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
-        // Release session state before executing child request
+        /// <inheritdoc />
         public void ReleaseSessionState(HttpContext context)
         {
+            // Release session state before executing child request
             TaskAsyncHelper.RunAsyncMethodSynchronously(() => ReleaseSessionStateAsync(context));
         }
 
+        /// <inheritdoc />
         public Task ReleaseSessionStateAsync(HttpContext context)
         {
             if (_acquireCalled && !_releaseCalled && _rqSessionState != null)
@@ -184,7 +174,6 @@ namespace Microsoft.AspNet.SessionState
             return CompletedTask;
         }
 
-        [AspNetHostingPermission(SecurityAction.Assert, Level = AspNetHostingPermissionLevel.Low)]
         private SessionStateStoreProviderAsyncBase SecureInstantiateAsyncProvider(ProviderSettings settings)
         {
             return
@@ -393,10 +382,6 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
-        /*
-         * Acquire session state
-         */
-
         private async Task AcquireStateAsync(HttpContext context)
         {
             _acquireCalled = true;
@@ -508,7 +493,6 @@ namespace Microsoft.AspNet.SessionState
             if (!_acquireCalled || _releaseCalled)
                 return;
 
-            // DevDiv 665141: 
             // Ensure ownership of the session state item here as the session ID now can be put on the wire (by Response.Flush)
             // and the client can initiate a request before this one reaches OnReleaseState and thus causing a race condition.
             // Note: It changes when we call into the Session Store provider. Now it may happen at BeginAcquireState instead of OnReleaseState.
@@ -878,10 +862,6 @@ namespace Microsoft.AspNet.SessionState
                       _sessionStartEventHandler != null &&
                       !SessionIdManagerUseCookieless))
             {
-                // We need to save it since it isn't read-only
-                // See Dev10 588711: Issuing a redirect from inside of Session_Start event 
-                // triggers an infinite loop when using pages with read-only session state
-
                 // We save it only if there is no error, and if something has changed (unless it's a new session)
                 if (context.Error == null // no error
                     && (_rqSessionStateNotFound

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionState.Entities
 {
-    public class Session
+    internal class Session
     {
         [Key, StringLength(88)]
         public string SessionId { get; set; }

@@ -22,4 +22,4 @@ using System.Runtime.InteropServices;
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("493b0482-572a-4465-bd52-4094351c2647")]
 
-[assembly: InternalsVisibleTo("Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.Test,2600d58b3c865185")]
+[assembly: InternalsVisibleTo("Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.Test")]

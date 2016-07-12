@@ -11,7 +11,7 @@
       <dependency id="EntityFramework" version="$EntityFrameworkNuGetPackageVersion$" />
     </dependencies>    
     <title>Microsoft ASP.NET SqlSessionStateAsync Providers</title>
-    <description>Async version SqlSessionState provider</description>
+    <description>In .Net 4.6.2, asp.net enables plugin async SessionState module which is a good fit for the non-in-memory SessionState data store. This SessionState provider uses SQL Server as the data store and leverages async database operation to provide better scability.</description>
     <summary>Async version SqlSessionState provider</summary>
     <language>en-US</language>
     <projectUrl>http://www.asp.net/</projectUrl>

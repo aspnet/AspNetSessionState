@@ -6,8 +6,8 @@
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
     <copyright>&#169; Microsoft Corporation. All rights reserved.</copyright>
-    <title>Microsoft ASP.NET SqlSessionStateAsync Module</title>
-    <description>Async version SqlSessionState module</description>
+    <title>Microsoft ASP.NET SessionStateAsync Module</title>
+    <description>In .Net 4.6.2, asp.net enables plugin async SessionState module which is a good fit for the non-in-memory SessionState data store. This async SessionState module provides the extensibility to plugin an async version of SessionState provider.</description>
     <summary>Async version SqlSessionState module</summary>
     <language>en-US</language>
     <projectUrl>http://www.asp.net/</projectUrl>

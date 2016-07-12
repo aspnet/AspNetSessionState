@@ -15,6 +15,14 @@ namespace Microsoft.AspNet.SessionState
     /// </summary>
     public sealed class GetItemResult
     {
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="item">SessionState data</param>
+        /// <param name="locked">Whether the session is locked or not</param>
+        /// <param name="lockAge">How long the session is locked</param>
+        /// <param name="lockId">Lock ID</param>
+        /// <param name="actions">SessionState action</param>
         public GetItemResult(SessionStateStoreData item, bool locked, TimeSpan lockAge, object lockId,
             SessionStateActions actions)
         {
@@ -76,7 +84,7 @@ namespace Microsoft.AspNet.SessionState
             CancellationToken cancellationToken);
 
         /// <summary>
-        /// 
+        /// Dispose resource
         /// </summary>
         public abstract void Dispose();
 

@@ -119,7 +119,7 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
                 var session = await db.Sessions.FindAsync(cancellationToken, id);
                 if (session == null)
                 {
-                    Session s = NewSession(id, timeout);
+                    Session s = NewSession(id, timeout, SessionStateActions.InitializeItem);
                     SessionStateStoreData item = new SessionStateStoreData(new SessionStateItemCollection(),
                         SessionStateUtility.GetSessionStaticObjects(context.ApplicationInstance.Context),
                         s.Timeout);
@@ -135,6 +135,7 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
             }
         }
 
+        /// <inheritdoc />
         public override void Dispose()
         {
         }
@@ -232,7 +233,8 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
         }
 
         /// <inheritdoc />
-        public override async Task SetAndReleaseItemExclusiveAsync(HttpContextBase context, string id, SessionStateStoreData item, object lockId, bool newItem, CancellationToken cancellationToken)
+        public override async Task SetAndReleaseItemExclusiveAsync(HttpContextBase context, string id, SessionStateStoreData item, 
+            object lockId, bool newItem, CancellationToken cancellationToken)
         {
             if (item == null)
             {
@@ -299,7 +301,7 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
             return id;
         }
 
-        private static Session NewSession(string id, int timeout)
+        private static Session NewSession(string id, int timeout, SessionStateActions action = SessionStateActions.None)
         {
             Session s = new Session();
             DateTime now = DateTime.UtcNow;
@@ -433,8 +435,8 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
             var locked = false;
             var lockAge = TimeSpan.Zero;
             object lockId = null;
-            SessionStateActions actions = SessionStateActions.None;
             var now = DateTime.UtcNow;
+            SessionStateActions actions = SessionStateActions.None;
 
             using (SessionContext db = ModelHelper.CreateSessionContext(ConnectionString))
             {
@@ -444,8 +446,8 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
                     session.Expires = now.AddMinutes(session.Timeout);
                     locked = session.Locked;
                     lockId = session.LockCookie;
-
                     SessionStateStoreData item = null;
+
                     if (locked)
                     {
                         lockAge = TimeSpan.FromSeconds((now - session.LockDate).Seconds);
@@ -456,6 +458,15 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
                         {
                             session.Locked = true;
                             session.LockDate = now;
+                        }
+
+                        actions = (SessionStateActions)session.Flags;
+                        session.Flags = (int)SessionStateActions.None;
+
+                        byte[] buf = session.SessionItem;
+                        using (MemoryStream s = new MemoryStream(buf))
+                        {
+                            item = DeserializeStoreData(context, s, CompressionEnabled);
                         }
                     }
                     try
@@ -468,21 +479,6 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
                         return new GetItemResult(null, true, lockAge, lockId, actions); ;
                     }
 
-                    if (!locked)
-                    {
-                        byte[] buf = session.SessionItem;
-                        if ((SessionStateActions)session.Flags == SessionStateActions.InitializeItem)
-                        {
-                            item = InitializeSessionItem(context, session, CompressionEnabled);
-                        }
-                        else
-                        {
-                            using (MemoryStream s = new MemoryStream(buf))
-                            {
-                                item = DeserializeStoreData(context, s, CompressionEnabled);
-                            }
-                        }
-                    }
                     return new GetItemResult(item, locked, lockAge, lockId, actions);
                 }
             }
