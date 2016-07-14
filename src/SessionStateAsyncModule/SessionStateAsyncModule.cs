@@ -174,6 +174,46 @@ namespace Microsoft.AspNet.SessionState
             return CompletedTask;
         }
 
+        /// <summary>
+        /// Session start event handler
+        /// </summary>
+        public event EventHandler Start
+        {
+            add { _sessionStartEventHandler += value; }
+            remove { _sessionStartEventHandler -= value; }
+        }
+
+        /// <summary>
+        /// Session end event handler
+        /// </summary>
+        public event EventHandler End
+        {
+            add
+            {
+                lock (_onEndTarget)
+                {
+                    if (_store != null && _onEndTarget.SessionEndEventHandlerCount == 0)
+                    {
+                        _supportSessionExpiry = _store.SetItemExpireCallback(
+                            _onEndTarget.RaiseSessionOnEnd);
+                    }
+                    ++_onEndTarget.SessionEndEventHandlerCount;
+                }
+            }
+            remove
+            {
+                lock (_onEndTarget)
+                {
+                    --_onEndTarget.SessionEndEventHandlerCount;
+                    if (_store != null && _onEndTarget.SessionEndEventHandlerCount == 0)
+                    {
+                        _store.SetItemExpireCallback(null);
+                        _supportSessionExpiry = false;
+                    }
+                }
+            }
+        }
+
         private SessionStateStoreProviderAsyncBase SecureInstantiateAsyncProvider(ProviderSettings settings)
         {
             return
@@ -216,10 +256,20 @@ namespace Microsoft.AspNet.SessionState
             app.AddOnReleaseRequestStateAsync(BeginOnReleaseState, EndOnReleaseState);
             app.AddOnEndRequestAsync(BeginOnEndRequest, EndOnEndRequest);
 
-            if (config.Mode != SessionStateMode.Custom)
-                throw new ConfigurationErrorsException("SessionStateMode is not set to Custom.");
+            if (config.Mode == SessionStateMode.Custom)
+            {
+                _store = InitCustomStore(config);
+            }
+            else if(config.Mode == SessionStateMode.InProc)
+            {
+                _store = new InProcAsyncSessionStateStore();
+                _store.Initialize(null, null);
+            }
+            else
+            {
+                throw new ConfigurationErrorsException(SR.Not_Support_SessionState_Mode);
+            }
 
-            _store = InitCustomStore(config);
             _idManager = InitSessionIDManager(config);
         }
 
@@ -312,74 +362,15 @@ namespace Microsoft.AspNet.SessionState
             _rqSupportSessionIdReissue = false;
         }
 
-        /*
-         * Add a OnStart event handler.
-         *
-         * @param sessionEventHandler
-         */
-
-        /// <devdoc>
-        ///     <para>[To be supplied.]</para>
-        /// </devdoc>
-        public event EventHandler Start
-        {
-            add { _sessionStartEventHandler += value; }
-            remove { _sessionStartEventHandler -= value; }
-        }
-
         private void RaiseOnStart(EventArgs e)
         {
             if (_sessionStartEventHandler != null)
                 _sessionStartEventHandler(this, e);
         }
 
-        /*
-         * Fire the OnStart event.
-         *
-         * @param e
-         */
-
         private void OnStart(EventArgs e)
         {
             RaiseOnStart(e);
-        }
-
-        /*
-         * Add a OnEnd event handler.
-         *
-         * @param sessionEventHandler
-         */
-
-        /// <devdoc>
-        ///     <para>[To be supplied.]</para>
-        /// </devdoc>
-        public event EventHandler End
-        {
-            add
-            {
-                lock (_onEndTarget)
-                {
-                    if (_store != null && _onEndTarget.SessionEndEventHandlerCount == 0)
-                    {
-                        _supportSessionExpiry = _store.SetItemExpireCallback(
-                            _onEndTarget.RaiseSessionOnEnd);
-                    }
-                    ++_onEndTarget.SessionEndEventHandlerCount;
-                }
-            }
-            remove
-            {
-                lock (_onEndTarget)
-                {
-                    --_onEndTarget.SessionEndEventHandlerCount;
-                    // REVIEW: Why do we check HasSessionEndEventHandler right after setting? (used to check handler == null here)
-                    if (_store != null && _onEndTarget.SessionEndEventHandlerCount == 0)
-                    {
-                        _store.SetItemExpireCallback(null);
-                        _supportSessionExpiry = false;
-                    }
-                }
-            }
         }
 
         private async Task AcquireStateAsync(HttpContext context)
@@ -550,7 +541,6 @@ namespace Microsoft.AspNet.SessionState
                         _rqSupportSessionIdReissue)
                     {
                         // And this request support session id reissue
-
                         // We will generate a new session id for this expired session state
                         bool redirected = CreateSessionId();
 

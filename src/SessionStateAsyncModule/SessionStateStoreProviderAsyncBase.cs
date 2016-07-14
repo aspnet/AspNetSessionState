@@ -80,7 +80,10 @@ namespace Microsoft.AspNet.SessionState
         /// <param name="timeout">The session state timeout value</param>
         /// <param name="cancellationToken">Cancellation token for the async task</param>
         /// <returns></returns>
-        public abstract Task CreateUninitializedItemAsync(HttpContextBase context, string id, int timeout,
+        public abstract Task CreateUninitializedItemAsync(
+            HttpContextBase context, 
+            string id, 
+            int timeout,
             CancellationToken cancellationToken);
 
         /// <summary>
@@ -102,7 +105,9 @@ namespace Microsoft.AspNet.SessionState
         /// <param name="id">Session ID</param>
         /// <param name="cancellationToken">Cancellation token for the async task</param>
         /// <returns>A task that retrieves the session item without lock</returns>
-        public abstract Task<GetItemResult> GetItemAsync(HttpContextBase context, string id,
+        public abstract Task<GetItemResult> GetItemAsync(
+            HttpContextBase context, 
+            string id,
             CancellationToken cancellationToken);
 
         /// <summary>
@@ -112,7 +117,9 @@ namespace Microsoft.AspNet.SessionState
         /// <param name="id">Session ID</param>
         /// <param name="cancellationToken">Cancellation token for the async task</param>
         /// <returns>A task that retrieves the session item with lock</returns>
-        public abstract Task<GetItemResult> GetItemExclusiveAsync(HttpContextBase context, string id,
+        public abstract Task<GetItemResult> GetItemExclusiveAsync(
+            HttpContextBase context, 
+            string id,
             CancellationToken cancellationToken);
 
         /// <summary>
@@ -129,7 +136,10 @@ namespace Microsoft.AspNet.SessionState
         /// <param name="lockId">Session item lock context</param>
         /// <param name="cancellationToken">Cancellation token for the async task</param>
         /// <returns></returns>
-        public abstract Task ReleaseItemExclusiveAsync(HttpContextBase context, string id, object lockId,
+        public abstract Task ReleaseItemExclusiveAsync(
+            HttpContextBase context, 
+            string id, 
+            object lockId,
             CancellationToken cancellationToken);
 
         /// <summary>
@@ -141,7 +151,11 @@ namespace Microsoft.AspNet.SessionState
         /// <param name="item">Session data</param>
         /// <param name="cancellationToken">Cancellation token for the async task</param>
         /// <returns></returns>
-        public abstract Task RemoveItemAsync(HttpContextBase context, string id, object lockId, SessionStateStoreData item,
+        public abstract Task RemoveItemAsync(
+            HttpContextBase context, 
+            string id, 
+            object lockId, 
+            SessionStateStoreData item,
             CancellationToken cancellationToken);
 
         /// <summary>
@@ -164,8 +178,13 @@ namespace Microsoft.AspNet.SessionState
         /// <param name="newItem">Whether it is a new session item</param>
         /// <param name="cancellationToken">Cancellation token for the async task</param>
         /// <returns></returns>
-        public abstract Task SetAndReleaseItemExclusiveAsync(HttpContextBase context, string id, SessionStateStoreData item,
-            object lockId, bool newItem, CancellationToken cancellationToken);
+        public abstract Task SetAndReleaseItemExclusiveAsync(
+            HttpContextBase context, 
+            string id, 
+            SessionStateStoreData item,
+            object lockId, 
+            bool newItem, 
+            CancellationToken cancellationToken);
 
         /// <summary>
         /// Sets a reference to the SessionStateItemExpireCallback delegate for the Session_OnEnd event

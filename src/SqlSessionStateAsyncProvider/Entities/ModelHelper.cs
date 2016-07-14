@@ -76,7 +76,8 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionState.Entities
             ConnectionStringSettings conn = ConfigurationManager.ConnectionStrings[connectionstringName];
             if (conn == null)
             {
-                throw new ProviderException(String.Format(CultureInfo.CurrentCulture, SR.Connection_string_not_found, connectionstringName));
+                throw new ProviderException(
+                    String.Format(CultureInfo.CurrentCulture, SR.Connection_string_not_found, connectionstringName));
             }
             return conn;
         }

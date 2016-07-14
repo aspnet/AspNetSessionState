@@ -88,6 +88,15 @@ namespace Microsoft.AspNet.SessionState.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to SessionStateAsync module only supports InProce and Custom mode..
+        /// </summary>
+        internal static string Not_Support_SessionState_Mode {
+            get {
+                return ResourceManager.GetString("Not_Support_SessionState_Mode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The SessionStateStoreData returned by ISessionStateStore has a null value for Items..
         /// </summary>
         internal static string Null_value_for_SessionStateItemCollection {
@@ -102,6 +111,15 @@ namespace Microsoft.AspNet.SessionState.Resources {
         internal static string Request_Queue_Limit_Per_Session_Exceeded {
             get {
                 return ResourceManager.GetString("Request_Queue_Limit_Per_Session_Exceeded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SessionId is too long..
+        /// </summary>
+        internal static string Session_id_too_long {
+            get {
+                return ResourceManager.GetString("Session_id_too_long", resourceCulture);
             }
         }
         

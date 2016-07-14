@@ -102,7 +102,11 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
         }
 
         /// <inheritdoc />
-        public override async Task CreateUninitializedItemAsync(HttpContextBase context, string id, int timeout, CancellationToken cancellationToken)
+        public override async Task CreateUninitializedItemAsync(
+            HttpContextBase context, 
+            string id, 
+            int timeout, 
+            CancellationToken cancellationToken)
         {
             if (id == null)
             {
@@ -154,7 +158,10 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
         }
 
         /// <inheritdoc />
-        public override Task<GetItemResult> GetItemExclusiveAsync(HttpContextBase context, string id, CancellationToken cancellationToken)
+        public override Task<GetItemResult> GetItemExclusiveAsync(
+            HttpContextBase context, 
+            string id, 
+            CancellationToken cancellationToken)
         {
             return DoGet(context, id, true, cancellationToken);
         }
@@ -165,7 +172,11 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
         }
 
         /// <inheritdoc />
-        public override async Task ReleaseItemExclusiveAsync(HttpContextBase context, string id, object lockId, CancellationToken cancellationToken)
+        public override async Task ReleaseItemExclusiveAsync(
+            HttpContextBase context, 
+            string id, 
+            object lockId, 
+            CancellationToken cancellationToken)
         {
             if (id == null)
             {
@@ -185,7 +196,12 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
         }
 
         /// <inheritdoc />
-        public override async Task RemoveItemAsync(HttpContextBase context, string id, object lockId, SessionStateStoreData item, CancellationToken cancellationToken)
+        public override async Task RemoveItemAsync(
+            HttpContextBase context, 
+            string id, 
+            object lockId, 
+            SessionStateStoreData item, 
+            CancellationToken cancellationToken)
         {
             if (id == null)
             {
@@ -209,7 +225,10 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
         }
 
         /// <inheritdoc />
-        public override async Task ResetItemTimeoutAsync(System.Web.HttpContextBase context, string id, CancellationToken cancellationToken)
+        public override async Task ResetItemTimeoutAsync(
+            HttpContextBase context, 
+            string id, 
+            CancellationToken cancellationToken)
         {
             if (id == null)
             {
@@ -233,8 +252,13 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
         }
 
         /// <inheritdoc />
-        public override async Task SetAndReleaseItemExclusiveAsync(HttpContextBase context, string id, SessionStateStoreData item, 
-            object lockId, bool newItem, CancellationToken cancellationToken)
+        public override async Task SetAndReleaseItemExclusiveAsync(
+            HttpContextBase context, 
+            string id, 
+            SessionStateStoreData item, 
+            object lockId, 
+            bool newItem, 
+            CancellationToken cancellationToken)
         {
             if (item == null)
             {
@@ -325,7 +349,12 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
         }
 
         // Internal code copied from SessionStateUtility
-        private static void SerializeStoreData(SessionStateStoreData item, int initialStreamSize, out byte[] buf, out int length, bool compressionEnabled)
+        private static void SerializeStoreData(
+            SessionStateStoreData item, 
+            int initialStreamSize, 
+            out byte[] buf, 
+            out int length, 
+            bool compressionEnabled)
         {
             using (MemoryStream s = new MemoryStream(initialStreamSize))
             {
@@ -386,8 +415,10 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
 
         private bool CanPurge()
         {
-            return (TimeSpan.FromTicks(DateTime.UtcNow.Ticks - s_lastSessionPurgeTicks).TotalSeconds > SessionExpiresFrequencyCheckInSeconds
-                && Interlocked.CompareExchange(ref s_inPurge, 1, 0) == 0);
+            return (
+                TimeSpan.FromTicks(DateTime.UtcNow.Ticks - s_lastSessionPurgeTicks).TotalSeconds > SessionExpiresFrequencyCheckInSeconds
+                && Interlocked.CompareExchange(ref s_inPurge, 1, 0) == 0
+                );
         }
 
         private void PurgeIfNeeded()
@@ -487,11 +518,13 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
 
         private static SessionStateStoreData InitializeSessionItem(HttpContextBase context, Session session, bool compression)
         {
-            SessionStateStoreData item = new SessionStateStoreData(new SessionStateItemCollection(),
+            var item = new SessionStateStoreData(
+                new SessionStateItemCollection(),
                 SessionStateUtility.GetSessionStaticObjects(context.ApplicationInstance.Context),
                 session.Timeout);
             SaveItemToSession(session, item, compression);
             session.Flags = (int)SessionStateActions.None;
+
             return item;
         }
 

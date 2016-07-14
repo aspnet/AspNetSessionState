@@ -126,11 +126,17 @@
   <data name="Missing_session_custom_provider" xml:space="preserve">
     <value>The custom session state store provider '{0}' is not found.</value>
   </data>
+  <data name="Not_Support_SessionState_Mode" xml:space="preserve">
+    <value>SessionStateAsync module only supports InProce and Custom mode.</value>
+  </data>
   <data name="Null_value_for_SessionStateItemCollection" xml:space="preserve">
     <value>The SessionStateStoreData returned by ISessionStateStore has a null value for Items.</value>
   </data>
   <data name="Request_Queue_Limit_Per_Session_Exceeded" xml:space="preserve">
     <value>The request queue limit of the session is exceeded.</value>
+  </data>
+  <data name="Session_id_too_long" xml:space="preserve">
+    <value>SessionId is too long.</value>
   </data>
   <data name="Type_doesnt_inherit_from_type" xml:space="preserve">
     <value>Type '{0}' does not inherit from '{1}'.</value>
