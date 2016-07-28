@@ -2,11 +2,11 @@
   <Import Project="tools\MicrosoftAspNetSessionState.settings.targets"/>
 
   <ItemGroup>
-    <AssemblyProject Include="src\SessionStateAsyncModule\Microsoft.AspNet.SessionState.SessionStateAsyncModule.csproj" />
-    <AssemblyProject Include="src\SqlSessionStateAsyncProvider\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.csproj" />
+    <AssemblyProject Include="src\SessionStateModule\Microsoft.AspNet.SessionState.SessionStateModule.csproj" />
+    <AssemblyProject Include="src\SqlSessionStateProviderAsync\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(BuildCoreOnly)' != 'true'">
-    <AssemblyProject Include="test\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.Test\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.Test.csproj" />
+    <AssemblyProject Include="test\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync.Test\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync.Test.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageProject Include="src\Packages\Packages.csproj" />

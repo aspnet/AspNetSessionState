@@ -19,10 +19,10 @@ namespace Microsoft.AspNet.SessionState
     /// <summary>
     /// Default in-memory SessionState provider for async SessionState module
     /// </summary>
-    public sealed class InProcAsyncSessionStateStore : SessionStateStoreProviderAsyncBase
+    public sealed class InProcSessionStateStoreAsync : SessionStateStoreProviderAsyncBase
     {
         private const int NewLockCookie = 1;
-        private static readonly MemoryCache s_store = new MemoryCache("InProcAsyncSessionStateStore");
+        private static readonly MemoryCache s_store = new MemoryCache("InProcSessionStateStoreAsync");
         private static readonly Task s_completedTask = Task.FromResult<object>(null);
 
         private CacheEntryRemovedCallback _callback;

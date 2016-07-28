@@ -18,8 +18,8 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' " />
   <ItemGroup>
-    <NuGetProject Include="SessionStateAsyncModule.nupkg\Microsoft.AspNet.SessionState.SessionStateAsyncModule.nuproj" />
-    <NuGetProject Include="SqlSessionStateAsyncProvider.nupkg\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.nuproj" />
+    <NuGetProject Include="SessionStateModule.nupkg\Microsoft.AspNet.SessionState.SessionStateModule.nuproj" />
+    <NuGetProject Include="SqlSessionStateProviderAsync.nupkg\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync.nuproj" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="Build">

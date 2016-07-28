@@ -25,7 +25,7 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
     /// <summary>
     /// Async version of SqlSessionState provider based on EF
     /// </summary>
-    public class SqlSessionStateAsyncProvider : SessionStateStoreProviderAsyncBase
+    public class SqlSessionStateProviderAsync : SessionStateStoreProviderAsyncBase
     {
         private const int ItemShortLength = 7000;
         private const double SessionExpiresFrequencyCheckInSeconds = 30.0;

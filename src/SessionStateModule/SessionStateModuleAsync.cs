@@ -20,7 +20,7 @@ namespace Microsoft.AspNet.SessionState
     /// <summary>
     /// Async version of SessionState module which requires .Net framework 4.6.2
     /// </summary>
-    public sealed class SessionStateAsyncModule : ISessionStateModule
+    public sealed class SessionStateModuleAsync : ISessionStateModule
     {
         internal const int TimeoutDefault = 20;
 
@@ -78,9 +78,9 @@ namespace Microsoft.AspNet.SessionState
         private bool _supportSessionExpiry;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref='Microsoft.AspNet.SessionState.SessionStateAsyncModule' />
+        /// Initializes a new instance of the <see cref='Microsoft.AspNet.SessionState.SessionStateModuleAsync' />
         /// </summary>
-        public SessionStateAsyncModule()
+        public SessionStateModuleAsync()
         {
         }
 
@@ -262,7 +262,7 @@ namespace Microsoft.AspNet.SessionState
             }
             else if(config.Mode == SessionStateMode.InProc)
             {
-                _store = new InProcAsyncSessionStateStore();
+                _store = new InProcSessionStateStoreAsync();
                 _store.Initialize(null, null);
             }
             else

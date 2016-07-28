@@ -4,7 +4,7 @@
     <PropertyGroup>
         <AssemblyName>$(MSBuildProjectName)</AssemblyName>
         <NuGetPackageId>$(MSBuildProjectName)</NuGetPackageId>
-        <NuSpecFile>Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.nuspec</NuSpecFile>
+        <NuSpecFile>Microsoft.AspNet.SessionState.SessionStateModule.nuspec</NuSpecFile>
     </PropertyGroup>
     <ItemGroup>
         <NuGetContent Include="$(AssemblyName).dll">
@@ -19,7 +19,7 @@
             <Source>$(OutputPath)</Source>
             <Destination>lib\Net462</Destination>
         </NuGetContent>
-        <NuGetContentProject Include="$(RepositoryRoot)\src\SqlSessionStateAsyncProvider\$(MSBuildProjectName).csproj" Condition="'$(NuGetPackSymbols)' == 'true'" />
+        <NuGetContentProject Include="$(RepositoryRoot)\src\SessionStateModule\$(MSBuildProjectName).csproj" Condition="'$(NuGetPackSymbols)' == 'true'" />
         <NuGetContent Include="Content\Net462\*">
             <Destination>content\Net462</Destination>
         </NuGetContent>

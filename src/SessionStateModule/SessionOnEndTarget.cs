@@ -38,8 +38,8 @@ namespace Microsoft.AspNet.SessionState
                 item.StaticObjects,
                 item.Timeout,
                 false,
-                SessionStateAsyncModule.ConfigCookieless,
-                SessionStateAsyncModule.ConfigMode,
+                SessionStateModuleAsync.ConfigCookieless,
+                SessionStateModuleAsync.ConfigMode,
                 true);
 
             RaiseOnEnd(sessionStateContainer);

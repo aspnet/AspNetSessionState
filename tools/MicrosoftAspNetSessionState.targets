@@ -22,7 +22,7 @@
             <NuSpecProperties>
                 NuGetPackageVersion=$(NuGetPackageVersion);
                 NuGetPackageId=$(NuGetPackageId);
-		SessionStateAsyncModuleNuGetPackageVersion=$(SessionStateAsyncModuleNuGetPackageVersion);
+		SessionStateModuleNuGetPackageVersion=$(SessionStateModuleNuGetPackageVersion);
 		EntityFrameworkNuGetPackageVersion=$(EntityFrameworkNuGetPackageVersion)
             </NuSpecProperties>
         </PropertyGroup>

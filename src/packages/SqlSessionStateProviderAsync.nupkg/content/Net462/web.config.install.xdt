@@ -7,14 +7,14 @@
   
   <system.web>
     <sessionState cookieless="false" regenerateExpiredSessionId="true"
-        mode="Custom" customProvider="SqlSessionStateAsyncProvider" xdt:Transform="Insert">
+        mode="Custom" customProvider="SqlSessionStateProviderAsync" xdt:Transform="Insert">
       <providers>
       <!--
             Please change the connection string named "DefaultConnection" to connect to an instance
             of SQL Server which you will use as the data store.
       -->
-        <add name="SqlSessionStateAsyncProvider" connectionStringName="DefaultConnection"
-          type="Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider, Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider, Version=1.0.0.0, Culture=neutral"
+        <add name="SqlSessionStateProviderAsync" connectionStringName="DefaultConnection"
+          type="Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync, Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync, Version=1.0.0.0, Culture=neutral"
              xdt:Transform="InsertIfMissing" />
       </providers>
     </sessionState>

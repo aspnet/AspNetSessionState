@@ -12,7 +12,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <TestRoot>$(RepositoryRoot)\test\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.Test</TestRoot>
+        <TestRoot>$(RepositoryRoot)\test\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync.Test</TestRoot>
         <BuildingTestProject Condition="$(MSBuildProjectDirectory.ToLower().Contains($(TestRoot.ToLower())))">true</BuildingTestProject>
     </PropertyGroup>
 
@@ -31,7 +31,7 @@
         <CodeSignSnCert Condition="'$(MSBuildProjectExtension)' == '.csproj'">72</CodeSignSnCert>
         <CodeSignDisplayName>Microsoft ASP.NET</CodeSignDisplayName>
         <CodeSignDisplayUrl>http://www.asp.net/</CodeSignDisplayUrl>
-        <CodeSignDescription>Signing binaries for ASP.NET Async SessionState module</CodeSignDescription>
+        <CodeSignDescription>Signing binaries for ASP.NET SessionState module and SqlSessionStateProviderAsync</CodeSignDescription>
         <CodeSignApprovers Condition="'$(CodeSignApprovers)' == ''">joeloff;elipton</CodeSignApprovers>
         <CodeSignOutputPath Condition="'$(CodeSignOutputPath)' == ''">$(BinPath)Signed\</CodeSignOutputPath>
         <CodeSignIntermediateOutputPath Condition="'$(CodeSignIntermediateOutputPath)' == ''">$(ObjPath)CodeSign\</CodeSignIntermediateOutputPath>
@@ -50,18 +50,18 @@
 
 <!--
     <ItemGroup>
-        <CodeSign Include="$(OutputPath)Microsoft.AspNet.SessionState.SessionStateAsyncModule.dll">
+        <CodeSign Include="$(OutputPath)Microsoft.AspNet.SessionState.SessionStateModule.dll">
             <AuthCodeCert>10006</AuthCodeCert>
             <StrongNameCert>72</StrongNameCert>
         </CodeSign>
-<CodeSign Include="$(OutputPath)Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.dll">
+<CodeSign Include="$(OutputPath)Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync.dll">
             <AuthCodeCert>10006</AuthCodeCert>
             <StrongNameCert>72</StrongNameCert>
         </CodeSign>
-        <CodeSign Include="$(RepositoryRootEx)src\Packages\SessionStateAsyncModule.nupkg\tools\*.ps1">
+        <CodeSign Include="$(RepositoryRootEx)src\Packages\SessionStateModule.nupkg\tools\*.ps1">
             <AuthCodeCert>10006</AuthCodeCert>
         </CodeSign>
- <CodeSign Include="$(RepositoryRootEx)src\Packages\SqlSessionStateAsyncProvider.nupkg\tools\*.ps1">
+ <CodeSign Include="$(RepositoryRootEx)src\Packages\SqlSessionStateProviderAsync.nupkg\tools\*.ps1">
             <AuthCodeCert>10006</AuthCodeCert>
         </CodeSign>
     </ItemGroup>  
