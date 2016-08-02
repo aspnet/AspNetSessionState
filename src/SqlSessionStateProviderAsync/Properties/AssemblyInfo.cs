@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SqlSessionStateAsyncProvider")]
+[assembly: AssemblyTitle("Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("SqlSessionStateAsyncProvider")]
+[assembly: AssemblyProduct("Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync")]
 [assembly: AssemblyCopyright("Copyright ©  2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

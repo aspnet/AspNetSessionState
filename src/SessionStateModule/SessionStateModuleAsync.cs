@@ -1,22 +1,21 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
-using System.Configuration;
-using System.Diagnostics;
-using System.Security.Permissions;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Web;
-using System.Web.Configuration;
-using System.Web.SessionState;
-using Microsoft.Win32;
-using Microsoft.AspNet.SessionState.Resources;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-
 namespace Microsoft.AspNet.SessionState
 {
+    using System;
+    using System.Configuration;
+    using System.Threading.Tasks;
+    using System.Web;
+    using System.Web.Configuration;
+    using System.Web.SessionState;
+    using System.Collections.Concurrent;
+    using Resources;
+    using System.Diagnostics;
+    using System.Collections.Generic;
+    using Win32;
+    using System.Threading;
+
     /// <summary>
     /// Async version of SessionState module which requires .Net framework 4.6.2
     /// </summary>
@@ -717,7 +716,6 @@ namespace Microsoft.AspNet.SessionState
 
             if (count >= AppSettings.RequestQueueLimitPerSession)
             {
-
                 throw new HttpException(SR.Request_Queue_Limit_Per_Session_Exceeded);
             }
 
@@ -746,8 +744,7 @@ namespace Microsoft.AspNet.SessionState
             rqLockId = result.LockId;
             rqActionFlags = result.Actions;
         }
-
-        [RegistryPermission(SecurityAction.Assert, Unrestricted = true)]
+        
         private static void LookUpRegForPollInterval()
         {
             lock (PollIntervalRegLock)
@@ -841,9 +838,7 @@ namespace Microsoft.AspNet.SessionState
                     Debug.Assert(_rqItem != null, "_rqItem cannot null if it's not a new session");
 
                     // Remove it from the store because the session is abandoned.
-                    await
-                        _store.RemoveItemAsync(_rqContext, ReleaseStateGetSessionId(), _rqLockId, _rqItem,
-                            GetCancellationToken());
+                    await _store.RemoveItemAsync(_rqContext, ReleaseStateGetSessionId(), _rqLockId, _rqItem, GetCancellationToken());
                 }
             }
             else if (!_rqReadonly ||

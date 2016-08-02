@@ -1,34 +1,34 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Threading;
-using System.Web;
-using System.Web.SessionState;
-using System.Globalization;
-using System.Configuration;
-using System.IO;
-using System.IO.Compression;
-using System.Diagnostics;
-using System.Web.Configuration;
-using System.Security;
-using System.Configuration.Provider;
-using System.Collections.Specialized;
-using System.Data.Entity.Infrastructure;
-using Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionState.Entities;
-using Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionState.Resources;
-
 namespace Microsoft.AspNet.SessionState.AsyncProviders
 {
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using System.Threading;
+    using System.Web;
+    using System.Web.SessionState;
+    using System.Globalization;
+    using System.Configuration;
+    using System.IO;
+    using System.IO.Compression;
+    using System.Diagnostics;
+    using System.Web.Configuration;
+    using System.Security;
+    using System.Configuration.Provider;
+    using System.Collections.Specialized;
+    using System.Data.Entity.Infrastructure;
+    using SqlSessionState.Entities;
+    using SqlSessionState.Resources;
+
     /// <summary>
     /// Async version of SqlSessionState provider based on EF
     /// </summary>
     public class SqlSessionStateProviderAsync : SessionStateStoreProviderAsyncBase
     {
         private const int ItemShortLength = 7000;
-        private const double SessionExpiresFrequencyCheckInSeconds = 30.0;
+        private const double SessionExpiresFrequencyCheckIntervalTicks = 30 * TimeSpan.TicksPerSecond;
         private static long s_lastSessionPurgeTicks;
         private static readonly Task s_completedTask = Task.FromResult<object>(null);
         private static string s_appSuffix = null;
@@ -416,7 +416,7 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
         private bool CanPurge()
         {
             return (
-                TimeSpan.FromTicks(DateTime.UtcNow.Ticks - s_lastSessionPurgeTicks).TotalSeconds > SessionExpiresFrequencyCheckInSeconds
+                DateTime.UtcNow.Ticks - s_lastSessionPurgeTicks > SessionExpiresFrequencyCheckIntervalTicks
                 && Interlocked.CompareExchange(ref s_inPurge, 1, 0) == 0
                 );
         }
@@ -426,8 +426,7 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
             // Only check for expired sessions every 30 seconds.
             if (CanPurge())
             {
-                Task purgeTask = new Task(() => PurgeExpiredSessions());
-                purgeTask.Start();
+                Task.Run(() => PurgeExpiredSessions());
             }
         }
 
@@ -610,13 +609,13 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
         /// <returns></returns>
         private static async Task UpdateEntityWithoutConcurrencyExceptionAsync(SessionContext db, CancellationToken cancellationToken)
         {
-            bool saveFailed;
+            bool saveFailed = false;
             do
             {
-                saveFailed = false;
                 try
                 {
                     await db.SaveChangesAsync(cancellationToken);
+                    break;
                 }
                 catch (DbUpdateConcurrencyException ex)
                 {

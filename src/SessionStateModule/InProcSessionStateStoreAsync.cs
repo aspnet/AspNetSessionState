@@ -1,21 +1,18 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.Caching;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Web;
-using System.Web.SessionState;
-using Microsoft.AspNet.SessionState.Resources;
-
 namespace Microsoft.AspNet.SessionState
 {
+    using System;
+    using System.Collections.Specialized;
+    using System.Diagnostics;
+    using System.Runtime.Caching;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Web;
+    using System.Web.SessionState;
+    using Resources;
+
     /// <summary>
     /// Default in-memory SessionState provider for async SessionState module
     /// </summary>

@@ -1,17 +1,16 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
-using System.Configuration;
-using System.Configuration.Provider;
-using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
-using System.Globalization;
-using Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionState.Resources;
-
-
 namespace Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionState.Entities
 {
+    using System;
+    using System.Configuration;
+    using System.Configuration.Provider;
+    using System.Data.Entity;
+    using System.Data.Entity.Infrastructure;
+    using System.Globalization;
+    using Resources;
+
     internal static class ModelHelper
     {
         private static bool s_sessionInitialized = false;

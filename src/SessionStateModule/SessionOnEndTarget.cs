@@ -1,11 +1,11 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
-using System.Web.SessionState;
-
 namespace Microsoft.AspNet.SessionState
 {
+    using System;
+    using System.Web.SessionState;
+
     /*
      * Calls the OnSessionEnd event. We use an object other than the SessionStateModule
      * because the state of the module is unknown - it could have been disposed
