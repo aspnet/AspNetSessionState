@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionState.Resources {
+namespace Microsoft.AspNet.SessionState.Resources {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionState.Resources
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Microsoft.AspNet.SessionState.AsyncProviders.Resources.SR", typeof(SR).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Microsoft.AspNet.SessionState.Resources.SR", typeof(SR).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

@@ -12,17 +12,17 @@ namespace Microsoft.AspNet.SessionState
      * when a session ends.
      */
 
-    internal class SessionOnEndTarget
+    class SessionOnEndTarget
     {
         private int _sessionEndEventHandlerCount;
 
-        internal int SessionEndEventHandlerCount
+        public int SessionEndEventHandlerCount
         {
             get { return _sessionEndEventHandlerCount; }
             set { _sessionEndEventHandlerCount = value; }
         }
 
-        internal void RaiseOnEnd(HttpSessionStateContainer sessionStateContainer)
+        public void RaiseOnEnd(HttpSessionStateContainer sessionStateContainer)
         {
             if (_sessionEndEventHandlerCount > 0)
             {
@@ -30,7 +30,7 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
-        internal void RaiseSessionOnEnd(string id, SessionStateStoreData item)
+        public void RaiseSessionOnEnd(string id, SessionStateStoreData item)
         {
             var sessionStateContainer = new HttpSessionStateContainer(
                 id,

@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider
+namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider
 {
     public class SqlSessionStateAsyncProviderTest
     {

@@ -8,8 +8,8 @@
     <ProjectGuid>{493B0482-572A-4465-BD52-4094351C2647}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Microsoft.AspNet.SessionState.AsyncProviders</RootNamespace>
-    <AssemblyName>Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync</AssemblyName>
+    <RootNamespace>Microsoft.AspNet.SessionState</RootNamespace>
+    <AssemblyName>Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />

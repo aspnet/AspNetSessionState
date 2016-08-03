@@ -1,7 +1,7 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-namespace Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionState.Entities
+namespace Microsoft.AspNet.SessionState.Entities
 {
     using System;
     using System.Configuration;
@@ -11,10 +11,10 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionState.Entities
     using System.Globalization;
     using Resources;
 
-    internal static class ModelHelper
+    static class ModelHelper
     {
-        private static bool s_sessionInitialized = false;
-        private static bool s_dbInitialized = false;
+        private static bool s_sessionInitialized;
+        private static bool s_dbInitialized;
         private static readonly object s_lock = new object();
 
         public static SessionContext CreateSessionContext(ConnectionStringSettings setting)
@@ -66,7 +66,7 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionState.Entities
             return results;
         }
 
-        internal static ConnectionStringSettings GetConnectionString(string connectionstringName)
+        public static ConnectionStringSettings GetConnectionString(string connectionstringName)
         {
             if (string.IsNullOrEmpty(connectionstringName))
             {

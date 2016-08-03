@@ -21,8 +21,6 @@ namespace Microsoft.AspNet.SessionState
     /// </summary>
     public sealed class SessionStateModuleAsync : ISessionStateModule
     {
-        internal const int TimeoutDefault = 20;
-
         private static long s_lockedItemPollingInterval = 500; // in milliseconds
         private static TimeSpan s_pollingTimespan;
 
@@ -32,19 +30,19 @@ namespace Microsoft.AspNet.SessionState
 
         private static bool s_configRegenerateExpiredSessionId;
 
-        internal static HttpCookieMode ConfigCookieless;
-        internal static SessionStateMode ConfigMode;
+        private static HttpCookieMode s_configCookieless;
+        private static SessionStateMode s_configMode;
 
         private static bool s_pollIntervalRegLookedUp;
         private static readonly object PollIntervalRegLock = new object();
 
         private static readonly object LockObject = new object();
         private static bool s_oneTimeInit;
-
-        private static readonly Task CompletedTask = Task.FromResult(false);
+                
         private readonly SessionOnEndTarget _onEndTarget = new SessionOnEndTarget();
 
-        private static ConcurrentDictionary<string, int> s_queuedRequestsNumPerSession = new ConcurrentDictionary<string, int>();
+        private static ConcurrentDictionary<string, int> s_queuedRequestsNumPerSession = 
+            new ConcurrentDictionary<string, int>();
 
         /* per request data goes in _rq* variables */
         private bool _acquireCalled;
@@ -83,17 +81,27 @@ namespace Microsoft.AspNet.SessionState
         {
         }
 
-        internal bool SessionIdManagerUseCookieless
+        /// <summary>
+        /// Get the HttpCookieMode setting of the module
+        /// </summary>
+        public static HttpCookieMode ConfigCookieless
         {
             get
             {
-                // For container created by custom session state module,
-                // sorry, we currently don't have a way to tell and thus we rely blindly
-                // on cookieMode.
-                return ConfigCookieless == HttpCookieMode.UseUri;
+                return s_configCookieless;
             }
         }
-
+        
+        /// <summary>
+        /// Get the SessionStateMode setting of the module
+        /// </summary>
+        public static SessionStateMode ConfigMode
+        {
+            get
+            {
+                return s_configMode;
+            }
+        }
         /// <summary>
         /// Initialize the module
         /// </summary>
@@ -128,8 +136,8 @@ namespace Microsoft.AspNet.SessionState
                         s_configExecutionTimeout = section.ExecutionTimeout;
 
                         s_configRegenerateExpiredSessionId = s_config.RegenerateExpiredSessionId;
-                        ConfigCookieless = s_config.Cookieless;
-                        ConfigMode = s_config.Mode;
+                        s_configCookieless = s_config.Cookieless;
+                        s_configMode = s_config.Mode;
 
                         if (!s_pollIntervalRegLookedUp)
                             LookUpRegForPollInterval();
@@ -170,7 +178,7 @@ namespace Microsoft.AspNet.SessionState
                 return ReleaseStateAsync(context.ApplicationInstance);
             }
 
-            return CompletedTask;
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -448,7 +456,18 @@ namespace Microsoft.AspNet.SessionState
             await CompleteAcquireStateAsync(context);
         }
 
-        internal bool CreateSessionId()
+        private bool SessionIdManagerUseCookieless
+        {
+            get
+            {
+                // For container created by custom session state module,
+                // sorry, we currently don't have a way to tell and thus we rely blindly
+                // on cookieMode.
+                return ConfigCookieless == HttpCookieMode.UseUri;
+            }
+        }
+
+        private bool CreateSessionId()
         {
             // CreateSessionId should be called only if:
             Debug.Assert(_rqId == null || // Session id isn't found in the request, OR
@@ -478,7 +497,7 @@ namespace Microsoft.AspNet.SessionState
                 _ => TaskAsyncHelper.RunAsyncMethodSynchronously(EnsureStateStoreItemLockedAsync));
         }
 
-        internal async Task EnsureStateStoreItemLockedAsync()
+        private async Task EnsureStateStoreItemLockedAsync()
         {
             if (!_acquireCalled || _releaseCalled)
                 return;
@@ -565,7 +584,7 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
-        internal void InitStateStoreItem(bool addToContext)
+        private void InitStateStoreItem(bool addToContext)
         {
             Debug.Assert(_rqId != null, "_rqId != null");
 
@@ -592,7 +611,7 @@ namespace Microsoft.AspNet.SessionState
                 _rqItem.Timeout,
                 _rqIsNewSession,
                 ConfigCookieless,
-                ConfigMode,
+                s_configMode,
                 _rqReadonly);
 
             if (addToContext)
@@ -783,7 +802,7 @@ namespace Microsoft.AspNet.SessionState
 
             if (_rqSessionState == null)
             {
-                return CompletedTask;
+                return Task.CompletedTask;
             }
 
             SessionStateUtility.RemoveHttpSessionStateFromContext(_rqContext.ApplicationInstance.Context);
@@ -807,7 +826,7 @@ namespace Microsoft.AspNet.SessionState
                 )
             {
                 RemoveSessionId(application.Context);
-                return CompletedTask;
+                return Task.CompletedTask;
             }
 
             return ReleaseStateAsyncImpl(application);

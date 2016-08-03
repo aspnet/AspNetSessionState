@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync")]
+[assembly: AssemblyTitle("Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync")]
+[assembly: AssemblyProduct("Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync")]
 [assembly: AssemblyCopyright("Copyright ©  2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -21,5 +21,3 @@ using System.Runtime.InteropServices;
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("493b0482-572a-4465-bd52-4094351c2647")]
-
-[assembly: InternalsVisibleTo("Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.Test")]

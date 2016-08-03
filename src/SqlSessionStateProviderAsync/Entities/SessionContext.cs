@@ -1,11 +1,11 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-namespace Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionState.Entities
+namespace Microsoft.AspNet.SessionState.Entities
 {
     using System.Data.Entity;
 
-    internal class SessionContext : DbContext
+    class SessionContext : DbContext
     {
         public virtual DbSet<Session> Sessions { get; set; }
 

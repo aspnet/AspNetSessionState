@@ -1,7 +1,7 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-namespace Microsoft.AspNet.SessionState.AsyncProviders
+namespace Microsoft.AspNet.SessionState
 {
     using System;
     using System.Linq;
@@ -19,8 +19,8 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
     using System.Configuration.Provider;
     using System.Collections.Specialized;
     using System.Data.Entity.Infrastructure;
-    using SqlSessionState.Entities;
-    using SqlSessionState.Resources;
+    using Entities;
+    using Resources;
 
     /// <summary>
     /// Async version of SqlSessionState provider based on EF
@@ -30,9 +30,8 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
         private const int ItemShortLength = 7000;
         private const double SessionExpiresFrequencyCheckIntervalTicks = 30 * TimeSpan.TicksPerSecond;
         private static long s_lastSessionPurgeTicks;
-        private static readonly Task s_completedTask = Task.FromResult<object>(null);
-        private static string s_appSuffix = null;
-        private static int s_inPurge = 0;
+        private static string s_appSuffix;
+        private static int s_inPurge;
 
         private ConnectionStringSettings ConnectionString { get; set; }
         private bool CompressionEnabled { get; set; }
@@ -148,7 +147,7 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
         public override Task EndRequestAsync(HttpContextBase context)
         {
             PurgeIfNeeded();
-            return s_completedTask;
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -609,24 +608,22 @@ namespace Microsoft.AspNet.SessionState.AsyncProviders
         /// <returns></returns>
         private static async Task UpdateEntityWithoutConcurrencyExceptionAsync(SessionContext db, CancellationToken cancellationToken)
         {
-            bool saveFailed = false;
+            bool saveSucceeded = false;
             do
             {
                 try
                 {
                     await db.SaveChangesAsync(cancellationToken);
-                    break;
+                    saveSucceeded = true;
                 }
                 catch (DbUpdateConcurrencyException ex)
                 {
-                    saveFailed = true;
-                                        
                     // Update original values from the database 
                     var entry = ex.Entries.Single();
                     entry.OriginalValues.SetValues(entry.GetDatabaseValues());
                 }
 
-            } while (saveFailed);
+            } while (!saveSucceeded);
         }
     }
 }

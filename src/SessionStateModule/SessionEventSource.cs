@@ -8,8 +8,8 @@ namespace Microsoft.AspNet.SessionState
     using System.Web;
 
     [EventSource(Guid = "e195a708-06d5-4605-bbfe-818c9ff8e124",
-        Name = "Microsoft-AspNet-SessionState-SessionStateAsyncModule")]
-    internal class SessionEventSource : EventSource
+        Name = "Microsoft-AspNet-SessionState-SessionStateModule")]
+    class SessionEventSource : EventSource
     {
         private SessionEventSource()
         {
@@ -70,10 +70,10 @@ namespace Microsoft.AspNet.SessionState
             return workerRequest;
         }
 
-        public class EventType
+        class EventType
         {
-            internal static readonly int SessionDataBegin = 42;
-            internal static readonly int SessionDataEnd = 43;
+            public static readonly int SessionDataBegin = 42;
+            public static readonly int SessionDataEnd = 43;
         }
 
         public class Keywords

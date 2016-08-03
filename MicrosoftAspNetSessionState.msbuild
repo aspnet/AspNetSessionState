@@ -3,10 +3,10 @@
 
   <ItemGroup>
     <AssemblyProject Include="src\SessionStateModule\Microsoft.AspNet.SessionState.SessionStateModule.csproj" />
-    <AssemblyProject Include="src\SqlSessionStateProviderAsync\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync.csproj" />
+    <AssemblyProject Include="src\SqlSessionStateProviderAsync\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(BuildCoreOnly)' != 'true'">
-    <AssemblyProject Include="test\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync.Test\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync.Test.csproj" />
+    <AssemblyProject Include="test\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.Test\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.Test.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageProject Include="src\Packages\Packages.csproj" />

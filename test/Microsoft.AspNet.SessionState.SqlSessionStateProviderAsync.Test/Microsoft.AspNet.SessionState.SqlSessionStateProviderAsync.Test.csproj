@@ -7,8 +7,8 @@
     <ProjectGuid>{CBB00B6C-8A44-43F0-BE73-0B0E8565F8A2}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider</RootNamespace>
-    <AssemblyName>Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateAsyncProvider.Test</AssemblyName>
+    <RootNamespace>Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider</RootNamespace>
+    <AssemblyName>Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
@@ -76,9 +76,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\SqlSessionStateProviderAsync\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync.csproj">
+    <ProjectReference Include="..\..\src\SqlSessionStateProviderAsync\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.csproj">
       <Project>{493b0482-572a-4465-bd52-4094351c2647}</Project>
-      <Name>Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync</Name>
+      <Name>Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

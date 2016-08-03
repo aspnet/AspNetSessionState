@@ -7,11 +7,11 @@ namespace Microsoft.AspNet.SessionState
     using System.Threading;
     using System.Threading.Tasks;
 
-    internal static class TaskAsyncHelper
+    static class TaskAsyncHelper
     {
         private static readonly Task CompletedTask = Task.FromResult<object>(null);
 
-        internal static IAsyncResult BeginTask(Func<Task> taskFunc, AsyncCallback callback, object state)
+        public static IAsyncResult BeginTask(Func<Task> taskFunc, AsyncCallback callback, object state)
         {
             Task task = taskFunc();
             if (task == null)
@@ -58,7 +58,7 @@ namespace Microsoft.AspNet.SessionState
 
         // The parameter is named 'ar' since it matches the parameter name on the EndEventHandler delegate type,
         // and we expect that most consumers will end up invoking this method via an instance of that delegate.
-        internal static void EndTask(IAsyncResult ar)
+        public static void EndTask(IAsyncResult ar)
         {
             if (ar == null)
             {
@@ -80,23 +80,23 @@ namespace Microsoft.AspNet.SessionState
             taskWrapper.Task.GetAwaiter().GetResult();
         }
 
-        internal static void RunAsyncMethodSynchronously(Func<Task> func)
+        public static void RunAsyncMethodSynchronously(Func<Task> func)
         {
             CompletedTask.ContinueWith(_ => func(), TaskScheduler.Default).Unwrap().Wait();
         }
     }
 
-    internal sealed class TaskWrapperAsyncResult : IAsyncResult
+    sealed class TaskWrapperAsyncResult : IAsyncResult
     {
         private bool _forceCompletedSynchronously;
 
-        internal TaskWrapperAsyncResult(Task task, object asyncState)
+        public TaskWrapperAsyncResult(Task task, object asyncState)
         {
             Task = task;
             AsyncState = asyncState;
         }
 
-        internal Task Task { get; }
+        public Task Task { get; }
 
         public object AsyncState { get; }
 
@@ -115,7 +115,7 @@ namespace Microsoft.AspNet.SessionState
             get { return ((IAsyncResult) Task).IsCompleted; }
         }
 
-        internal void ForceCompletedSynchronously()
+        public void ForceCompletedSynchronously()
         {
             _forceCompletedSynchronously = true;
         }

@@ -20,7 +20,6 @@ namespace Microsoft.AspNet.SessionState
     {
         private const int NewLockCookie = 1;
         private static readonly MemoryCache s_store = new MemoryCache("InProcSessionStateStoreAsync");
-        private static readonly Task s_completedTask = Task.FromResult<object>(null);
 
         private CacheEntryRemovedCallback _callback;
         private SessionStateItemExpireCallback _expireCallback;
@@ -70,7 +69,7 @@ namespace Microsoft.AspNet.SessionState
                        
             InsertToCache(id, state);
 
-            return s_completedTask;
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -81,7 +80,7 @@ namespace Microsoft.AspNet.SessionState
         /// <inheritdoc />
         public override Task EndRequestAsync(HttpContextBase context)
         {
-            return s_completedTask;
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -142,7 +141,7 @@ namespace Microsoft.AspNet.SessionState
                 }
             }
 
-            return s_completedTask;
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -176,7 +175,7 @@ namespace Microsoft.AspNet.SessionState
                     // Only remove the item if we are the owner
                     if(!state.Locked || state.LockCookie != lockCookie)
                     {
-                        return s_completedTask;
+                        return Task.CompletedTask;
                     }
 
                     // prevent overwriting when we drop the lock
@@ -193,7 +192,7 @@ namespace Microsoft.AspNet.SessionState
                 s_store.Remove(id);
             }
 
-            return s_completedTask;
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -201,7 +200,7 @@ namespace Microsoft.AspNet.SessionState
         {
             s_store.Get(id);
 
-            return s_completedTask;
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -247,7 +246,7 @@ namespace Microsoft.AspNet.SessionState
 
                 if(currentState == null)
                 {
-                    return s_completedTask;
+                    return Task.CompletedTask;
                 }
 
                 var lockTaken = false;
@@ -257,7 +256,7 @@ namespace Microsoft.AspNet.SessionState
                     // Only set the state if we are the owner
                     if(!currentState.Locked || currentState.LockCookie != lockCookie)
                     {
-                        return s_completedTask;
+                        return Task.CompletedTask;
                     }
 
                     // we can change the state in place if the timeout hasn't changed
@@ -312,7 +311,7 @@ namespace Microsoft.AspNet.SessionState
                 InsertToCache(id, newState);
             }
 
-            return s_completedTask;
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -496,17 +495,83 @@ namespace Microsoft.AspNet.SessionState
         }
     }
 
-    internal sealed class InProcSessionState
+    /// <summary>
+    /// The data structure used to store a session in the memory
+    /// </summary>
+    public sealed class InProcSessionState
     {
-        public ISessionStateItemCollection SessionItems { get; set; }
-        public HttpStaticObjectsCollection StaticObjects { get; set; }
-        public int Timeout { get; set; }            // USed to set slidingExpiration in CacheEntry
-        public bool Locked { get; set; }            // If it's locked by another thread
+        private ISessionStateItemCollection _sessionItems;
+        private HttpStaticObjectsCollection _staticObjects;
+        private int _timeout;
+
+        /// <summary>
+        /// Gets session state items
+        /// </summary>
+        public ISessionStateItemCollection SessionItems
+        {
+            get
+            {
+                return _sessionItems;
+            }
+        }
+
+        /// <summary>
+        /// Gets a static objects collection
+        /// </summary>
+        public HttpStaticObjectsCollection StaticObjects
+        {
+            get
+            {
+                return _staticObjects;
+            }
+        }
+
+        /// <summary>
+        /// Gets timeout of a Session
+        /// </summary>
+        public int Timeout
+        {
+            get
+            {
+                return _timeout;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets if a session is locked
+        /// </summary>
+        public bool Locked { get; set; }
+
+        /// <summary>
+        /// Gets or sets the lock date of a session
+        /// </summary>
         public DateTime LockDate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the lock id of a session
+        /// </summary>
         public int LockCookie { get; set; }
+
+        /// <summary>
+        /// The locker of a session
+        /// </summary>
         public SpinLock SpinLock;
+
+        /// <summary>
+        /// SessionStateItem flags
+        /// </summary>
         public int Flags;                           // Can't use property in Interlocked.CompareExchange
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="sessionItems">Session state items</param>
+        /// <param name="staticObjects">A static objects collection</param>
+        /// <param name="timeout">Timeout of the session</param>
+        /// <param name="locked">Whether the session is locked or not</param>
+        /// <param name="utcLockDate">Datetime the session is locked</param>
+        /// <param name="lockCookie">The lock id of the session</param>
+        /// <param name="flags">SessionStateItem flags</param>
         public InProcSessionState(
                 ISessionStateItemCollection sessionItems,
                 HttpStaticObjectsCollection staticObjects,
@@ -520,7 +585,17 @@ namespace Microsoft.AspNet.SessionState
             Copy(sessionItems, staticObjects, timeout, locked, utcLockDate, lockCookie, flags);
         }
 
-        internal void Copy(
+        /// <summary>
+        /// Copy InProcSessionState data to the instance
+        /// </summary>
+        /// <param name="sessionItems">Session state items</param>
+        /// <param name="staticObjects">A static objects collection</param>
+        /// <param name="timeout">Timeout of the session</param>
+        /// <param name="locked">Whether the session is locked or not</param>
+        /// <param name="utcLockDate">Datetime the session is locked</param>
+        /// <param name="lockCookie">The lock id of the session</param>
+        /// <param name="flags">SessionStateItem flags</param>
+        public void Copy(
                 ISessionStateItemCollection sessionItems,
                 HttpStaticObjectsCollection staticObjects,
                 int timeout,
@@ -530,9 +605,9 @@ namespace Microsoft.AspNet.SessionState
                 int flags)
         {
 
-            SessionItems = sessionItems;
-            StaticObjects = staticObjects;
-            Timeout = timeout;
+            _sessionItems = sessionItems;
+            _staticObjects = staticObjects;
+            _timeout = timeout;
             Locked = locked;
             LockDate = utcLockDate;
             LockCookie = lockCookie;
@@ -540,11 +615,25 @@ namespace Microsoft.AspNet.SessionState
         }
     }
 
-    [FlagsAttribute()]
-    internal enum SessionStateItemFlags : int
+    /// <summary>
+    /// The state of session state item
+    /// </summary>
+    [Flags]
+    public enum SessionStateItemFlags : int
     {
+        /// <summary>
+        /// No flag
+        /// </summary>
         None = 0x00000000,
+
+        /// <summary>
+        /// Unintialized session state
+        /// </summary>
         Uninitialized = 0x00000001,
+
+        /// <summary>
+        /// Avoid to trigger cache item removed callback due to the sessionstate timeout change
+        /// </summary>
         IgnoreCacheItemRemoved = 0x00000002
     }
 }

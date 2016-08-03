@@ -1,12 +1,12 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-namespace Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionState.Entities
+namespace Microsoft.AspNet.SessionState.Entities
 {
     using System;
     using System.ComponentModel.DataAnnotations;
 
-    internal class Session
+    class Session
     {
         [Key, StringLength(88)]
         public string SessionId { get; set; }

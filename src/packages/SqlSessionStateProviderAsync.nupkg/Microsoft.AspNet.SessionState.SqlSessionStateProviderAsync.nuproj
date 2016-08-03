@@ -4,7 +4,7 @@
     <PropertyGroup>
         <AssemblyName>$(MSBuildProjectName)</AssemblyName>
         <NuGetPackageId>$(MSBuildProjectName)</NuGetPackageId>
-        <NuSpecFile>Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync.nuspec</NuSpecFile>
+        <NuSpecFile>Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.nuspec</NuSpecFile>
     </PropertyGroup>
     <ItemGroup>
         <NuGetContent Include="$(AssemblyName).dll">
