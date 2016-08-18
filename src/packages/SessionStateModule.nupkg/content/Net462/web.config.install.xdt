@@ -10,7 +10,7 @@
     <modules>
       <remove name="Session" xdt:Transform="InsertIfMissing" xdt:Locator="Match(name)" />
       <add name="Session"
-           type="Microsoft.AspNet.SessionState.SessionStateModuleAsync, Microsoft.AspNet.SessionState.SessionStateModule, Version=1.0.0.0, Culture=neutral"
+           type="Microsoft.AspNet.SessionState.SessionStateModuleAsync, Microsoft.AspNet.SessionState.SessionStateModule, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
            preCondition="integratedMode" xdt:Transform="Insert" />
     </modules>
   </system.webServer>

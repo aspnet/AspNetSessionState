@@ -6,7 +6,7 @@
         mode="Custom" customProvider="SqlSessionStateAsyncProvider" xdt:Transform="Remove">
       <providers>
         <add name="SqlSessionStateAsyncProvider" connectionStringName="DefaultConnection"
-          type="Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider, Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider, Version=1.0.0.0, Culture=neutral"
+          type="Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider, Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
              xdt:Transform="Remove" xdt:Locator="Match(type)" />
       </providers>
     </sessionState>

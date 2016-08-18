@@ -1,0 +1,6 @@
+[Oo]bj/
+[Bb]in/
+.vs/
+msbuild.*
+obj/
+packages/

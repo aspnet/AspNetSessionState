@@ -14,7 +14,7 @@
             of SQL Server which you will use as the data store.
       -->
         <add name="SqlSessionStateProviderAsync" connectionStringName="DefaultConnection"
-          type="Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync, Version=1.0.0.0, Culture=neutral"
+          type="Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
              xdt:Transform="InsertIfMissing" />
       </providers>
     </sessionState>

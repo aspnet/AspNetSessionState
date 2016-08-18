@@ -335,7 +335,7 @@ namespace Microsoft.AspNet.SessionState
             s.Locked = false;
             s.LockDate = now;
             s.LockCookie = 0;
-            s.Flags = (int)SessionStateActions.InitializeItem;
+            s.Flags = (int)action;
             return s;
         }
 
