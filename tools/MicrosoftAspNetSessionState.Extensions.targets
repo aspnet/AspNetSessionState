@@ -4,8 +4,6 @@
     <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.nuproj'">
         <NuGetPackageVersion Condition="'$(UpdateNightlyPackages)' == 'true'">$(NuGetPackageVersion)-b$(VersionBuild)</NuGetPackageVersion>
     </PropertyGroup>
-    
-    <Import Project="$(MSBuildThisFileDirectory)CodeSign.targets"/>
 
     <Target Name="CopyInstallScripts">
         <Copy SourceFiles="@(NuGetInstallScripts)"
