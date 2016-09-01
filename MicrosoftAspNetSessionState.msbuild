@@ -29,7 +29,7 @@
 
   <!-- Packages build -->
 
-  <Target Name="BuildPackages" DependsOnTargets="CopyInstallScripts;RestorePackages">
+  <Target Name="BuildPackages" DependsOnTargets="RestorePackages">
     <MSBuild Targets="" Projects="@(PackageProject)" />
   </Target>
 

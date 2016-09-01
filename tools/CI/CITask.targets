@@ -4,8 +4,7 @@
 
   <UsingTask AssemblyFile="$(MSBuildThisFileDirectory)Microsoft.Web.MsBuildTasks2.dll" TaskName="Microsoft.Web.MsBuildTasks.PoliCheck"/>
 
-  <Target Name="BuildCI" DependsOnTargets="Clean;PoliCheck;Build;BinScope" />
-  <Target Name="SignBinaries" DependsOnTargets="CopyInstallScripts;CodeSign" />
+  <Target Name="BuildCI" DependsOnTargets="Clean;PoliCheck;BuildAssemblies;CodeSign;BuildPackages;BinScope" />
   <Target Name="PoliCheck">
     <ItemGroup>
       <ObjFiles Include="src\**\obj\**\*.*;test\**\obj\**\*.*;test\**\bin\**\*.*;"/>
@@ -41,5 +40,41 @@
     <BinScopeTargetFiles Include="$(OutputPath)Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.dll" />
     <BinScopeTargetFiles Include="$(OutputPath)Microsoft.AspNet.SessionState.SessionStateModule.dll" />
   </ItemGroup>
+  
+<!-- CodeSign definitions -->
+
+    <PropertyGroup>
+        <!-- Unify codesign properties. -->
+        <CodeSignEnabled Condition="'$(Sign)' == 'Sign'">true</CodeSignEnabled>
+        <CodeSignEnabled Condition="'$(BuildingTestProject)' == 'true'">false</CodeSignEnabled>
+        <CodeSignEnabled Condition="'$(CodeSignEnabled)' == ''">false</CodeSignEnabled>
+        <CodeSignTest Condition="'$(TestCodeSign)' != ''">$(TestCodeSign)</CodeSignTest>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(CodeSignEnabled)' == 'true'">
+        <CodeSignSnCert Condition="'$(MSBuildProjectExtension)' == '.csproj'">72</CodeSignSnCert>
+        <CodeSignDisplayName>Microsoft ASP.NET</CodeSignDisplayName>
+        <CodeSignDisplayUrl>http://www.asp.net/</CodeSignDisplayUrl>
+        <CodeSignDescription>Signing binaries for ASP.NET Async SessionState module</CodeSignDescription>
+        <CodeSignApprovers Condition="'$(CodeSignApprovers)' == ''">hongli;joeloff;mattfei</CodeSignApprovers>
+        <CodeSignOutputPath Condition="'$(CodeSignOutputPath)' == ''">$(BinPath)Signed\</CodeSignOutputPath>
+        <CodeSignIntermediateOutputPath Condition="'$(CodeSignIntermediateOutputPath)' == ''">$(ObjPath)CodeSign\</CodeSignIntermediateOutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <AssemblyPath Condition="'$(CodeSignEnabled)' == 'true'">$(CodeSignOutputPath)</AssemblyPath>
+        <AssemblyPath Condition="'$(AssemblyPath)' == ''">$(OutputPath)</AssemblyPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <CodeSign Include="$(OutputPath)Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.dll">
+            <AuthCodeCert>10006</AuthCodeCert>
+            <StrongNameCert>72</StrongNameCert>
+        </CodeSign>
+              <CodeSign Include="$(OutputPath)Microsoft.AspNet.SessionState.SessionStateModule.dll">
+            <AuthCodeCert>10006</AuthCodeCert>
+            <StrongNameCert>72</StrongNameCert>
+        </CodeSign>
+    </ItemGroup>  
 
 </Project>
