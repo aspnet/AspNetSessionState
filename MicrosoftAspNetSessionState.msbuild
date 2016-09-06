@@ -1,6 +1,5 @@
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="tools\MicrosoftAspNetSessionState.settings.targets"/>
-  <Import Project="tools\CI\CITask.targets" Condition="Exists('tools\CI\CITask.targets')"/>
+  <Import Project="tools\MicrosoftAspNetSessionState.settings.targets"/>  
 
   <ItemGroup>
     <AssemblyProject Include="src\SessionStateModule\Microsoft.AspNet.SessionState.SessionStateModule.csproj" />

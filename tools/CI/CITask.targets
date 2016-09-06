@@ -61,11 +61,6 @@
         <CodeSignIntermediateOutputPath Condition="'$(CodeSignIntermediateOutputPath)' == ''">$(ObjPath)CodeSign\</CodeSignIntermediateOutputPath>
     </PropertyGroup>
 
-    <PropertyGroup>
-        <AssemblyPath Condition="'$(CodeSignEnabled)' == 'true'">$(CodeSignOutputPath)</AssemblyPath>
-        <AssemblyPath Condition="'$(AssemblyPath)' == ''">$(OutputPath)</AssemblyPath>
-    </PropertyGroup>
-
     <ItemGroup>
         <CodeSign Include="$(OutputPath)Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.dll">
             <AuthCodeCert>10006</AuthCodeCert>

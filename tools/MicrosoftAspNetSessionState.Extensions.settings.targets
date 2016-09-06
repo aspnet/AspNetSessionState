@@ -1,4 +1,5 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
   <PropertyGroup>
     <RepositoryRootEx Condition="'$(RepositoryRootEx)' == ''">$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory),Microsoft.Aspnet.SessionState.sln))\</RepositoryRootEx>
   </PropertyGroup>
@@ -15,6 +16,8 @@
     <TestRoot>$(RepositoryRoot)\test\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync.Test</TestRoot>
     <BuildingTestProject Condition="$(MSBuildProjectDirectory.ToLower().Contains($(TestRoot.ToLower())))">true</BuildingTestProject>
   </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)CI\CITask.targets" Condition="Exists('$(MSBuildThisFileDirectory)CI\CITask.targets')"/>
 
   <PropertyGroup>
     <AssemblyPath Condition="'$(CodeSignEnabled)' == 'true'">$(CodeSignOutputPath)</AssemblyPath>
