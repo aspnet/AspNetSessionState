@@ -56,7 +56,7 @@
         <CodeSignDisplayName>Microsoft ASP.NET</CodeSignDisplayName>
         <CodeSignDisplayUrl>http://www.asp.net/</CodeSignDisplayUrl>
         <CodeSignDescription>Signing binaries for ASP.NET Async SessionState module</CodeSignDescription>
-        <CodeSignApprovers Condition="'$(CodeSignApprovers)' == ''">hongli;joeloff;mattfei</CodeSignApprovers>
+        <CodeSignApprovers Condition="'$(CodeSignApprovers)' == ''">joeloff;elipton</CodeSignApprovers>
         <CodeSignOutputPath Condition="'$(CodeSignOutputPath)' == ''">$(BinPath)Signed\</CodeSignOutputPath>
         <CodeSignIntermediateOutputPath Condition="'$(CodeSignIntermediateOutputPath)' == ''">$(ObjPath)CodeSign\</CodeSignIntermediateOutputPath>
     </PropertyGroup>
