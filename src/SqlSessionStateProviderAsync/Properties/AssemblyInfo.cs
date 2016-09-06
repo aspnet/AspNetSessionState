@@ -6,10 +6,10 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.dll")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync")]
+[assembly: AssemblyCompany("Microsoft Corporation")]
+[assembly: AssemblyProduct("Microsoft AspNet Async SqlSessionStateProvider")]
 [assembly: AssemblyCopyright("\x00a9 Microsoft Corporation. All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
