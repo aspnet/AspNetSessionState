@@ -1,0 +1,75 @@
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildThisFileDirectory)QERM.targets"/>
+  <Import Project="$(MSBuildThisFileDirectory)CodeSign.targets"/>
+
+  <UsingTask AssemblyFile="$(MSBuildThisFileDirectory)Microsoft.Web.MsBuildTasks2.dll" TaskName="Microsoft.Web.MsBuildTasks.PoliCheck"/>
+
+  <Target Name="BuildCI" DependsOnTargets="Clean;PoliCheck;BuildAssemblies;CodeSign;BuildPackages;BinScope" />
+  <Target Name="PoliCheck">
+    <ItemGroup>
+      <ObjFiles Include="src\**\obj\**\*.*;test\**\obj\**\*.*;test\**\bin\**\*.*;"/>
+    </ItemGroup>
+
+    <!-- Intermediate folders can cause false positives for PoliCheck -->
+    <Delete Files="@(ObjFiles)"/>
+
+    <ItemGroup>
+      <!-- Exclusions specific to the src folder -->
+      <SrcExclusions Include="src\SessionStateModule\TaskAsyncHelper.cs">
+        <Justification>
+          Suppress the warning of using "execution" and "race". Both of them are used in the comments to describe the "execution context"
+          and "race condition" which are typical software terms.
+        </Justification>
+      </SrcExclusions>
+    </ItemGroup>
+
+    <PropertyGroup>
+      <!-- Semicolon separated list of general terms to exclude across projects -->
+      <Exclusions>components;invalid</Exclusions>
+    </PropertyGroup>
+
+    <PoliCheck FolderToScan="src"
+               Severity="4"
+               FailSeverity="4"
+               ExcludeTerms="$(Exclusions)"
+               ExcludeFiles=""
+               DetailedExclusions="@(SrcExclusions)" />
+  </Target>
+
+  <ItemGroup>
+    <BinScopeTargetFiles Include="$(OutputPath)Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.dll" />
+    <BinScopeTargetFiles Include="$(OutputPath)Microsoft.AspNet.SessionState.SessionStateModule.dll" />
+  </ItemGroup>
+  
+<!-- CodeSign definitions -->
+
+    <PropertyGroup>
+        <!-- Unify codesign properties. -->
+        <CodeSignEnabled Condition="'$(Sign)' == 'Sign'">true</CodeSignEnabled>
+        <CodeSignEnabled Condition="'$(BuildingTestProject)' == 'true'">false</CodeSignEnabled>
+        <CodeSignEnabled Condition="'$(CodeSignEnabled)' == ''">false</CodeSignEnabled>
+        <CodeSignTest Condition="'$(TestCodeSign)' != ''">$(TestCodeSign)</CodeSignTest>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(CodeSignEnabled)' == 'true'">
+        <CodeSignSnCert Condition="'$(MSBuildProjectExtension)' == '.csproj'">72</CodeSignSnCert>
+        <CodeSignDisplayName>Microsoft ASP.NET</CodeSignDisplayName>
+        <CodeSignDisplayUrl>http://www.asp.net/</CodeSignDisplayUrl>
+        <CodeSignDescription>Signing binaries for ASP.NET Async SessionState module</CodeSignDescription>
+        <CodeSignApprovers Condition="'$(CodeSignApprovers)' == ''">joeloff;elipton</CodeSignApprovers>
+        <CodeSignOutputPath Condition="'$(CodeSignOutputPath)' == ''">$(BinPath)Signed\</CodeSignOutputPath>
+        <CodeSignIntermediateOutputPath Condition="'$(CodeSignIntermediateOutputPath)' == ''">$(ObjPath)CodeSign\</CodeSignIntermediateOutputPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <CodeSign Include="$(OutputPath)Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.dll">
+            <AuthCodeCert>10006</AuthCodeCert>
+            <StrongNameCert>72</StrongNameCert>
+        </CodeSign>
+              <CodeSign Include="$(OutputPath)Microsoft.AspNet.SessionState.SessionStateModule.dll">
+            <AuthCodeCert>10006</AuthCodeCert>
+            <StrongNameCert>72</StrongNameCert>
+        </CodeSign>
+    </ItemGroup>  
+
+</Project>

@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>$NuGetPackageId$</id>
+    <version>$NuGetPackageVersion$</version>
+    <authors>Microsoft</authors>
+    <owners>Microsoft</owners>
+    <copyright>&#169; Microsoft Corporation. All rights reserved.</copyright>
+    <title>Microsoft ASP.NET SessionState Module</title>
+    <description>In .Net 4.6.2, asp.net enables plugin async SessionState module which is a good fit for the non-in-memory SessionState data store. This async SessionState module provides the extensibility to plugin an async version of SessionState provider.</description>
+    <summary>A SessionState module provides ability to plug in async SessionState provider.</summary>
+    <language>en-US</language>
+    <projectUrl>http://www.asp.net/</projectUrl>
+    <licenseUrl>http://www.microsoft.com/web/webpi/eula/net_library_eula_ENU.htm</licenseUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <tags>ASP.NET Async SessionState Module</tags>
+  </metadata>
+</package>
