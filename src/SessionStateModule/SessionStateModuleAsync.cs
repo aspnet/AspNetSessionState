@@ -576,7 +576,11 @@ namespace Microsoft.AspNet.SessionState
                     OnStart(EventArgs.Empty);
                 }
 
-                RegisterEnsureStateStoreItemLocked();
+                // lock free session doesn't need this
+                if(!AppSettings.AllowConcurrentRequestsPerSession)
+                {
+                    RegisterEnsureStateStoreItemLocked();
+                }
             }
             finally
             {
@@ -653,7 +657,7 @@ namespace Microsoft.AspNet.SessionState
 
                     Debug.Assert(_rqId != null, "_rqId != null");
 
-                    if (_rqReadonly)
+                    if (_rqReadonly || AppSettings.AllowConcurrentRequestsPerSession)
                     {
                         GetItemResult result = await _store.GetItemAsync(_rqContext, _rqId, GetCancellationToken());
                         if (result != null)

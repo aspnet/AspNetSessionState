@@ -173,7 +173,9 @@ namespace Microsoft.AspNet.SessionState
                     state.SpinLock.Enter(ref lockTaken);
 
                     // Only remove the item if we are the owner
-                    if(!state.Locked || state.LockCookie != lockCookie)
+                    // When concurrentRequestsPerSession enabled, the session is not locked
+                    // but we still should remove the session
+                    if ((!state.Locked && !AppSettings.AllowConcurrentRequestsPerSession) || state.LockCookie != lockCookie)
                     {
                         return Task.CompletedTask;
                     }
@@ -254,7 +256,10 @@ namespace Microsoft.AspNet.SessionState
                 {
                     currentState.SpinLock.Enter(ref lockTaken);
                     // Only set the state if we are the owner
-                    if(!currentState.Locked || currentState.LockCookie != lockCookie)
+                    // When concurrentRequestsPerSession enabled, the session is not locked
+                    // but we still need to update the session(module already checks if the session is dirty)
+                    if((!currentState.Locked && !AppSettings.AllowConcurrentRequestsPerSession)
+                        || currentState.LockCookie != lockCookie)
                     {
                         return Task.CompletedTask;
                     }
@@ -472,7 +477,7 @@ namespace Microsoft.AspNet.SessionState
                 RemovedCallback = _callback,
                 Priority = CacheItemPriority.NotRemovable
             };
-            s_store.Add(key, value, cachePolicy);
+            s_store.Set(key, value, cachePolicy);
         }
 
         private SessionStateStoreData CreateLegitStoreData(
