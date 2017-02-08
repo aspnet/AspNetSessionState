@@ -790,15 +790,7 @@ namespace Microsoft.AspNet.SessionState
                 }
             }
         }
-
-        // Called by OnReleaseState to get the session id.
-        private string ReleaseStateGetSessionId()
-        {
-            Debug.Assert(_rqId != null, "_rqId != null");
-            return _rqId;
-        }
-
-
+        
         // Release session state
         private Task ReleaseStateAsync(HttpApplication application)
         {
@@ -853,7 +845,7 @@ namespace Microsoft.AspNet.SessionState
                     // we need to explicitly call Session_End.
                     if (_supportSessionExpiry)
                     {
-                        _onEndTarget.RaiseSessionOnEnd(ReleaseStateGetSessionId(), _rqItem);
+                        _onEndTarget.RaiseSessionOnEnd(_rqId, _rqItem);
                     }
                 }
                 else
@@ -861,7 +853,7 @@ namespace Microsoft.AspNet.SessionState
                     Debug.Assert(_rqItem != null, "_rqItem cannot null if it's not a new session");
 
                     // Remove it from the store because the session is abandoned.
-                    await _store.RemoveItemAsync(_rqContext, ReleaseStateGetSessionId(), _rqLockId, _rqItem, GetCancellationToken());
+                    await _store.RemoveItemAsync(_rqContext, _rqId, _rqLockId, _rqItem, GetCancellationToken());
                 }
             }
             else if (!_rqReadonly ||
@@ -886,8 +878,7 @@ namespace Microsoft.AspNet.SessionState
                     }
 
                     setItemCalled = true;
-                    await
-                        _store.SetAndReleaseItemExclusiveAsync(_rqContext, ReleaseStateGetSessionId(), _rqItem,
+                    await _store.SetAndReleaseItemExclusiveAsync(_rqContext, _rqId, _rqItem,
                             _rqLockId, _rqSessionStateNotFound, GetCancellationToken());
                 }
                 else
@@ -896,8 +887,7 @@ namespace Microsoft.AspNet.SessionState
                     if (!_rqSessionStateNotFound)
                     {
                         Debug.Assert(_rqItem != null, "_rqItem cannot null if it's not a new session");
-                        await
-                            _store.ReleaseItemExclusiveAsync(_rqContext, ReleaseStateGetSessionId(), _rqLockId,
+                        await _store.ReleaseItemExclusiveAsync(_rqContext, _rqId, _rqLockId,
                                 GetCancellationToken());
                     }
                 }

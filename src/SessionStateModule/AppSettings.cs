@@ -27,11 +27,7 @@ namespace Microsoft.AspNet.SessionState
             // AllowConcurrentRequests
             //
             string allowConcurrentRequestPerSession = appSettings["aspnet:AllowConcurrentRequestsPerSession"];
-
-            if(!bool.TryParse(allowConcurrentRequestPerSession, out _allowConcurrentRequestsPerSession))
-            {
-                _allowConcurrentRequestsPerSession = true;
-            }
+            bool.TryParse(allowConcurrentRequestPerSession, out _allowConcurrentRequestsPerSession);
         }
 
         private static void EnsureSettingsLoaded()
@@ -73,7 +69,7 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
-        private static bool _allowConcurrentRequestsPerSession = true;
+        private static bool _allowConcurrentRequestsPerSession = false;
         public static bool AllowConcurrentRequestsPerSession
         {
             get
