@@ -161,36 +161,7 @@ namespace Microsoft.AspNet.SessionState
                 throw new ArgumentException(SR.Session_id_too_long);
             }
 
-            var lockCookie = (int)lockId;
-            var state = (InProcSessionState)s_store.Get(id);
-
-            if(state != null)
-            {
-                bool lockTaken = false;
-
-                try
-                {
-                    state.SpinLock.Enter(ref lockTaken);
-
-                    // Only remove the item if we are the owner
-                    if(!state.Locked || state.LockCookie != lockCookie)
-                    {
-                        return Task.CompletedTask;
-                    }
-
-                    // prevent overwriting when we drop the lock
-                    state.LockCookie = 0;
-                }
-                finally
-                {
-                    if(lockTaken)
-                    {
-                        state.SpinLock.Exit();
-                    }
-                }
-
-                s_store.Remove(id);
-            }
+            s_store.Remove(id);
 
             return Task.CompletedTask;
         }
@@ -253,11 +224,6 @@ namespace Microsoft.AspNet.SessionState
                 try
                 {
                     currentState.SpinLock.Enter(ref lockTaken);
-                    // Only set the state if we are the owner
-                    if(!currentState.Locked || currentState.LockCookie != lockCookie)
-                    {
-                        return Task.CompletedTask;
-                    }
 
                     // we can change the state in place if the timeout hasn't changed
                     if(currentState.Timeout == item.Timeout)
@@ -278,14 +244,7 @@ namespace Microsoft.AspNet.SessionState
                            updated its expiry time.
                         */
                         currentState.Flags |= (int)SessionStateItemFlags.IgnoreCacheItemRemoved;
-
-                        /* By setting _lockCookie to 0, we prevent an overwriting by ReleaseExclusive 
-                           when we drop the lock.
-                           The scenario can happen if another request is polling and trying to prempt
-                           the lock we have on the item.
-                        */
                         lockCookieForInsert = lockCookie;
-                        currentState.LockCookie = 0;
                     }
                 }
                 finally
@@ -472,7 +431,7 @@ namespace Microsoft.AspNet.SessionState
                 RemovedCallback = _callback,
                 Priority = CacheItemPriority.NotRemovable
             };
-            s_store.Add(key, value, cachePolicy);
+            s_store.Set(key, value, cachePolicy);
         }
 
         private SessionStateStoreData CreateLegitStoreData(
