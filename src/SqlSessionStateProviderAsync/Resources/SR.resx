@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Cant_connect_sql_session_database" xml:space="preserve">
+    <value>Unable to connect to SQL Server session database.</value>
+  </data>
   <data name="Connection_name_not_specified" xml:space="preserve">
     <value>The attribute 'connectionStringName' is missing or empty.</value>
   </data>
@@ -125,6 +128,9 @@
   </data>
   <data name="Invalid_session_state" xml:space="preserve">
     <value>The session state information is invalid and might be corrupted.</value>
+  </data>
+  <data name="Login_failed_sql_session_database" xml:space="preserve">
+    <value>Failed to login to session state SQL server for user '{0}'.</value>
   </data>
   <data name="Provider_unrecognized_attribute" xml:space="preserve">
     <value>Attribute not recognized '{0}'</value>
