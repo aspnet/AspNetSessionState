@@ -305,12 +305,7 @@ namespace Microsoft.AspNet.SessionState
             SessionStateActions actionFlags;
 
             var item = DoGet(context, id, exclusive, out locked, out lockAge, out lockId, out actionFlags);
-            GetItemResult result = null;
-
-            if (item != null)
-            {
-                result = new GetItemResult(item, locked, lockAge, lockId, actionFlags);
-            }
+            GetItemResult result = new GetItemResult(item, locked, lockAge, lockId, actionFlags);
 
             return Task.FromResult<GetItemResult>(result);
         }

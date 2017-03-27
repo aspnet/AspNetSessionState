@@ -10,7 +10,7 @@ namespace Microsoft.AspNet.SessionState
     using System.Diagnostics;
 
     
-    internal class SqlStateCommandUtil
+    internal class SqlCommandUtil
     {
         public static readonly string TableName = "ASPStateTempSessions";
         public static readonly int IdLength = 88;

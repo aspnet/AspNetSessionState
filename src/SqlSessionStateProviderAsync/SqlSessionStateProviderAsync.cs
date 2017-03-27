@@ -25,17 +25,19 @@ namespace Microsoft.AspNet.SessionState
     /// </summary>
     public class SqlSessionStateProviderAsync : SessionStateStoreProviderAsyncBase
     {
+        private const string InMemoryTableConfigurationName = "UseInMemoryTable";
+        private const string ConnectionStringNameConfigurationName = "connectionStringName";
         private const double SessionExpiresFrequencyCheckIntervalTicks = 30 * TimeSpan.TicksPerSecond;
         private static long s_lastSessionPurgeTicks;
         private static int s_inPurge;
         private static string s_appSuffix;
-
-        private int _rqOrigStreamLen;
-        private ISqlStateCommandCreator _sqlCommandCreator;
-
-        private ConnectionStringSettings ConnectionString { get; set; }
-        private bool CompressionEnabled { get; set; }
+        private static bool s_compressionEnabled;
+        private static bool s_oneTimeInited = false;
+        private static object s_lock = new object();
+        private static ISqlCommandFactory s_sqlCommandFactory;
         
+        private int _rqOrigStreamLen;
+                
         /// <summary>
         /// Initialize the provider through the configuration
         /// </summary>
@@ -54,41 +56,60 @@ namespace Microsoft.AspNet.SessionState
 
             base.Initialize(name, config);
 
-            ConnectionString = ConfigurationHelper.GetConnectionString(config["connectionStringName"]);
-            config.Remove("connectionStringName");
-
-            try
+            if (!s_oneTimeInited)
             {
-                SessionStateSection ssc = (SessionStateSection)ConfigurationManager.GetSection("system.web/sessionState");
-                CompressionEnabled = ssc.CompressionEnabled;
-                SqlStateExecutor.Initialize(ConnectionString.ConnectionString, ssc.SqlConnectionRetryInterval);
-
-                // check if it's inMemory table
-                _sqlCommandCreator = new SqlStateCommandCreator((int)ssc.SqlCommandTimeout.TotalSeconds);
-
-                // must be called after SqlStateExecutor & SqlStateCommandFactory are initialized
-                SqlStateExecutor.CreateSessionStateTableIfNeeded(_sqlCommandCreator);
-            }
-            catch (SecurityException)
-            {
-                // We don't want to blow up in medium trust, just turn compression enabled off instead
-            }
-
-            if (config.Count > 0)
-            {
-                string key = config.GetKey(0);
-                if (!string.IsNullOrEmpty(key))
+                lock (s_lock)
                 {
-                    throw new ProviderException(String.Format(CultureInfo.CurrentCulture, SR.Provider_unrecognized_attribute, key));
+                    if(!s_oneTimeInited)
+                    {
+                        var connectionString = GetConnectionString(config[ConnectionStringNameConfigurationName]);
+                        config.Remove(ConnectionStringNameConfigurationName);
+
+                        try
+                        {
+                            SessionStateSection ssc = (SessionStateSection)ConfigurationManager.GetSection("system.web/sessionState");
+                            s_compressionEnabled = ssc.CompressionEnabled;
+
+                            SqlCommandInvoker.Initialize(connectionString.ConnectionString, ssc.SqlConnectionRetryInterval);
+
+                            var useInMemoryTable = false;
+                            if (config[InMemoryTableConfigurationName] != null)
+                            {
+                                if (bool.TryParse(config[InMemoryTableConfigurationName], out useInMemoryTable) && useInMemoryTable)
+                                {
+                                    s_sqlCommandFactory = new SqlInMemoryTableCommandFactory((int)ssc.SqlCommandTimeout.TotalSeconds);
+                                }
+                                config.Remove(InMemoryTableConfigurationName);
+                            }
+
+                            if (s_sqlCommandFactory == null)
+                            {
+                                s_sqlCommandFactory = new SqlCommandFactory((int)ssc.SqlCommandTimeout.TotalSeconds);
+                            }
+
+                            CreateSessionStateTableIfNeeded(s_sqlCommandFactory);
+                        }
+                        catch (SecurityException)
+                        {
+                            // We don't want to blow up in medium trust, just turn compression enabled off instead
+                        }
+
+                        if (config.Count > 0)
+                        {
+                            string key = config.GetKey(0);
+                            if (!string.IsNullOrEmpty(key))
+                            {
+                                throw new ProviderException(String.Format(CultureInfo.CurrentCulture, SR.Provider_unrecognized_attribute, key));
+                            }
+                        }
+
+                        string appId = HttpRuntime.AppDomainAppId;
+                        s_appSuffix = appId.GetHashCode().ToString("X8", CultureInfo.InvariantCulture);
+
+                        s_oneTimeInited = true;
+                    }
                 }
             }
-
-            if (s_appSuffix == null)
-            {
-                string appId = HttpRuntime.AppDomainAppId;
-                s_appSuffix = appId.GetHashCode().ToString("X8", CultureInfo.InvariantCulture);
-            }
-
         }
 
         /// <summary>
@@ -131,11 +152,11 @@ namespace Microsoft.AspNet.SessionState
                         SessionStateUtility.GetSessionStaticObjects(context.ApplicationInstance.Context),
                         timeout);
 
-            SerializeStoreData(item, SqlStateCommandUtil.ItemShortLength, out buf, out length, CompressionEnabled);
-            var cmd = _sqlCommandCreator.CreateTempInsertUninitializedItemCmd(id, length, buf, timeout);
-            using (var executor = GetSqlStateExecutor(cmd))
+            SerializeStoreData(item, SqlCommandUtil.ItemShortLength, out buf, out length, s_compressionEnabled);
+            var cmd = s_sqlCommandFactory.CreateTempInsertUninitializedItemCmd(id, length, buf, timeout);
+            using (var invoker = new SqlCommandInvoker(cmd))
             {
-                await executor.SqlExecuteNonQueryWithRetryAsync(true);
+                await invoker.SqlExecuteNonQueryWithRetryAsync(true);
             }
         }
 
@@ -189,10 +210,10 @@ namespace Microsoft.AspNet.SessionState
             }
 
             id = AppendAppIdHash(id);
-            var cmd = _sqlCommandCreator.CreateReleaseItemExclusiveCmd(id, lockId);
-            using(var executor = GetSqlStateExecutor(cmd))
+            var cmd = s_sqlCommandFactory.CreateReleaseItemExclusiveCmd(id, lockId);
+            using(var invoker = new SqlCommandInvoker(cmd))
             {
-                await executor.SqlExecuteNonQueryWithRetryAsync();
+                await invoker.SqlExecuteNonQueryWithRetryAsync();
             }
         }
 
@@ -215,10 +236,10 @@ namespace Microsoft.AspNet.SessionState
 
             id = AppendAppIdHash(id);
 
-            var cmd = _sqlCommandCreator.CreateRemoveStateItemCmd(id, lockId);
-            using(var executor = GetSqlStateExecutor(cmd))
+            var cmd = s_sqlCommandFactory.CreateRemoveStateItemCmd(id, lockId);
+            using(var invoker = new SqlCommandInvoker(cmd))
             {
-                await executor.SqlExecuteNonQueryWithRetryAsync();
+                await invoker.SqlExecuteNonQueryWithRetryAsync();
             }
         }
 
@@ -239,10 +260,10 @@ namespace Microsoft.AspNet.SessionState
 
             id = AppendAppIdHash(id);
 
-            var cmd = _sqlCommandCreator.CreateResetItemTimeoutCmd(id);
-            using(var executor = GetSqlStateExecutor(cmd))
+            var cmd = s_sqlCommandFactory.CreateResetItemTimeoutCmd(id);
+            using(var invoker = new SqlCommandInvoker(cmd))
             {
-                await executor.SqlExecuteNonQueryWithRetryAsync();
+                await invoker.SqlExecuteNonQueryWithRetryAsync();
             }
         }
 
@@ -276,7 +297,7 @@ namespace Microsoft.AspNet.SessionState
 
             try
             {
-                SerializeStoreData(item, SqlStateCommandUtil.ItemShortLength, out buf, out length, CompressionEnabled);
+                SerializeStoreData(item, SqlCommandUtil.ItemShortLength, out buf, out length, s_compressionEnabled);
             }
             catch
             {
@@ -291,29 +312,29 @@ namespace Microsoft.AspNet.SessionState
 
             if (!newItem)
             {
-                if(length <= SqlStateCommandUtil.ItemShortLength)
+                if(length <= SqlCommandUtil.ItemShortLength)
                 {
-                    cmd = _rqOrigStreamLen <= SqlStateCommandUtil.ItemShortLength ?
-                        _sqlCommandCreator.CreateUpdateStateItemShortCmd(id, buf, length, item.Timeout, lockCookie) :
-                        _sqlCommandCreator.CreateUpdateStateItemShortNullLongCmd(id, buf, length, item.Timeout, lockCookie);
+                    cmd = _rqOrigStreamLen <= SqlCommandUtil.ItemShortLength ?
+                        s_sqlCommandFactory.CreateUpdateStateItemShortCmd(id, buf, length, item.Timeout, lockCookie) :
+                        s_sqlCommandFactory.CreateUpdateStateItemShortNullLongCmd(id, buf, length, item.Timeout, lockCookie);
                 }
                 else
                 {
-                    cmd = _rqOrigStreamLen <= SqlStateCommandUtil.ItemShortLength ?
-                        _sqlCommandCreator.CreateUpdateStateItemLongNullShortCmd(id, buf, length, item.Timeout, lockCookie) :
-                        _sqlCommandCreator.CreateUpdateStateItemLongCmd(id, buf, length, item.Timeout, lockCookie);
+                    cmd = _rqOrigStreamLen <= SqlCommandUtil.ItemShortLength ?
+                        s_sqlCommandFactory.CreateUpdateStateItemLongNullShortCmd(id, buf, length, item.Timeout, lockCookie) :
+                        s_sqlCommandFactory.CreateUpdateStateItemLongCmd(id, buf, length, item.Timeout, lockCookie);
                 }                
             }
             else
             {
-                cmd = length <= SqlStateCommandUtil.ItemShortLength ?
-                    _sqlCommandCreator.CreateInsertStateItemShortCmd(id, buf, length, item.Timeout) :
-                    _sqlCommandCreator.CreateInsertStateItemLongCmd(id, buf, length, item.Timeout);
+                cmd = length <= SqlCommandUtil.ItemShortLength ?
+                    s_sqlCommandFactory.CreateInsertStateItemShortCmd(id, buf, length, item.Timeout) :
+                    s_sqlCommandFactory.CreateInsertStateItemLongCmd(id, buf, length, item.Timeout);
             }
 
-            using(var executor = new SqlStateExecutor(cmd))
+            using(var invoker = new SqlCommandInvoker(cmd))
             {
-                await executor.SqlExecuteNonQueryWithRetryAsync(newItem);
+                await invoker.SqlExecuteNonQueryWithRetryAsync(newItem);
             }
         }
 
@@ -342,16 +363,16 @@ namespace Microsoft.AspNet.SessionState
 
             if (exclusive)
             {
-                cmd = _sqlCommandCreator.CreateGetStateItemExclusiveCmd(id);
+                cmd = s_sqlCommandFactory.CreateGetStateItemExclusiveCmd(id);
             }
             else
             {
-                cmd = _sqlCommandCreator.CreateGetStateItemCmd(id);
+                cmd = s_sqlCommandFactory.CreateGetStateItemCmd(id);
             }
 
-            using (var executor = new SqlStateExecutor(cmd))
+            using (var invoker = new SqlCommandInvoker(cmd))
             {
-                using (var reader = await executor.SqlExecuteReaderWithRetryAsync())
+                using (var reader = await invoker.SqlExecuteReaderWithRetryAsync())
                 {
                     try
                     {
@@ -362,21 +383,21 @@ namespace Microsoft.AspNet.SessionState
                     }
                     catch (Exception ex)
                     {
-                        SqlStateExecutor.ThrowSqlConnectionException(ex);
+                        SqlCommandInvoker.ThrowSqlConnectionException(ex);
                     }
                 }
 
-                var outParameterLocked = executor.GetOutPutParameterValue(SqlParameterName.Locked);
+                var outParameterLocked = invoker.GetOutPutParameterValue(SqlParameterName.Locked);
                 if (outParameterLocked == null || Convert.IsDBNull(outParameterLocked.Value))
                 {
                     return null;
                 }
                 locked = (bool)outParameterLocked.Value;
-                lockId = (int)executor.GetOutPutParameterValue(SqlParameterName.LockCookie).Value;
+                lockId = (int)invoker.GetOutPutParameterValue(SqlParameterName.LockCookie).Value;
 
                 if (locked)
                 {
-                    lockAge = new TimeSpan(0, 0, (int)executor.GetOutPutParameterValue(SqlParameterName.LockAge).Value);
+                    lockAge = new TimeSpan(0, 0, (int)invoker.GetOutPutParameterValue(SqlParameterName.LockAge).Value);
 
                     if (lockAge > new TimeSpan(0, 0, Sec.ONE_YEAR))
                     {
@@ -384,26 +405,21 @@ namespace Microsoft.AspNet.SessionState
                     }
                     return new GetItemResult(null, true, lockAge, lockId, actions);
                 }
-                actions = (SessionStateActions)executor.GetOutPutParameterValue(SqlParameterName.ActionFlags).Value;
+                actions = (SessionStateActions)invoker.GetOutPutParameterValue(SqlParameterName.ActionFlags).Value;
 
                 if (buf == null)
                 {
-                    buf = (byte[])executor.GetOutPutParameterValue(SqlParameterName.SessionItemShort).Value;
+                    buf = (byte[])invoker.GetOutPutParameterValue(SqlParameterName.SessionItemShort).Value;
                 }
             }
 
             using (var stream = new MemoryStream(buf))
             {
-                item = DeserializeStoreData(context, stream, CompressionEnabled);
+                item = DeserializeStoreData(context, stream, s_compressionEnabled);
                 _rqOrigStreamLen = (int)stream.Position;
             }
 
             return new GetItemResult(item, locked, lockAge, lockId, actions);
-        }
-
-        private SqlStateExecutor GetSqlStateExecutor(SqlCommand cmd)
-        {
-            return new SqlStateExecutor(cmd);
         }
 
         // We just want to append an 8 char hash from the AppDomainAppId to prevent any session id collisions
@@ -564,9 +580,9 @@ namespace Microsoft.AspNet.SessionState
         {
             try
             {
-                using(var executor = new SqlStateExecutor(_sqlCommandCreator.CreateDeleteExpiredSessionsCmd()))
+                using(var invoker = new SqlCommandInvoker(s_sqlCommandFactory.CreateDeleteExpiredSessionsCmd()))
                 {
-                    var task = executor.SqlExecuteNonQueryWithRetryAsync().ConfigureAwait(false);
+                    var task = invoker.SqlExecuteNonQueryWithRetryAsync().ConfigureAwait(false);
                     task.GetAwaiter().GetResult();
                     s_lastSessionPurgeTicks = DateTime.Now.Ticks;
                 }                
@@ -578,6 +594,46 @@ namespace Microsoft.AspNet.SessionState
             finally
             {
                 Interlocked.CompareExchange(ref s_inPurge, 0, 1);
+            }
+        }
+
+        private static ConnectionStringSettings GetConnectionString(string connectionstringName)
+        {
+            if (string.IsNullOrEmpty(connectionstringName))
+            {
+                throw new ProviderException(SR.Connection_name_not_specified);
+            }
+            ConnectionStringSettings conn = ConfigurationManager.ConnectionStrings[connectionstringName];
+            if (conn == null)
+            {
+                throw new ProviderException(
+                    String.Format(CultureInfo.CurrentCulture, SR.Connection_string_not_found, connectionstringName));
+            }
+            return conn;
+        }
+
+        private static void CreateSessionStateTableIfNeeded(ISqlCommandFactory cmdCreator)
+        {
+            using (var invoker = new SqlCommandInvoker(cmdCreator.CreateCreateSessionTableCmd()))
+            {
+                try
+                {
+                    var task = invoker.SqlExecuteNonQueryWithRetryAsync().ConfigureAwait(false);
+                    task.GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    // Indicate that the DB doesn't support InMemoryTable
+                    var innerException = ex.InnerException as SqlException;
+                    if (innerException != null && innerException.Number == 40536)
+                    {
+                        throw innerException;
+                    }
+                    else
+                    {
+                        SqlCommandInvoker.ThrowSqlConnectionException(ex);
+                    }
+                }
             }
         }
     }

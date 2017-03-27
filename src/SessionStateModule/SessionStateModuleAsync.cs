@@ -705,7 +705,7 @@ namespace Microsoft.AspNet.SessionState
                             QueueRef();
                             isQueued = true;
                         }
-                        // TODO: The retry timeout should be configurable.
+                        
                         if (lockAge >= _rqExecutionTimeout)
                         {
                             /* Release the lock on the item, which is held by another thread*/

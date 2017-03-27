@@ -11,7 +11,7 @@ namespace Microsoft.AspNet.SessionState
     {
         public static SqlParameterCollection AddSessionIdParameter(this SqlParameterCollection pc, string id)
         {
-            var param = new SqlParameter($"@{SqlParameterName.SessionId}", SqlDbType.NVarChar, SqlStateCommandUtil.IdLength);
+            var param = new SqlParameter($"@{SqlParameterName.SessionId}", SqlDbType.NVarChar, SqlCommandUtil.IdLength);
             param.Value = id;
             pc.Add(param);
 
@@ -20,7 +20,7 @@ namespace Microsoft.AspNet.SessionState
 
         public static SqlParameterCollection AddSessionItemShortParameter(this SqlParameterCollection pc, int length = 0, byte[] buf = null)
         {
-            var param = new SqlParameter($"@{SqlParameterName.SessionItemShort}", SqlDbType.VarBinary, SqlStateCommandUtil.ItemShortLength);
+            var param = new SqlParameter($"@{SqlParameterName.SessionItemShort}", SqlDbType.VarBinary, SqlCommandUtil.ItemShortLength);
             if (buf != null)
             {
                 param.Value = buf;

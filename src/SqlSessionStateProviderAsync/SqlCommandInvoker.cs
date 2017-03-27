@@ -39,7 +39,8 @@ namespace Microsoft.AspNet.SessionState
         internal const int ONE_YEAR = ONE_DAY * 365;
         internal const int ONE_LEAP_YEAR = ONE_DAY * 366;
     }
-    internal class SqlStateExecutor : IDisposable
+
+    internal class SqlCommandInvoker : IDisposable
     {
         private const int ITEM_SHORT_LENGTH = 7000;
         private const int SQL_ERROR_PRIMARY_KEY_VIOLATION = 2627;
@@ -55,8 +56,6 @@ namespace Microsoft.AspNet.SessionState
         private static bool s_initialized;
         private static string s_connectionString;
         private static TimeSpan s_retryInterval;
-        private static bool s_sessionTableInitialized;
-        private static object s_lock = new object();
                 
         private SqlConnection _sqlConnection;
         private SqlCommand _sqlCmd;
@@ -69,35 +68,9 @@ namespace Microsoft.AspNet.SessionState
                 s_retryInterval = retryInterval;
                 s_initialized = true;
             }
-        }
+        }       
 
-        public static void CreateSessionStateTableIfNeeded(ISqlStateCommandCreator cmdCreator)
-        {
-            if (!s_sessionTableInitialized)
-            {
-                lock (s_lock)
-                {
-                    using(var executor = new SqlStateExecutor(cmdCreator.CreateCreateSessionTableCmd()))
-                    {
-                        try
-                        {
-                            var task = executor.SqlExecuteNonQueryWithRetryAsync().ConfigureAwait(false);
-                            task.GetAwaiter().GetResult();
-                        }
-                        catch (Exception ex)
-                        {
-                            ThrowSqlConnectionException(ex);
-                        }
-                        finally
-                        {
-                            s_sessionTableInitialized = true;
-                        }
-                    }
-                }
-            }
-        }
-
-        public SqlStateExecutor(SqlCommand cmd)
+        public SqlCommandInvoker(SqlCommand cmd)
         {
             _sqlConnection = new SqlConnection(s_connectionString);
             _sqlCmd = cmd;
@@ -106,7 +79,6 @@ namespace Microsoft.AspNet.SessionState
 
         public static void ThrowSqlConnectionException(Exception e)
         {
-            //TODO: relace resource string
             throw new HttpException(SR.Cant_connect_sql_session_database, e);
         }
 
@@ -194,10 +166,6 @@ namespace Microsoft.AspNet.SessionState
             // We will retry sql operations for serious errors.
             // We consider fatal exceptions any error with severity >= 20.
             // In this case, the SQL server closes the connection.
-            // TODO: make sure other failures (cluster failoevers, etc) throw the same kind of errors
-            // When Sql goes down and then is restarted, the first attempt to connect
-            // sometimes results in a SqlException "Cannot open database "%.*ls" requested by the login. The login failed."
-            // (number 4060, class 11)
             if (ex != null &&
                 (ex.Class >= 20 ||
                  ex.Number == SQL_CANNOT_OPEN_DATABASE_FOR_LOGIN ||
@@ -209,7 +177,7 @@ namespace Microsoft.AspNet.SessionState
         }
 
         private bool CanRetry(SqlException ex, SqlConnection conn,
-                                            ref bool isFirstAttempt, ref DateTime endRetryTime)
+                                ref bool isFirstAttempt, ref DateTime endRetryTime)
         {
             if (s_retryInterval.Seconds <= 0)
             {
