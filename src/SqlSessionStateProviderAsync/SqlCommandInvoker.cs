@@ -12,7 +12,7 @@ namespace Microsoft.AspNet.SessionState
     using System.Threading.Tasks;
     using System.Web;
 
-    internal enum SqlParameterName
+    enum SqlParameterName
     {
         SessionId,
         Created,
@@ -29,7 +29,7 @@ namespace Microsoft.AspNet.SessionState
         ActionFlags
     }
 
-    internal static class Sec
+    static class Sec
     {
         internal const int ONE_SECOND = 1;
         internal const int ONE_MINUTE = ONE_SECOND * 60;
@@ -40,7 +40,7 @@ namespace Microsoft.AspNet.SessionState
         internal const int ONE_LEAP_YEAR = ONE_DAY * 366;
     }
 
-    internal class SqlCommandInvoker : IDisposable
+    class SqlCommandInvoker : IDisposable
     {
         private const int ITEM_SHORT_LENGTH = 7000;
         private const int SQL_ERROR_PRIMARY_KEY_VIOLATION = 2627;
@@ -75,17 +75,13 @@ namespace Microsoft.AspNet.SessionState
             _sqlConnection = new SqlConnection(s_connectionString);
             _sqlCmd = cmd;
             _sqlCmd.Connection = _sqlConnection;            
-        }      
-
-        public static void ThrowSqlConnectionException(Exception e)
-        {
-            throw new HttpException(SR.Cant_connect_sql_session_database, e);
         }
 
         public async Task<int> SqlExecuteNonQueryWithRetryAsync(bool ignoreInsertPKException = false)
         {
             bool isFirstAttempt = true;
             DateTime endRetryTime = DateTime.UtcNow;
+            int retryCount = 0;
 
             while (true)
             {
@@ -104,7 +100,7 @@ namespace Microsoft.AspNet.SessionState
                         return -1;
                     }
 
-                    if (!CanRetry(e, _sqlCmd.Connection, ref isFirstAttempt, ref endRetryTime))
+                    if (!CanRetry(e, _sqlCmd.Connection, ref isFirstAttempt, ref endRetryTime, ref retryCount))
                     {
                         // just throw, because not all conditions to retry are satisfied
                         ThrowSqlConnectionException(e);
@@ -122,6 +118,7 @@ namespace Microsoft.AspNet.SessionState
         {
             bool isFirstAttempt = true;
             DateTime endRetryTime = DateTime.UtcNow;
+            int retryCount = 0;
 
             while (true)
             {
@@ -133,7 +130,7 @@ namespace Microsoft.AspNet.SessionState
                 }
                 catch (SqlException e)
                 {
-                    if (!CanRetry(e, _sqlCmd.Connection, ref isFirstAttempt, ref endRetryTime))
+                    if (!CanRetry(e, _sqlCmd.Connection, ref isFirstAttempt, ref endRetryTime, ref retryCount))
                     {
                         // just throw, default to previous behavior
                         ThrowSqlConnectionException(e);
@@ -161,7 +158,12 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
-        private static bool IsFatalSqlException(SqlException ex)
+        protected void ThrowSqlConnectionException(Exception e)
+        {
+            throw new HttpException(SR.Cant_connect_sql_session_database, e);
+        }
+
+        private bool IsFatalSqlException(SqlException ex)
         {
             // We will retry sql operations for serious errors.
             // We consider fatal exceptions any error with severity >= 20.
@@ -176,34 +178,66 @@ namespace Microsoft.AspNet.SessionState
             return false;
         }
 
-        private bool CanRetry(SqlException ex, SqlConnection conn,
-                                ref bool isFirstAttempt, ref DateTime endRetryTime)
+        private bool ShouldUseInMemoryTableRetry(SqlException ex)
         {
-            if (s_retryInterval.Seconds <= 0)
+            // Error code is defined on
+            // https://docs.microsoft.com/en-us/sql/relational-databases/in-memory-oltp/transactions-with-memory-optimized-tables#conflict-detection-and-retry-logic
+            if (ex != null && (ex.Number == 41302 || ex.Number == 41305 || ex.Number == 41325 || ex.Number == 41301 || ex.Number == 41839))
             {
-                // no retry policy set
-                return false;
-            }
-            if (!IsFatalSqlException(ex))
-            {
-                return false;
-            }
-            if (isFirstAttempt)
-            {
-                // First time we sleep longer than for subsequent retries.
-                Thread.Sleep(FIRST_RETRY_SLEEP_TIME);
-                endRetryTime = DateTime.UtcNow.Add(s_retryInterval);
-
-                isFirstAttempt = false;
                 return true;
             }
-            if (DateTime.UtcNow > endRetryTime)
+            else
             {
                 return false;
             }
-            // sleep the specified time and allow retry
-            Thread.Sleep(RETRY_SLEEP_TIME);
-            return true;
+        }
+
+        private bool CanRetry(SqlException ex, SqlConnection conn,
+                                ref bool isFirstAttempt, ref DateTime endRetryTime, ref int retryCount)
+        {
+            if (ShouldUseInMemoryTableRetry(ex))
+            {
+                if(retryCount > 10)
+                {
+                    return false;
+                }
+                // this actually may sleep up to 15ms
+                // but it's better than spinning CPU
+                Thread.Sleep(1);
+                retryCount++;
+
+                return true;
+            }
+            else
+            {
+                if (s_retryInterval.Seconds <= 0)
+                {
+                    // no retry policy set
+                    return false;
+                }
+                if (!IsFatalSqlException(ex))
+                {
+                    return false;
+                }
+
+
+                if (isFirstAttempt)
+                {
+                    // First time we sleep longer than for subsequent retries.
+                    Thread.Sleep(FIRST_RETRY_SLEEP_TIME);
+                    endRetryTime = DateTime.UtcNow.Add(s_retryInterval);
+
+                    isFirstAttempt = false;
+                    return true;
+                }
+                if (DateTime.UtcNow > endRetryTime)
+                {
+                    return false;
+                }
+                // sleep the specified time and allow retry
+                Thread.Sleep(RETRY_SLEEP_TIME);
+                return true;
+            }
         }
 
         private void ClearConnectionAndThrow(Exception e)
@@ -240,8 +274,7 @@ namespace Microsoft.AspNet.SessionState
                     {
                         user = scsb.UserID;
                     }
-
-                    // TODO: resource string
+                    
                     HttpException outerException = new HttpException(string.Format(SR.Login_failed_sql_session_database, user), e);
 
                     ClearConnectionAndThrow(outerException);

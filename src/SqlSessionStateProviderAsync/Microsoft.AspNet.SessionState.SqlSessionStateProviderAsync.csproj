@@ -62,17 +62,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ISqlSessionStateRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources\SR.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>SR.resx</DependentUpon>
     </Compile>
-    <Compile Include="SqlInMemoryTableCommandFactory.cs" />
+    <Compile Include="SqlInMemoryTableSessionStateRepository.cs" />
     <Compile Include="SqlParameterCollectionExtension.cs" />
     <Compile Include="SqlSessionStateProviderAsync.cs" />
-    <Compile Include="SqlCommandFactory.cs" />
-    <Compile Include="SqlCommandUtil.cs" />
+    <Compile Include="SqlSessionStateRepository.cs" />
+    <Compile Include="SqlSessionStateRepositoryUtil.cs" />
     <Compile Include="SqlCommandInvoker.cs" />
   </ItemGroup>
   <ItemGroup>

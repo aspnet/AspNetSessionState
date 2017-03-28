@@ -1,31 +1,20 @@
-﻿
-
-namespace Microsoft.AspNet.SessionState
+﻿namespace Microsoft.AspNet.SessionState
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
+    using System.Data.SqlClient;
 
-    internal class SqlInMemoryTableCommandFactory : SqlCommandFactory
+    class SqlInMemoryTableSessionStateRepository : SqlSessionStateRepository
     {
-        public SqlInMemoryTableCommandFactory(int commandTimeout) : base(commandTimeout) { }
-
-        protected override Dictionary<string, string> CreateSqlStatementDictionary()
-        {            
-            var sqlStatementDictionary = base.CreateSqlStatementDictionary();
-
-            // Premium database on a V12 server is required for InMemoryTable
-            // DB owner needs to ALTER DATABASE [Database Name] SET MEMORY_OPTIMIZED_ELEVATE_TO_SNAPSHOT=ON;
-            // Most of the SQL statement should just work, the following statements are different
-            #region CreateSessionTable
-            sqlStatementDictionary["CreateSessionTable"] = $@"
+        #region Sql statement
+        // Premium database on a V12 server is required for InMemoryTable
+        // DB owner needs to ALTER DATABASE [Database Name] SET MEMORY_OPTIMIZED_ELEVATE_TO_SNAPSHOT=ON;
+        // Most of the SQL statement should just work, the following statements are different
+        #region CreateSessionTable
+        private static readonly string CreateSessionTableSql = $@"
                IF NOT EXISTS (SELECT * 
                  FROM INFORMATION_SCHEMA.TABLES 
-                 WHERE TABLE_NAME = '{SqlCommandUtil.TableName}')
+                 WHERE TABLE_NAME = '{SqlSessionStateRepositoryUtil.TableName}')
                BEGIN
-                CREATE TABLE {SqlCommandUtil.TableName} (
+                CREATE TABLE {SqlSessionStateRepositoryUtil.TableName} (
                 SessionId           nvarchar(88)    COLLATE Latin1_General_100_BIN2 NOT NULL,
                 Created             datetime        NOT NULL DEFAULT GETUTCDATE(),
                 Expires             datetime        NOT NULL,
@@ -34,7 +23,7 @@ namespace Microsoft.AspNet.SessionState
                 LockCookie          int             NOT NULL,
                 Timeout             int             NOT NULL,
                 Locked              bit             NOT NULL,
-                SessionItemShort    varbinary({SqlCommandUtil.ItemShortLength}) NULL,
+                SessionItemShort    varbinary({SqlSessionStateRepositoryUtil.ItemShortLength}) NULL,
                 SessionItemLong     varbinary(max)           NULL,
                 Flags               int             NOT NULL DEFAULT 0,
                 INDEX [Index_Expires] NONCLUSTERED 
@@ -47,10 +36,10 @@ namespace Microsoft.AspNet.SessionState
                 )WITH ( BUCKET_COUNT = 33554432)
                 )WITH ( MEMORY_OPTIMIZED = ON , DURABILITY = SCHEMA_ONLY )                
               END";
-            #endregion
+        #endregion
 
-            #region GetStateItemExclusive            
-            sqlStatementDictionary["GetStateItemExclusive"] = $@"
+        #region GetStateItemExclusive            
+        private static readonly string GetStateItemExclusiveSql = $@"
                 DECLARE @textptr AS varbinary(max)
                 DECLARE @length AS int
                 DECLARE @now AS datetime
@@ -62,18 +51,18 @@ namespace Microsoft.AspNet.SessionState
                 DECLARE @LockedCheck bit
                 DECLARE @Flags int
 
-                SELECT @LockedCheck = Locked, @Flags = Flags FROM {SqlCommandUtil.TableName} WHERE SessionID = @{SqlParameterName.SessionId}
+                SELECT @LockedCheck = Locked, @Flags = Flags FROM {SqlSessionStateRepositoryUtil.TableName} WHERE SessionID = @{SqlParameterName.SessionId}
                 IF @Flags&1 <> 0
                 BEGIN
                     SET @actionFlags = 1
-                    UPDATE {SqlCommandUtil.TableName} SET Flags = Flags & ~1 WHERE SessionID = @{SqlParameterName.SessionId}
+                    UPDATE {SqlSessionStateRepositoryUtil.TableName} SET Flags = Flags & ~1 WHERE SessionID = @{SqlParameterName.SessionId}
                 END
                 ELSE
                     SET @{SqlParameterName.ActionFlags} = 0
 
                 IF @LockedCheck = 1
                 BEGIN
-                    UPDATE {SqlCommandUtil.TableName}
+                    UPDATE {SqlSessionStateRepositoryUtil.TableName}
                     SET Expires = DATEADD(n, Timeout, @now), 
                         @{SqlParameterName.LockAge} = DATEDIFF(second, LockDate, @now),
                         @{SqlParameterName.LockCookie} = LockCookie,
@@ -85,7 +74,7 @@ namespace Microsoft.AspNet.SessionState
                 END
                 ELSE
                 BEGIN
-                    UPDATE {SqlCommandUtil.TableName}
+                    UPDATE {SqlSessionStateRepositoryUtil.TableName}
                     SET Expires = DATEADD(n, Timeout, @now), 
                         LockDate = @now,
                         LockDateLocal = @nowlocal,
@@ -101,16 +90,16 @@ namespace Microsoft.AspNet.SessionState
                     IF @TextPtr IS NOT NULL
                         SELECT @TextPtr
                 END";
-            #endregion
+        #endregion
 
-            #region GetStateItem            
-            sqlStatementDictionary["GetStateItem"] = $@"
+        #region GetStateItem            
+        private static readonly string GetStateItemSql = $@"
                 DECLARE @textptr AS varbinary(max)
                 DECLARE @length AS int
                 DECLARE @now AS datetime
                 SET @now = GETUTCDATE()
 
-                UPDATE {SqlCommandUtil.TableName}
+                UPDATE {SqlSessionStateRepositoryUtil.TableName}
                 SET Expires = DATEADD(n, Timeout, @now), 
                     @{SqlParameterName.Locked} = Locked,
                     @{SqlParameterName.LockAge} = DATEDIFF(second, LockDate, @now),
@@ -142,10 +131,10 @@ namespace Microsoft.AspNet.SessionState
                     SELECT @textptr
                 END
             ";
-            #endregion
+        #endregion
 
-            #region DeleteExpiredSessions
-            sqlStatementDictionary["DeleteExpiredSessions"] = $@"
+        #region DeleteExpiredSessions
+        private static readonly string DeleteExpiredSessionsSql = $@"
                 SET NOCOUNT ON
                 SET DEADLOCK_PRIORITY LOW 
 
@@ -154,12 +143,12 @@ namespace Microsoft.AspNet.SessionState
 
                 CREATE TABLE #tblExpiredSessions 
                 ( 
-                    SessionId nvarchar({SqlCommandUtil.IdLength}) NOT NULL PRIMARY KEY
+                    SessionId nvarchar({SqlSessionStateRepositoryUtil.IdLength}) NOT NULL PRIMARY KEY
                 )
 
                 INSERT #tblExpiredSessions (SessionId)
                     SELECT SessionId
-                    FROM {SqlCommandUtil.TableName} WITH (SNAPSHOT)
+                    FROM {SqlSessionStateRepositoryUtil.TableName} WITH (SNAPSHOT)
                     WHERE Expires < @now
 
                 IF @@ROWCOUNT <> 0 
@@ -167,7 +156,7 @@ namespace Microsoft.AspNet.SessionState
                     DECLARE ExpiredSessionCursor CURSOR LOCAL FORWARD_ONLY READ_ONLY
                     FOR SELECT SessionId FROM #tblExpiredSessions 
 
-                    DECLARE @SessionId nvarchar({SqlCommandUtil.IdLength})
+                    DECLARE @SessionId nvarchar({SqlSessionStateRepositoryUtil.IdLength})
 
                     OPEN ExpiredSessionCursor
 
@@ -175,7 +164,7 @@ namespace Microsoft.AspNet.SessionState
 
                     WHILE @@FETCH_STATUS = 0 
                         BEGIN
-                            DELETE FROM {SqlCommandUtil.TableName} WHERE SessionId = @SessionId AND Expires < @now
+                            DELETE FROM {SqlSessionStateRepositoryUtil.TableName} WHERE SessionId = @SessionId AND Expires < @now
                             FETCH NEXT FROM ExpiredSessionCursor INTO @SessionId
                         END
 
@@ -186,9 +175,45 @@ namespace Microsoft.AspNet.SessionState
                 END 
 
                 DROP TABLE #tblExpiredSessions";
-            #endregion
+        #endregion
+        #endregion
 
-            return sqlStatementDictionary;
+        public SqlInMemoryTableSessionStateRepository(int commandTimeout) : base(commandTimeout) { }
+
+        protected override SqlCommand CreateCreateSessionTableCmd()
+        {
+            return CreateSqlCommand(CreateSessionTableSql);
+        }
+
+        protected override SqlCommand CreateGetStateItemExclusiveCmd(string id)
+        {
+            var cmd = CreateSqlCommand(GetStateItemExclusiveSql);
+            cmd.Parameters.AddSessionIdParameter(id)
+                          .AddSessionItemShortParameter()
+                          .AddLockAgeParameter()
+                          .AddLockedParameter()
+                          .AddLockCookieParameter()
+                          .AddActionFlagsParameter();
+
+            return cmd;
+        }
+
+        protected override SqlCommand CreateGetStateItemCmd(string id)
+        {
+            var cmd = CreateSqlCommand(GetStateItemSql);
+            cmd.Parameters.AddSessionIdParameter(id)
+                          .AddSessionItemShortParameter()
+                          .AddLockedParameter()
+                          .AddLockAgeParameter()
+                          .AddLockCookieParameter()
+                          .AddActionFlagsParameter();
+
+            return cmd;
+        }
+
+        protected override SqlCommand CreateDeleteExpiredSessionsCmd()
+        {
+            return CreateSqlCommand(DeleteExpiredSessionsSql);
         }
     }
 }
