@@ -62,32 +62,24 @@ namespace Microsoft.AspNet.SessionState
                     if(!s_oneTimeInited)
                     {
                         var connectionString = GetConnectionString(config[ConnectionStringNameConfigurationName]);
-                        config.Remove(ConnectionStringNameConfigurationName);
-
                         SessionStateSection ssc = (SessionStateSection)ConfigurationManager.GetSection("system.web/sessionState");
                         s_compressionEnabled = ssc.CompressionEnabled;
-
                         SqlCommandInvoker.Initialize(connectionString.ConnectionString, ssc.SqlConnectionRetryInterval);
 
                         var useInMemoryTable = false;
-                        if (config[InMemoryTableConfigurationName] != null)
+                        if (config[InMemoryTableConfigurationName] != null && 
+                            bool.TryParse(config[InMemoryTableConfigurationName], out useInMemoryTable) && useInMemoryTable)
                         {
-                            if (bool.TryParse(config[InMemoryTableConfigurationName], out useInMemoryTable) && useInMemoryTable)
-                            {
-                                s_sqlSessionStateRepository = new SqlInMemoryTableSessionStateRepository((int)ssc.SqlCommandTimeout.TotalSeconds);
-                            }
-                            config.Remove(InMemoryTableConfigurationName);
+                            s_sqlSessionStateRepository = new SqlInMemoryTableSessionStateRepository((int)ssc.SqlCommandTimeout.TotalSeconds);
                         }
-
-                        if (s_sqlSessionStateRepository == null)
+                        else
                         {
                             s_sqlSessionStateRepository = new SqlSessionStateRepository((int)ssc.SqlCommandTimeout.TotalSeconds);
                         }
-
                         s_sqlSessionStateRepository.CreateSessionStateTable();
 
-                        string appId = HttpRuntime.AppDomainAppId;
-                        s_appSuffix = appId.GetHashCode().ToString("X8", CultureInfo.InvariantCulture);
+                        Debug.Assert(HttpRuntime.AppDomainAppId != null);
+                        s_appSuffix = HttpRuntime.AppDomainAppId.GetHashCode().ToString("X8", CultureInfo.InvariantCulture);
 
                         s_oneTimeInited = true;
                     }
@@ -277,7 +269,7 @@ namespace Microsoft.AspNet.SessionState
 
             lockCookie = lockId == null ? 0 : (int)lockId;
 
-            await s_sqlSessionStateRepository.CreateUpdateStateItemAsync(newItem, id, buf, length, item.Timeout, lockCookie, _rqOrigStreamLen);
+            await s_sqlSessionStateRepository.CreateOrUpdateSessionStateItemAsync(newItem, id, buf, length, item.Timeout, lockCookie, _rqOrigStreamLen);
         }
 
         /// <inheritdoc />
@@ -295,11 +287,15 @@ namespace Microsoft.AspNet.SessionState
             id = AppendAppIdHash(id);
             
             SessionStateStoreData data = null;
-            var sessionItem = await s_sqlSessionStateRepository.GetStateIteAsync(id, exclusive);
+            var sessionItem = await s_sqlSessionStateRepository.GetSessionStateItemAsync(id, exclusive);
 
             if(sessionItem == null)
             {
                 return null;
+            }
+            if(sessionItem.Item == null)
+            {
+                return new GetItemResult(null, sessionItem.Locked, sessionItem.LockAge, sessionItem.LockId, sessionItem.Actions);
             }
 
             using (var stream = new MemoryStream(sessionItem.Item))
@@ -470,7 +466,7 @@ namespace Microsoft.AspNet.SessionState
             try
             {
                 s_sqlSessionStateRepository.DeleteExpiredSessions();
-                s_lastSessionPurgeTicks = DateTime.Now.Ticks;
+                s_lastSessionPurgeTicks = DateTime.UtcNow.Ticks;
             }
             catch
             {

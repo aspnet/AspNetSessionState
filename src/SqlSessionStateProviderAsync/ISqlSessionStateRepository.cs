@@ -10,9 +10,9 @@
 
         void DeleteExpiredSessions();
 
-        Task<SessionItem> GetStateIteAsync(string id, bool exclusive);
+        Task<SessionItem> GetSessionStateItemAsync(string id, bool exclusive);
 
-        Task CreateUpdateStateItemAsync(bool newItem, string id, byte[] buf, int length, int timeout, int lockCookie, int orginalStreamLen);
+        Task CreateOrUpdateSessionStateItemAsync(bool newItem, string id, byte[] buf, int length, int timeout, int lockCookie, int orginalStreamLen);
 
         Task ResetSessionItemTimeoutAsync(string id);
 

@@ -5,9 +5,7 @@
     class SqlInMemoryTableSessionStateRepository : SqlSessionStateRepository
     {
         #region Sql statement
-        // Premium database on a V12 server is required for InMemoryTable
-        // DB owner needs to ALTER DATABASE [Database Name] SET MEMORY_OPTIMIZED_ELEVATE_TO_SNAPSHOT=ON;
-        // Most of the SQL statement should just work, the following statements are different
+        // Most of the SQL statements should just work, the following statements are different
         #region CreateSessionTable
         private static readonly string CreateSessionTableSql = $@"
                IF NOT EXISTS (SELECT * 

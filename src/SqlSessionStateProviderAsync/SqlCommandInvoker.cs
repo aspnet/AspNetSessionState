@@ -3,7 +3,7 @@
 
 namespace Microsoft.AspNet.SessionState
 {
-    using Microsoft.AspNet.SessionState.Resources;
+    using Resources;
     using System;
     using System.Data;
     using System.Data.SqlClient;
@@ -52,6 +52,7 @@ namespace Microsoft.AspNet.SessionState
         private const int APP_SUFFIX_LENGTH = 8;
         private const int FIRST_RETRY_SLEEP_TIME = 5000;
         private const int RETRY_SLEEP_TIME = 1000;
+        private const int INMEMORYTABLE_MAX_RETRY_NUM = 10;
         
         private static bool s_initialized;
         private static string s_connectionString;
@@ -102,14 +103,8 @@ namespace Microsoft.AspNet.SessionState
 
                     if (!CanRetry(e, _sqlCmd.Connection, ref isFirstAttempt, ref endRetryTime, ref retryCount))
                     {
-                        // just throw, because not all conditions to retry are satisfied
-                        ThrowSqlConnectionException(e);
+                        throw;
                     }
-                }
-                catch (Exception e)
-                {
-                    // just throw, we have a different Exception
-                    ThrowSqlConnectionException(e);
                 }
             }
         }
@@ -132,14 +127,8 @@ namespace Microsoft.AspNet.SessionState
                 {
                     if (!CanRetry(e, _sqlCmd.Connection, ref isFirstAttempt, ref endRetryTime, ref retryCount))
                     {
-                        // just throw, default to previous behavior
-                        ThrowSqlConnectionException(e);
+                        throw;
                     }
-                }
-                catch (Exception e)
-                {
-                    // just throw, we have a different Exception
-                    ThrowSqlConnectionException(e);
                 }
             }
         }
@@ -156,11 +145,6 @@ namespace Microsoft.AspNet.SessionState
                 _sqlConnection.Close();
                 _sqlConnection = null;
             }
-        }
-
-        protected void ThrowSqlConnectionException(Exception e)
-        {
-            throw new HttpException(SR.Cant_connect_sql_session_database, e);
         }
 
         private bool IsFatalSqlException(SqlException ex)
@@ -197,7 +181,7 @@ namespace Microsoft.AspNet.SessionState
         {
             if (ShouldUseInMemoryTableRetry(ex))
             {
-                if(retryCount > 10)
+                if(retryCount >= INMEMORYTABLE_MAX_RETRY_NUM)
                 {
                     return false;
                 }
@@ -219,8 +203,7 @@ namespace Microsoft.AspNet.SessionState
                 {
                     return false;
                 }
-
-
+                
                 if (isFirstAttempt)
                 {
                     // First time we sleep longer than for subsequent retries.
@@ -244,7 +227,8 @@ namespace Microsoft.AspNet.SessionState
         {
             SqlConnection connection = _sqlConnection;
             _sqlConnection = null;
-            ThrowSqlConnectionException(e);
+
+            throw new HttpException(SR.Cant_connect_sql_session_database, e);
         }
 
         private async Task OpenConnectionAsync()
