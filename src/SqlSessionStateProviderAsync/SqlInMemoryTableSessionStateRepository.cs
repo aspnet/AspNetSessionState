@@ -1,9 +1,23 @@
 ﻿namespace Microsoft.AspNet.SessionState
 {
+    using Resources;
+    using System;
     using System.Data.SqlClient;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Web;
+    using System.Web.SessionState;
 
-    class SqlInMemoryTableSessionStateRepository : SqlSessionStateRepository
+    class SqlInMemoryTableSessionStateRepository : ISqlSessionStateRepository
     {
+        private const int DEFAULT_RETRY_NUM = 10;
+        private const int DEFAULT_RETRY_INERVAL = 1;
+
+        private int _retryIntervalMilSec;
+        private string _connectString;
+        private int _maxRetryNum;
+        private SqlCommandHelper _commandHelper;
+
         #region Sql statement
         // Most of the SQL statements should just work, the following statements are different
         #region CreateSessionTable
@@ -174,44 +188,355 @@
 
                 DROP TABLE #tblExpiredSessions";
         #endregion
+
+        #region TempInsertUninitializedItem
+        private static readonly string TempInsertUninitializedItemSql = $@"
+            DECLARE @now AS datetime
+            DECLARE @nowLocal AS datetime
+            SET @now = GETUTCDATE()
+            SET @nowLocal = GETDATE()
+
+            INSERT {SqlSessionStateRepositoryUtil.TableName} (SessionId, 
+                 SessionItemShort, 
+                 Timeout, 
+                 Expires, 
+                 Locked, 
+                 LockDate,
+                 LockDateLocal,
+                 LockCookie,
+                 Flags) 
+            VALUES
+                (@{SqlParameterName.SessionId},
+                 @{SqlParameterName.SessionItemShort},
+                 @{SqlParameterName.Timeout},
+                 DATEADD(n, @{SqlParameterName.Timeout}, @now),
+                 0,
+                 @now,
+                 @nowLocal,
+                 1,
+                 1)";
         #endregion
 
-        public SqlInMemoryTableSessionStateRepository(int commandTimeout) : base(commandTimeout) { }
+        #region ReleaseItemExclusive
+        private static readonly string ReleaseItemExclusiveSql = $@"
+            UPDATE {SqlSessionStateRepositoryUtil.TableName}
+            SET Expires = DATEADD(n, Timeout, GETUTCDATE()),
+                Locked = 0
+            WHERE SessionId = @{SqlParameterName.SessionId} AND LockCookie = @{SqlParameterName.LockCookie}";
+        #endregion
 
-        protected override SqlCommand CreateCreateSessionTableCmd()
+        #region RemoveStateItem
+        private static readonly string RemoveStateItemSql = $@"
+            DELETE {SqlSessionStateRepositoryUtil.TableName}
+            WHERE SessionId = @{SqlParameterName.SessionId} AND LockCookie = @{SqlParameterName.LockCookie}";
+        #endregion
+
+        #region ResetItemTimeout
+        private static readonly string ResetItemTimeoutSql = $@"
+            UPDATE {SqlSessionStateRepositoryUtil.TableName}
+            SET Expires = DATEADD(n, Timeout, GETUTCDATE())
+            WHERE SessionId = @{SqlParameterName.SessionId}";
+        #endregion
+
+        #region UpdateStateItemShort
+        private static readonly string UpdateStateItemShortSql = $@"
+            UPDATE {SqlSessionStateRepositoryUtil.TableName}
+            SET Expires = DATEADD(n, @{SqlParameterName.Timeout}, GETUTCDATE()), 
+                SessionItemShort = @{SqlParameterName.SessionItemShort}, 
+                Timeout = @{SqlParameterName.Timeout},
+                Locked = 0
+            WHERE SessionId = @{SqlParameterName.SessionId} AND LockCookie = @{SqlParameterName.LockCookie}";
+        #endregion
+
+        #region UpdateStateItemShortNullLong
+        private static readonly string UpdateStateItemShortNullLongSql = $@"
+            UPDATE {SqlSessionStateRepositoryUtil.TableName}
+            SET Expires = DATEADD(n, @{SqlParameterName.Timeout}, GETUTCDATE()), 
+                SessionItemShort = @{SqlParameterName.SessionItemShort}, 
+                SessionItemLong = NULL, 
+                Timeout = @{SqlParameterName.Timeout},
+                Locked = 0
+            WHERE SessionId = @{SqlParameterName.SessionId} AND LockCookie = @{SqlParameterName.LockCookie}";
+        #endregion
+
+        #region UpdateStateItemLongNullShort
+        private static readonly string UpdateStateItemLongNullShortSql = $@"
+            UPDATE {SqlSessionStateRepositoryUtil.TableName}
+            SET Expires = DATEADD(n, @{SqlParameterName.Timeout}, GETUTCDATE()), 
+                SessionItemLong = @{SqlParameterName.SessionItemLong}, 
+                SessionItemShort = NULL,
+                Timeout = @{SqlParameterName.Timeout},
+                Locked = 0
+            WHERE SessionId = @{SqlParameterName.SessionId} AND LockCookie = @{SqlParameterName.LockCookie}";
+        #endregion
+
+        #region UpdateStateItemLong
+        private static readonly string UpdateStateItemLongSql = $@"
+            UPDATE {SqlSessionStateRepositoryUtil.TableName}
+            SET Expires = DATEADD(n, @{SqlParameterName.Timeout}, GETUTCDATE()), 
+                SessionItemLong = @{SqlParameterName.SessionItemLong},
+                Timeout = @{SqlParameterName.Timeout},
+                Locked = 0
+            WHERE SessionId = @{SqlParameterName.SessionId} AND LockCookie = @{SqlParameterName.LockCookie}";
+        #endregion
+
+        #region InsertStateItemShort
+        private static readonly string InsertStateItemShortSql = $@"
+            DECLARE @now AS datetime
+            DECLARE @nowLocal AS datetime
+            
+            SET @now = GETUTCDATE()
+            SET @nowLocal = GETDATE()
+
+            INSERT {SqlSessionStateRepositoryUtil.TableName} 
+                (SessionId, 
+                 SessionItemShort, 
+                 Timeout, 
+                 Expires, 
+                 Locked, 
+                 LockDate,
+                 LockDateLocal,
+                 LockCookie) 
+            VALUES 
+                (@{SqlParameterName.SessionId}, 
+                 @{SqlParameterName.SessionItemShort}, 
+                 @{SqlParameterName.Timeout}, 
+                 DATEADD(n, @{SqlParameterName.Timeout}, @now), 
+                 0, 
+                 @now,
+                 @nowLocal,
+                 1)";
+        #endregion
+
+        #region InsertStateItemLong
+        private static readonly string InsertStateItemLongSql = $@"
+            DECLARE @now AS datetime
+            DECLARE @nowLocal AS datetime
+            
+            SET @now = GETUTCDATE()
+            SET @nowLocal = GETDATE()
+
+            INSERT {SqlSessionStateRepositoryUtil.TableName} 
+                (SessionId, 
+                 SessionItemLong, 
+                 Timeout, 
+                 Expires, 
+                 Locked, 
+                 LockDate,
+                 LockDateLocal,
+                 LockCookie) 
+            VALUES 
+                (@{SqlParameterName.SessionId}, 
+                 @{SqlParameterName.SessionItemLong}, 
+                 @{SqlParameterName.Timeout}, 
+                 DATEADD(n, @{SqlParameterName.Timeout}, @now), 
+                 0, 
+                 @now,
+                 @nowLocal,
+                 1)";
+        #endregion
+        #endregion
+
+        public SqlInMemoryTableSessionStateRepository(string connectionString, int commandTimeout, 
+            int? retryInterval, int? retryNum)
         {
-            return CreateSqlCommand(CreateSessionTableSql);
+            this._retryIntervalMilSec = retryInterval.HasValue ? retryInterval.Value : DEFAULT_RETRY_INERVAL;
+            this._connectString = connectionString;
+            this._maxRetryNum = retryNum.HasValue ? retryNum.Value : DEFAULT_RETRY_NUM;
+            this._commandHelper = new SqlCommandHelper(commandTimeout);
         }
 
-        protected override SqlCommand CreateGetStateItemExclusiveCmd(string id)
+        public void CreateSessionStateTable()
         {
-            var cmd = CreateSqlCommand(GetStateItemExclusiveSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemShortParameter()
-                          .AddLockAgeParameter()
-                          .AddLockedParameter()
-                          .AddLockCookieParameter()
-                          .AddActionFlagsParameter();
-
-            return cmd;
+            using (var connection = new SqlConnection(_connectString))
+            {
+                try
+                {
+                    var cmd = _commandHelper.CreateNewSessionTableCmd(CreateSessionTableSql);
+                    var task = SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry).ConfigureAwait(false);
+                    task.GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    // Indicate that the DB doesn't support InMemoryTable
+                    var innerException = ex.InnerException as SqlException;
+                    if (innerException != null && innerException.Number == 40536)
+                    {
+                        throw innerException;
+                    }
+                    else
+                    {
+                        throw new HttpException(SR.Cant_connect_sql_session_database, ex);
+                    }
+                }
+            }
         }
 
-        protected override SqlCommand CreateGetStateItemCmd(string id)
+        public void DeleteExpiredSessions()
         {
-            var cmd = CreateSqlCommand(GetStateItemSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemShortParameter()
-                          .AddLockedParameter()
-                          .AddLockAgeParameter()
-                          .AddLockCookieParameter()
-                          .AddActionFlagsParameter();
-
-            return cmd;
+            using (var connection = new SqlConnection(_connectString))
+            {
+                var cmd = _commandHelper.CreateDeleteExpiredSessionsCmd(DeleteExpiredSessionsSql);
+                var task = SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry).ConfigureAwait(false);
+                task.GetAwaiter().GetResult();
+            }
         }
 
-        protected override SqlCommand CreateDeleteExpiredSessionsCmd()
+        public async Task<SessionItem> GetSessionStateItemAsync(string id, bool exclusive)
         {
-            return CreateSqlCommand(DeleteExpiredSessionsSql);
+            var locked = false;
+            var lockAge = TimeSpan.Zero;
+            var now = DateTime.UtcNow;
+            object lockId = null;
+            byte[] buf = null;
+            SessionStateActions actions = SessionStateActions.None;
+            SqlCommand cmd = null;
+
+            if (exclusive)
+            {
+                cmd = _commandHelper.CreateGetStateItemExclusiveCmd(GetStateItemExclusiveSql, id);
+            }
+            else
+            {
+                cmd = _commandHelper.CreateGetStateItemCmd(GetStateItemSql, id);
+            }
+
+            using (var connection = new SqlConnection(_connectString))
+            {
+                using (var reader = await SqlSessionStateRepositoryUtil.SqlExecuteReaderWithRetryAsync(connection, cmd, CanRetry))
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        buf = await reader.GetFieldValueAsync<byte[]>(0);
+                    }
+                }
+
+                var outParameterLocked = cmd.GetOutPutParameterValue(SqlParameterName.Locked);
+                if (outParameterLocked == null || Convert.IsDBNull(outParameterLocked.Value))
+                {
+                    return null;
+                }
+                locked = (bool)outParameterLocked.Value;
+                lockId = (int)cmd.GetOutPutParameterValue(SqlParameterName.LockCookie).Value;
+
+                if (locked)
+                {
+                    lockAge = new TimeSpan(0, 0, (int)cmd.GetOutPutParameterValue(SqlParameterName.LockAge).Value);
+
+                    if (lockAge > new TimeSpan(0, 0, Sec.ONE_YEAR))
+                    {
+                        lockAge = TimeSpan.Zero;
+                    }
+                    return new SessionItem(null, true, lockAge, lockId, actions);
+                }
+                actions = (SessionStateActions)cmd.GetOutPutParameterValue(SqlParameterName.ActionFlags).Value;
+
+                if (buf == null)
+                {
+                    buf = (byte[])cmd.GetOutPutParameterValue(SqlParameterName.SessionItemShort).Value;
+                }
+
+                return new SessionItem(buf, true, lockAge, lockId, actions);
+            }
+        }
+
+        public async Task CreateOrUpdateSessionStateItemAsync(bool newItem, string id, 
+            byte[] buf, int length, int timeout, int lockCookie, int orginalStreamLen)
+        {
+            SqlCommand cmd;
+
+            if (!newItem)
+            {
+                if (length <= SqlSessionStateRepositoryUtil.ItemShortLength)
+                {
+                    cmd = orginalStreamLen <= SqlSessionStateRepositoryUtil.ItemShortLength ?
+                        _commandHelper.CreateUpdateStateItemShortCmd(UpdateStateItemShortSql, id, buf, length, timeout, lockCookie) :
+                        _commandHelper.CreateUpdateStateItemShortNullLongCmd(UpdateStateItemShortNullLongSql, id, buf, length, timeout, lockCookie);
+                }
+                else
+                {
+                    cmd = orginalStreamLen <= SqlSessionStateRepositoryUtil.ItemShortLength ?
+                        _commandHelper.CreateUpdateStateItemLongNullShortCmd(UpdateStateItemLongNullShortSql, id, buf, length, timeout, lockCookie) :
+                        _commandHelper.CreateUpdateStateItemLongCmd(UpdateStateItemLongSql, id, buf, length, timeout, lockCookie);
+                }
+            }
+            else
+            {
+                cmd = length <= SqlSessionStateRepositoryUtil.ItemShortLength ?
+                    _commandHelper.CreateInsertStateItemShortCmd(InsertStateItemShortSql, id, buf, length, timeout) :
+                    _commandHelper.CreateInsertStateItemLongCmd(InsertStateItemLongSql, id, buf, length, timeout);
+            }
+
+            using (var connection = new SqlConnection(_connectString))
+            {
+                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry, newItem);
+            }
+        }
+
+        public async Task ResetSessionItemTimeoutAsync(string id)
+        {
+            var cmd = _commandHelper.CreateResetItemTimeoutCmd(ResetItemTimeoutSql, id);
+            using (var connection = new SqlConnection(_connectString))
+            {
+                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry);
+            }
+        }
+
+        public async Task RemoveSessionItemAsync(string id, object lockId)
+        {
+            var cmd = _commandHelper.CreateRemoveStateItemCmd(RemoveStateItemSql, id, lockId);
+            using (var connection = new SqlConnection(_connectString))
+            {
+                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry);
+            }
+        }
+
+        public async Task ReleaseSessionItemAsync(string id, object lockId)
+        {
+            var cmd = _commandHelper.CreateReleaseItemExclusiveCmd(ReleaseItemExclusiveSql, id, lockId);
+            using (var connection = new SqlConnection(_connectString))
+            {
+                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry);
+            }
+        }
+
+        public async Task CreateUninitializedSessionItemAsync(string id, int length, byte[] buf, int timeout)
+        {
+            var cmd = _commandHelper.CreateTempInsertUninitializedItemCmd(TempInsertUninitializedItemSql, id, length, buf, timeout);
+            using (var connection = new SqlConnection(_connectString))
+            {
+                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry, true);
+            }
+        }
+
+        private bool CanRetry(RetryCheckParameter parameter)
+        {
+            if (parameter.RetryCount >= _maxRetryNum ||
+                !ShouldUseInMemoryTableRetry(parameter.Exception))
+            {
+                return false;
+            }
+
+            // this actually may sleep up to 15ms
+            // but it's better than spinning CPU
+            Thread.Sleep(_retryIntervalMilSec);
+            parameter.RetryCount++;
+
+            return true;
+        }
+
+        private bool ShouldUseInMemoryTableRetry(SqlException ex)
+        {
+            // Error code is defined on
+            // https://docs.microsoft.com/en-us/sql/relational-databases/in-memory-oltp/transactions-with-memory-optimized-tables#conflict-detection-and-retry-logic
+            if (ex != null && (ex.Number == 41302 || ex.Number == 41305 || ex.Number == 41325 || ex.Number == 41301 || ex.Number == 41839))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

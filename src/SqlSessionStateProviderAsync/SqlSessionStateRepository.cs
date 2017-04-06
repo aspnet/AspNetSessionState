@@ -2,8 +2,8 @@
 {
     using Resources;
     using System;
-    using System.Data;
     using System.Data.SqlClient;
+    using System.Threading;
     using System.Threading.Tasks;
     using System.Web;
     using System.Web.SessionState;
@@ -13,7 +13,13 @@
     /// </summary>
     class SqlSessionStateRepository : ISqlSessionStateRepository
     {
-        private int commandTimeout;
+        private const int DEFAULT_RETRY_INTERVAL = 1000;
+        private const int DEFAULT_RETRY_NUM = 10;
+
+        private int _retryIntervalMilSec;
+        private string _connectString;
+        private int _maxRetryNum;
+        private SqlCommandHelper _commandHelper;
 
         #region sql statement
         // SQL server version must be >= 8.0
@@ -331,42 +337,55 @@
             #endregion
         #endregion
 
-        public SqlSessionStateRepository(int commandTimeout)
+        public SqlSessionStateRepository(string connectionString, int commandTimeout,
+            int? retryInterval = DEFAULT_RETRY_INTERVAL, int? retryNum = DEFAULT_RETRY_NUM)
         {
-            this.commandTimeout = commandTimeout;
+            this._retryIntervalMilSec = retryInterval.HasValue ? retryInterval.Value : DEFAULT_RETRY_INTERVAL;
+            this._connectString = connectionString;
+            this._maxRetryNum = retryNum.HasValue ? retryNum.Value : DEFAULT_RETRY_NUM;
+            this._commandHelper = new SqlCommandHelper(commandTimeout);
+        }
+
+        private bool CanRetry(RetryCheckParameter parameter)
+        {
+            if (_retryIntervalMilSec <= 0 ||
+                !SqlSessionStateRepositoryUtil.IsFatalSqlException(parameter.Exception) ||
+                parameter.RetryCount >= _maxRetryNum)
+            {
+                return false;
+            }
+
+            // sleep the specified time and allow retry
+            Thread.Sleep(_retryIntervalMilSec);
+            parameter.RetryCount++;
+
+            return true;
         }
 
         #region ISqlSessionStateRepository implementation
         public void CreateSessionStateTable()
         {
-            using (var invoker = new SqlCommandInvoker(CreateCreateSessionTableCmd()))
+            using (var connection = new SqlConnection(_connectString))
             {
                 try
                 {
-                    var task = invoker.SqlExecuteNonQueryWithRetryAsync().ConfigureAwait(false);
+                    var cmd = _commandHelper.CreateNewSessionTableCmd(CreateSessionTableSql);
+                    var task = SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry).ConfigureAwait(false);
                     task.GetAwaiter().GetResult();
                 }
                 catch (Exception ex)
                 {
-                    // Indicate that the DB doesn't support InMemoryTable
-                    var innerException = ex.InnerException as SqlException;
-                    if (innerException != null && innerException.Number == 40536)
-                    {
-                        throw innerException;
-                    }
-                    else
-                    {
-                        throw new HttpException(SR.Cant_connect_sql_session_database, ex);
-                    }
+                    throw new HttpException(SR.Cant_connect_sql_session_database, ex);
                 }
             }
         }
 
         public void DeleteExpiredSessions()
         {
-            using (var invoker = new SqlCommandInvoker(CreateDeleteExpiredSessionsCmd()))
+            using (var connection = new SqlConnection(_connectString))
             {
-                var task = invoker.SqlExecuteNonQueryWithRetryAsync().ConfigureAwait(false);
+                var cmd = _commandHelper.CreateDeleteExpiredSessionsCmd(DeleteExpiredSessionsSql);
+                var task = SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry).ConfigureAwait(false);
                 task.GetAwaiter().GetResult();
             }
         }
@@ -383,16 +402,16 @@
 
             if (exclusive)
             {
-                cmd = CreateGetStateItemExclusiveCmd(id);
+                cmd = _commandHelper.CreateGetStateItemExclusiveCmd(GetStateItemExclusiveSql, id);
             }
             else
             {
-                cmd = CreateGetStateItemCmd(id);
+                cmd = _commandHelper.CreateGetStateItemCmd(GetStateItemSql, id);
             }
 
-            using (var invoker = new SqlCommandInvoker(cmd))
+            using (var connection = new SqlConnection(_connectString))
             {
-                using (var reader = await invoker.SqlExecuteReaderWithRetryAsync())
+                using (var reader = await SqlSessionStateRepositoryUtil.SqlExecuteReaderWithRetryAsync(connection, cmd, CanRetry))
                 {
                     if (await reader.ReadAsync())
                     {
@@ -400,17 +419,17 @@
                     }
                 }
 
-                var outParameterLocked = invoker.GetOutPutParameterValue(SqlParameterName.Locked);
+                var outParameterLocked = cmd.GetOutPutParameterValue(SqlParameterName.Locked);
                 if (outParameterLocked == null || Convert.IsDBNull(outParameterLocked.Value))
                 {
                     return null;
                 }
                 locked = (bool)outParameterLocked.Value;
-                lockId = (int)invoker.GetOutPutParameterValue(SqlParameterName.LockCookie).Value;
+                lockId = (int)cmd.GetOutPutParameterValue(SqlParameterName.LockCookie).Value;
 
                 if (locked)
                 {
-                    lockAge = new TimeSpan(0, 0, (int)invoker.GetOutPutParameterValue(SqlParameterName.LockAge).Value);
+                    lockAge = new TimeSpan(0, 0, (int)cmd.GetOutPutParameterValue(SqlParameterName.LockAge).Value);
 
                     if (lockAge > new TimeSpan(0, 0, Sec.ONE_YEAR))
                     {
@@ -418,11 +437,11 @@
                     }
                     return new SessionItem(null, true, lockAge, lockId, actions);
                 }
-                actions = (SessionStateActions)invoker.GetOutPutParameterValue(SqlParameterName.ActionFlags).Value;
+                actions = (SessionStateActions)cmd.GetOutPutParameterValue(SqlParameterName.ActionFlags).Value;
 
                 if (buf == null)
                 {
-                    buf = (byte[])invoker.GetOutPutParameterValue(SqlParameterName.SessionItemShort).Value;
+                    buf = (byte[])cmd.GetOutPutParameterValue(SqlParameterName.SessionItemShort).Value;
                 }
 
                 return new SessionItem(buf, true, lockAge, lockId, actions);
@@ -438,210 +457,65 @@
                 if (length <= SqlSessionStateRepositoryUtil.ItemShortLength)
                 {
                     cmd = orginalStreamLen <= SqlSessionStateRepositoryUtil.ItemShortLength ?
-                        CreateUpdateStateItemShortCmd(id, buf, length, timeout, lockCookie) :
-                        CreateUpdateStateItemShortNullLongCmd(id, buf, length, timeout, lockCookie);
+                        _commandHelper.CreateUpdateStateItemShortCmd(UpdateStateItemShortSql, id, buf, length, timeout, lockCookie) :
+                        _commandHelper.CreateUpdateStateItemShortNullLongCmd(UpdateStateItemShortNullLongSql, id, buf, length, timeout, lockCookie);
                 }
                 else
                 {
                     cmd = orginalStreamLen <= SqlSessionStateRepositoryUtil.ItemShortLength ?
-                        CreateUpdateStateItemLongNullShortCmd(id, buf, length, timeout, lockCookie) :
-                        CreateUpdateStateItemLongCmd(id, buf, length, timeout, lockCookie);
+                        _commandHelper.CreateUpdateStateItemLongNullShortCmd(UpdateStateItemLongNullShortSql, id, buf, length, timeout, lockCookie) :
+                        _commandHelper.CreateUpdateStateItemLongCmd(UpdateStateItemLongSql, id, buf, length, timeout, lockCookie);
                 }
             }
             else
             {
                 cmd = length <= SqlSessionStateRepositoryUtil.ItemShortLength ?
-                    CreateInsertStateItemShortCmd(id, buf, length, timeout) :
-                    CreateInsertStateItemLongCmd(id, buf, length, timeout);
+                    _commandHelper.CreateInsertStateItemShortCmd(InsertStateItemShortSql, id, buf, length, timeout) :
+                    _commandHelper.CreateInsertStateItemLongCmd(InsertStateItemLongSql, id, buf, length, timeout);
             }
 
-            using (var invoker = new SqlCommandInvoker(cmd))
+            using (var connection = new SqlConnection(_connectString))
             {
-                await invoker.SqlExecuteNonQueryWithRetryAsync(newItem);
+                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry, newItem);
             }
         }
 
         public async Task ResetSessionItemTimeoutAsync(string id)
         {
-            var cmd = CreateResetItemTimeoutCmd(id);
-            using (var invoker = new SqlCommandInvoker(cmd))
+            var cmd = _commandHelper.CreateResetItemTimeoutCmd(ResetItemTimeoutSql, id);
+            using (var connection = new SqlConnection(_connectString))
             {
-                await invoker.SqlExecuteNonQueryWithRetryAsync();
+                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry);
             }
         }
 
         public async Task RemoveSessionItemAsync(string id, object lockId)
         {
-            var cmd = CreateRemoveStateItemCmd(id, lockId);
-            using (var invoker = new SqlCommandInvoker(cmd))
+            var cmd = _commandHelper.CreateRemoveStateItemCmd(RemoveStateItemSql, id, lockId);
+            using (var connection = new SqlConnection(_connectString))
             {
-                await invoker.SqlExecuteNonQueryWithRetryAsync();
+                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry);
             }
         }
 
         public async Task ReleaseSessionItemAsync(string id, object lockId)
         {
-            var cmd = CreateReleaseItemExclusiveCmd(id, lockId);
-            using (var invoker = new SqlCommandInvoker(cmd))
+            var cmd = _commandHelper.CreateReleaseItemExclusiveCmd(ReleaseItemExclusiveSql, id, lockId);
+            using (var connection = new SqlConnection(_connectString))
             {
-                await invoker.SqlExecuteNonQueryWithRetryAsync();
+                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry);
             }
         }
 
         public async Task CreateUninitializedSessionItemAsync(string id, int length, byte[] buf, int timeout)
         {
-            var cmd = CreateTempInsertUninitializedItemCmd(id, length, buf, timeout);
-            using (var invoker = new SqlCommandInvoker(cmd))
+            var cmd = _commandHelper.CreateTempInsertUninitializedItemCmd(TempInsertUninitializedItemSql, id, length, buf, timeout);
+            using (var connection = new SqlConnection(_connectString))
             {
-                await invoker.SqlExecuteNonQueryWithRetryAsync(true);
+                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry, true);
             }
         }
         #endregion
-
-        protected virtual SqlCommand CreateCreateSessionTableCmd()
-        {
-            return CreateSqlCommand(CreateSessionTableSql);
-        }
-
-        protected virtual SqlCommand CreateTempInsertUninitializedItemCmd(string id, int length, byte[] buf, int timeout)
-        {
-            var cmd = CreateSqlCommand(TempInsertUninitializedItemSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemShortParameter(length, buf)
-                          .AddTimeoutParameter(timeout);
-
-            return cmd;
-        }
-
-        protected virtual SqlCommand CreateGetStateItemExclusiveCmd(string id)
-        {
-            var cmd = CreateSqlCommand(GetStateItemExclusiveSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemShortParameter()
-                          .AddLockAgeParameter()
-                          .AddLockedParameter()
-                          .AddLockCookieParameter()
-                          .AddActionFlagsParameter();
-
-            return cmd;
-        }
-
-        protected virtual SqlCommand CreateGetStateItemCmd(string id)
-        {
-            var cmd = CreateSqlCommand(GetStateItemSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemShortParameter()
-                          .AddLockedParameter()
-                          .AddLockAgeParameter()
-                          .AddLockCookieParameter()
-                          .AddActionFlagsParameter();
-
-            return cmd;
-        }
-
-        protected virtual SqlCommand CreateReleaseItemExclusiveCmd(string id, object lockid)
-        {
-            var cmd = CreateSqlCommand(ReleaseItemExclusiveSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddLockCookieParameter(lockid);
-
-            return cmd;
-        }
-
-        protected virtual SqlCommand CreateRemoveStateItemCmd(string id, object lockid)
-        {
-            var cmd = CreateSqlCommand(RemoveStateItemSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddLockCookieParameter(lockid);
-
-            return cmd;
-        }
-
-        protected virtual SqlCommand CreateResetItemTimeoutCmd(string id)
-        {
-            var cmd = CreateSqlCommand(ResetItemTimeoutSql);
-            cmd.Parameters.AddSessionIdParameter(id);
-
-            return cmd;
-        }
-
-        protected virtual SqlCommand CreateUpdateStateItemShortCmd(string id, byte[] buf, int length, int timeout, int lockCookie)
-        {
-            var cmd = CreateSqlCommand(UpdateStateItemShortSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemShortParameter(length, buf)
-                          .AddTimeoutParameter(timeout)
-                          .AddLockCookieParameter(lockCookie);
-
-            return cmd;
-        }
-
-        protected virtual SqlCommand CreateUpdateStateItemShortNullLongCmd(string id, byte[] buf, int length, int timeout, int lockCookie)
-        {
-            var cmd = CreateSqlCommand(UpdateStateItemShortNullLongSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemShortParameter(length, buf)
-                          .AddTimeoutParameter(timeout)
-                          .AddLockCookieParameter(lockCookie);
-
-            return cmd;
-        }
-
-        protected virtual SqlCommand CreateUpdateStateItemLongNullShortCmd(string id, byte[] buf, int length, int timeout, int lockCookie)
-        {
-            var cmd = CreateSqlCommand(UpdateStateItemLongNullShortSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemLongParameter(length, buf)
-                          .AddTimeoutParameter(timeout)
-                          .AddLockCookieParameter(lockCookie);
-
-            return cmd;
-        }
-
-        protected virtual SqlCommand CreateUpdateStateItemLongCmd(string id, byte[] buf, int length, int timeout, int lockCookie)
-        {
-            var cmd = CreateSqlCommand(UpdateStateItemLongSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemLongParameter(length, buf)
-                          .AddTimeoutParameter(timeout)
-                          .AddLockCookieParameter(lockCookie);
-
-            return cmd;
-        }
-
-        protected virtual SqlCommand CreateInsertStateItemShortCmd(string id, byte[] buf, int length, int timeout)
-        {
-            var cmd = CreateSqlCommand(InsertStateItemShortSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemShortParameter(length, buf)
-                          .AddTimeoutParameter(timeout);
-
-            return cmd;
-        }
-
-        protected virtual SqlCommand CreateInsertStateItemLongCmd(string id, byte[] buf, int length, int timeout)
-        {
-            var cmd = CreateSqlCommand(InsertStateItemLongSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemLongParameter(length, buf)
-                          .AddTimeoutParameter(timeout);
-
-            return cmd;
-        }
-
-        protected virtual SqlCommand CreateDeleteExpiredSessionsCmd()
-        {
-            return CreateSqlCommand(DeleteExpiredSessionsSql);
-        }
-
-        protected SqlCommand CreateSqlCommand(string sql)
-        {
-            return new SqlCommand()
-            {
-                CommandType = CommandType.Text,
-                CommandTimeout = commandTimeout,
-                CommandText = sql
-            };
-        }
+        
     }    
 }

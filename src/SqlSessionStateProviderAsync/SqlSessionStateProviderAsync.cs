@@ -1,7 +1,4 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-
-namespace Microsoft.AspNet.SessionState
+﻿namespace Microsoft.AspNet.SessionState
 {
     using System;
     using System.Threading.Tasks;
@@ -14,7 +11,6 @@ namespace Microsoft.AspNet.SessionState
     using System.IO.Compression;
     using System.Diagnostics;
     using System.Web.Configuration;
-    using System.Security;
     using System.Configuration.Provider;
     using System.Collections.Specialized;
     using Resources;
@@ -24,8 +20,10 @@ namespace Microsoft.AspNet.SessionState
     /// </summary>
     public class SqlSessionStateProviderAsync : SessionStateStoreProviderAsyncBase
     {
-        private const string InMemoryTableConfigurationName = "UseInMemoryTable";
-        private const string ConnectionStringNameConfigurationName = "connectionStringName";
+        private const string INMEMORY_TABLE_CONFIGURATION_NAME = "UseInMemoryTable";
+        private const string MAX_RETRY_NUMBER_CONFIGURATION_NAME = "MaxRetryNumber";
+        private const string RETRY_INTERVAL_CONFIGURATION_NAME = "RetryInterval";
+        private const string CONNECTIONSTRING_NAME_CONFIGURATION_NAME = "connectionStringName";
         private const double SessionExpiresFrequencyCheckIntervalTicks = 30 * TimeSpan.TicksPerSecond;
         private static long s_lastSessionPurgeTicks;
         private static int s_inPurge;
@@ -61,20 +59,19 @@ namespace Microsoft.AspNet.SessionState
                 {
                     if(!s_oneTimeInited)
                     {
-                        var connectionString = GetConnectionString(config[ConnectionStringNameConfigurationName]);
+                        var connectionString = GetConnectionString(config[CONNECTIONSTRING_NAME_CONFIGURATION_NAME]);
                         SessionStateSection ssc = (SessionStateSection)ConfigurationManager.GetSection("system.web/sessionState");
                         s_compressionEnabled = ssc.CompressionEnabled;
-                        SqlCommandInvoker.Initialize(connectionString.ConnectionString, ssc.SqlConnectionRetryInterval);
 
-                        var useInMemoryTable = false;
-                        if (config[InMemoryTableConfigurationName] != null && 
-                            bool.TryParse(config[InMemoryTableConfigurationName], out useInMemoryTable) && useInMemoryTable)
+                        if (ShouldUseInMemoryTable(config))
                         {
-                            s_sqlSessionStateRepository = new SqlInMemoryTableSessionStateRepository((int)ssc.SqlCommandTimeout.TotalSeconds);
+                            s_sqlSessionStateRepository = new SqlInMemoryTableSessionStateRepository(connectionString.ConnectionString,
+                                (int)ssc.SqlCommandTimeout.TotalSeconds, GetRetryInterval(config), GetMaxRetryNum(config));
                         }
                         else
                         {
-                            s_sqlSessionStateRepository = new SqlSessionStateRepository((int)ssc.SqlCommandTimeout.TotalSeconds);
+                            s_sqlSessionStateRepository = new SqlSessionStateRepository(connectionString.ConnectionString, 
+                                (int)ssc.SqlCommandTimeout.TotalSeconds, GetRetryInterval(config), GetMaxRetryNum(config));
                         }
                         s_sqlSessionStateRepository.CreateSessionStateTable();
 
@@ -85,6 +82,35 @@ namespace Microsoft.AspNet.SessionState
                     }
                 }
             }
+        }
+
+        private bool ShouldUseInMemoryTable(NameValueCollection config)
+        {
+            var useInMemoryTable = false;
+            var val = config[INMEMORY_TABLE_CONFIGURATION_NAME];
+            return (val != null && bool.TryParse(val, out useInMemoryTable) && useInMemoryTable);
+        }
+
+        private int? GetMaxRetryNum(NameValueCollection config)
+        {
+            int maxRetryNum;
+            var val = config[MAX_RETRY_NUMBER_CONFIGURATION_NAME];
+            if (val != null && int.TryParse(val, out maxRetryNum))
+            {
+                return maxRetryNum;
+            }
+            return null;
+        }
+
+        private int? GetRetryInterval(NameValueCollection config)
+        {
+            int retryInterval;
+            var val = config[RETRY_INTERVAL_CONFIGURATION_NAME];
+            if(val != null && int.TryParse(val, out retryInterval))
+            {
+                return retryInterval;
+            }
+            return null;
         }
 
         /// <summary>

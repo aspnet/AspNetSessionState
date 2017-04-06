@@ -69,12 +69,13 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>SR.resx</DependentUpon>
     </Compile>
+    <Compile Include="SqlCommandExtension.cs" />
+    <Compile Include="SqlCommandHelper.cs" />
     <Compile Include="SqlInMemoryTableSessionStateRepository.cs" />
     <Compile Include="SqlParameterCollectionExtension.cs" />
     <Compile Include="SqlSessionStateProviderAsync.cs" />
     <Compile Include="SqlSessionStateRepository.cs" />
     <Compile Include="SqlSessionStateRepositoryUtil.cs" />
-    <Compile Include="SqlCommandInvoker.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="35MSSharedLib1024.snk" />
