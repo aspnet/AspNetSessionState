@@ -18,7 +18,6 @@
         LockCookie,
         Timeout,
         Locked,
-        SessionItemShort,
         SessionItemLong,
         Flags,
         LockAge,
@@ -56,12 +55,13 @@
 
         public static readonly string TableName = "ASPStateTempSessions";
         public static readonly int IdLength = 88;
-        public static readonly int ItemShortLength = 7000;
+        public static readonly int DefaultItemLength = 7000;
 
         public static async Task<int> SqlExecuteNonQueryWithRetryAsync(SqlConnection connection, SqlCommand sqlCmd, 
             Func<RetryCheckParameter, bool> canRetry, bool ignoreInsertPKException = false)
         {
             var retryParamenter = new RetryCheckParameter() { EndRetryTime = DateTime.UtcNow, RetryCount = 0 };
+            sqlCmd.Connection = connection;
 
             while (true)
             {
@@ -93,6 +93,7 @@
             CommandBehavior cmdBehavior = CommandBehavior.Default)
         {
             var retryParamenter = new RetryCheckParameter() { EndRetryTime = DateTime.UtcNow, RetryCount = 0 };
+            sqlCmd.Connection = connection;
 
             while (true)
             {

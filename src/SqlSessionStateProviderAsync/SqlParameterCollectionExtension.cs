@@ -14,25 +14,7 @@
 
             return pc;
         }
-
-        public static SqlParameterCollection AddSessionItemShortParameter(this SqlParameterCollection pc, int length = 0, byte[] buf = null)
-        {
-            var param = new SqlParameter($"@{SqlParameterName.SessionItemShort}", SqlDbType.VarBinary, SqlSessionStateRepositoryUtil.ItemShortLength);
-            if (buf != null)
-            {
-                param.Value = buf;
-                param.Size = length;
-            }
-            else
-            {
-                param.Direction = ParameterDirection.Output;
-                param.Value = Convert.DBNull;
-            }
-            pc.Add(param);
-
-            return pc;
-        }
-
+        
         public static SqlParameterCollection AddLockedParameter(this SqlParameterCollection pc)
         {
             var param = new SqlParameter($"@{SqlParameterName.Locked}", SqlDbType.Bit);

@@ -21,7 +21,6 @@
         {
             var cmd = CreateSqlCommand(getStateItemExclusiveSql);
             cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemShortParameter()
                           .AddLockAgeParameter()
                           .AddLockedParameter()
                           .AddLockCookieParameter()
@@ -34,7 +33,6 @@
         {
             var cmd = CreateSqlCommand(getStateItemSql);
             cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemShortParameter()
                           .AddLockedParameter()
                           .AddLockAgeParameter()
                           .AddLockCookieParameter()
@@ -53,7 +51,7 @@
         {
             var cmd = CreateSqlCommand(tempInsertUninitializedItemSql);
             cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemShortParameter(length, buf)
+                          .AddSessionItemLongParameter(length, buf)
                           .AddTimeoutParameter(timeout);
 
             return cmd;
@@ -85,42 +83,6 @@
             return cmd;
         }
 
-        public SqlCommand CreateUpdateStateItemShortCmd(string updateStateItemShortSql, 
-            string id, byte[] buf, int length, int timeout, int lockCookie)
-        {
-            var cmd = CreateSqlCommand(updateStateItemShortSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemShortParameter(length, buf)
-                          .AddTimeoutParameter(timeout)
-                          .AddLockCookieParameter(lockCookie);
-
-            return cmd;
-        }
-
-        public SqlCommand CreateUpdateStateItemShortNullLongCmd(string updateStateItemShortNullLongSql, 
-            string id, byte[] buf, int length, int timeout, int lockCookie)
-        {
-            var cmd = CreateSqlCommand(updateStateItemShortNullLongSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemShortParameter(length, buf)
-                          .AddTimeoutParameter(timeout)
-                          .AddLockCookieParameter(lockCookie);
-
-            return cmd;
-        }
-
-        public SqlCommand CreateUpdateStateItemLongNullShortCmd(string updateStateItemLongNullShortSql, 
-            string id, byte[] buf, int length, int timeout, int lockCookie)
-        {
-            var cmd = CreateSqlCommand(updateStateItemLongNullShortSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemLongParameter(length, buf)
-                          .AddTimeoutParameter(timeout)
-                          .AddLockCookieParameter(lockCookie);
-
-            return cmd;
-        }
-
         public SqlCommand CreateUpdateStateItemLongCmd(string updateStateItemLongSql, 
             string id, byte[] buf, int length, int timeout, int lockCookie)
         {
@@ -132,18 +94,7 @@
 
             return cmd;
         }
-
-        public SqlCommand CreateInsertStateItemShortCmd(string insertStateItemShortSql, 
-            string id, byte[] buf, int length, int timeout)
-        {
-            var cmd = CreateSqlCommand(insertStateItemShortSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemShortParameter(length, buf)
-                          .AddTimeoutParameter(timeout);
-
-            return cmd;
-        }
-
+        
         public SqlCommand CreateInsertStateItemLongCmd(string insertStateItemLongSql, 
             string id, byte[] buf, int length, int timeout)
         {

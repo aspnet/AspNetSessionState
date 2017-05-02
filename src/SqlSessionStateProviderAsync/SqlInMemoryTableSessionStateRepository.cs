@@ -3,6 +3,7 @@
     using Resources;
     using System;
     using System.Data.SqlClient;
+    using System.Diagnostics;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Web;
@@ -35,7 +36,6 @@
                 LockCookie          int             NOT NULL,
                 Timeout             int             NOT NULL,
                 Locked              bit             NOT NULL,
-                SessionItemShort    varbinary({SqlSessionStateRepositoryUtil.ItemShortLength}) NULL,
                 SessionItemLong     varbinary(max)           NULL,
                 Flags               int             NOT NULL DEFAULT 0,
                 INDEX [Index_Expires] NONCLUSTERED 
@@ -52,96 +52,94 @@
 
         #region GetStateItemExclusive            
         private static readonly string GetStateItemExclusiveSql = $@"
-                DECLARE @textptr AS varbinary(max)
-                DECLARE @length AS int
-                DECLARE @now AS datetime
-                DECLARE @nowLocal AS datetime
+                    DECLARE @textptr AS varbinary(max)
+                    DECLARE @length AS int
+                    DECLARE @now AS datetime
+                    DECLARE @nowLocal AS datetime
 
-                SET @now = GETUTCDATE()
-                SET @nowLocal = GETDATE()
+                    SET @now = GETUTCDATE()
+                    SET @nowLocal = GETDATE()
 
-                DECLARE @LockedCheck bit
-                DECLARE @Flags int
+                    DECLARE @LockedCheck bit
+                    DECLARE @Flags int
 
-                SELECT @LockedCheck = Locked, @Flags = Flags FROM {SqlSessionStateRepositoryUtil.TableName} WHERE SessionID = @{SqlParameterName.SessionId}
-                IF @Flags&1 <> 0
-                BEGIN
-                    SET @actionFlags = 1
-                    UPDATE {SqlSessionStateRepositoryUtil.TableName} SET Flags = Flags & ~1 WHERE SessionID = @{SqlParameterName.SessionId}
-                END
-                ELSE
-                    SET @{SqlParameterName.ActionFlags} = 0
+                    SELECT @LockedCheck = Locked, @Flags = Flags 
+                        FROM {SqlSessionStateRepositoryUtil.TableName}
+                        WHERE SessionID = @{SqlParameterName.SessionId}
+                    IF @Flags&1 <> 0
+                    BEGIN
+                        SET @actionFlags = 1
+                        UPDATE {SqlSessionStateRepositoryUtil.TableName}
+                            SET Flags = Flags & ~1 WHERE SessionID = @{SqlParameterName.SessionId}
+                    END
+                    ELSE
+                        SET @{SqlParameterName.ActionFlags} = 0
 
-                IF @LockedCheck = 1
-                BEGIN
-                    UPDATE {SqlSessionStateRepositoryUtil.TableName}
-                    SET Expires = DATEADD(n, Timeout, @now), 
-                        @{SqlParameterName.LockAge} = DATEDIFF(second, LockDate, @now),
-                        @{SqlParameterName.LockCookie} = LockCookie,
-                        @{SqlParameterName.SessionItemShort} = NULL,
-                        --@textptr = NULL,
-                        @length = NULL,
-                        @{SqlParameterName.Locked} = 1
-                    WHERE SessionId = @{SqlParameterName.SessionId}
-                END
-                ELSE
-                BEGIN
-                    UPDATE {SqlSessionStateRepositoryUtil.TableName}
-                    SET Expires = DATEADD(n, Timeout, @now), 
-                        LockDate = @now,
-                        LockDateLocal = @nowlocal,
-                        @{SqlParameterName.LockAge} = 0,
-                        @{SqlParameterName.LockCookie} = LockCookie = LockCookie + 1,
-                        @{SqlParameterName.SessionItemShort} = SessionItemShort,
-                        @textptr = SessionItemLong,
-                        @length = 1,
-                        @{SqlParameterName.Locked} = 0,
-                        Locked = 1
-                    WHERE SessionId = @{SqlParameterName.SessionId}
+                    IF @LockedCheck = 1
+                    BEGIN
+                        UPDATE {SqlSessionStateRepositoryUtil.TableName}
+                        SET Expires = DATEADD(n, Timeout, @now), 
+                            @{SqlParameterName.LockAge} = DATEDIFF(second, LockDate, @now),
+                            @{SqlParameterName.LockCookie} = LockCookie,
+                            --@textptr = NULL,
+                            @length = NULL,
+                            @{SqlParameterName.Locked} = 1
+                        WHERE SessionId = @{SqlParameterName.SessionId}
+                    END
+                    ELSE
+                    BEGIN
+                        UPDATE {SqlSessionStateRepositoryUtil.TableName}
+                        SET Expires = DATEADD(n, Timeout, @now), 
+                            LockDate = @now,
+                            LockDateLocal = @nowlocal,
+                            @{SqlParameterName.LockAge} = 0,
+                            @{SqlParameterName.LockCookie} = LockCookie = LockCookie + 1,
+                            @textptr = SessionItemLong,
+                            @length = 1,
+                            @{SqlParameterName.Locked} = 0,
+                            Locked = 1
+                        WHERE SessionId = @{SqlParameterName.SessionId}
 
-                    IF @TextPtr IS NOT NULL
-                        SELECT @TextPtr
-                END";
+                        IF @TextPtr IS NOT NULL
+                            SELECT @TextPtr
+                    END
+                ";
         #endregion
 
         #region GetStateItem            
-        private static readonly string GetStateItemSql = $@"
-                DECLARE @textptr AS varbinary(max)
-                DECLARE @length AS int
-                DECLARE @now AS datetime
-                SET @now = GETUTCDATE()
+        private static readonly string GetStateItemSql = $@"                
+                    DECLARE @textptr AS varbinary(max)
+                    DECLARE @length AS int
+                    DECLARE @now AS datetime
+                    SET @now = GETUTCDATE()
 
-                UPDATE {SqlSessionStateRepositoryUtil.TableName}
-                SET Expires = DATEADD(n, Timeout, @now), 
-                    @{SqlParameterName.Locked} = Locked,
-                    @{SqlParameterName.LockAge} = DATEDIFF(second, LockDate, @now),
-                    @{SqlParameterName.LockCookie} = LockCookie,
-                    @{SqlParameterName.SessionItemShort} = CASE @{SqlParameterName.Locked}
-                        WHEN 0 THEN SessionItemShort
-                        ELSE NULL
-                        END,
-                    @textptr = CASE @{SqlParameterName.Locked}
-                        WHEN 0 THEN SessionItemLong
-                        ELSE NULL
-                        END,
-                    @length = CASE @{SqlParameterName.Locked}
-                        WHEN 0 THEN DATALENGTH(SessionItemLong)
-                        ELSE NULL
-                        END,
-                        /* If the Uninitialized flag (0x1) if it is set,
-                        remove it and return InitializeItem (0x1) in actionFlags */
-                    Flags = CASE
-                        WHEN (Flags & 1) <> 0 THEN (Flags & ~1)
-                        ELSE Flags
-                        END,
-                    @{SqlParameterName.ActionFlags} = CASE
-                        WHEN (Flags & 1) <> 0 THEN 1
-                        ELSE 0
-                        END
-                WHERE SessionId = @{SqlParameterName.SessionId}
-                IF @length IS NOT NULL BEGIN
-                    SELECT @textptr
-                END
+                    UPDATE {SqlSessionStateRepositoryUtil.TableName}
+                    SET Expires = DATEADD(n, Timeout, @now), 
+                        @{SqlParameterName.Locked} = Locked,
+                        @{SqlParameterName.LockAge} = DATEDIFF(second, LockDate, @now),
+                        @{SqlParameterName.LockCookie} = LockCookie,                   
+                        @textptr = CASE @{SqlParameterName.Locked}
+                            WHEN 0 THEN SessionItemLong
+                            ELSE NULL
+                            END,
+                        @length = CASE @{SqlParameterName.Locked}
+                            WHEN 0 THEN DATALENGTH(SessionItemLong)
+                            ELSE NULL
+                            END,
+                            /* If the Uninitialized flag (0x1) if it is set,
+                            remove it and return InitializeItem (0x1) in actionFlags */
+                        Flags = CASE
+                            WHEN (Flags & 1) <> 0 THEN (Flags & ~1)
+                            ELSE Flags
+                            END,
+                        @{SqlParameterName.ActionFlags} = CASE
+                            WHEN (Flags & 1) <> 0 THEN 1
+                            ELSE 0
+                            END
+                    WHERE SessionId = @{SqlParameterName.SessionId}
+                    IF @length IS NOT NULL BEGIN
+                        SELECT @textptr
+                    END
             ";
         #endregion
 
@@ -197,7 +195,7 @@
             SET @nowLocal = GETDATE()
 
             INSERT {SqlSessionStateRepositoryUtil.TableName} (SessionId, 
-                 SessionItemShort, 
+                 SessionItemLong,
                  Timeout, 
                  Expires, 
                  Locked, 
@@ -207,7 +205,7 @@
                  Flags) 
             VALUES
                 (@{SqlParameterName.SessionId},
-                 @{SqlParameterName.SessionItemShort},
+                 @{SqlParameterName.SessionItemLong},
                  @{SqlParameterName.Timeout},
                  DATEADD(n, @{SqlParameterName.Timeout}, @now),
                  0,
@@ -237,39 +235,7 @@
             SET Expires = DATEADD(n, Timeout, GETUTCDATE())
             WHERE SessionId = @{SqlParameterName.SessionId}";
         #endregion
-
-        #region UpdateStateItemShort
-        private static readonly string UpdateStateItemShortSql = $@"
-            UPDATE {SqlSessionStateRepositoryUtil.TableName}
-            SET Expires = DATEADD(n, @{SqlParameterName.Timeout}, GETUTCDATE()), 
-                SessionItemShort = @{SqlParameterName.SessionItemShort}, 
-                Timeout = @{SqlParameterName.Timeout},
-                Locked = 0
-            WHERE SessionId = @{SqlParameterName.SessionId} AND LockCookie = @{SqlParameterName.LockCookie}";
-        #endregion
-
-        #region UpdateStateItemShortNullLong
-        private static readonly string UpdateStateItemShortNullLongSql = $@"
-            UPDATE {SqlSessionStateRepositoryUtil.TableName}
-            SET Expires = DATEADD(n, @{SqlParameterName.Timeout}, GETUTCDATE()), 
-                SessionItemShort = @{SqlParameterName.SessionItemShort}, 
-                SessionItemLong = NULL, 
-                Timeout = @{SqlParameterName.Timeout},
-                Locked = 0
-            WHERE SessionId = @{SqlParameterName.SessionId} AND LockCookie = @{SqlParameterName.LockCookie}";
-        #endregion
-
-        #region UpdateStateItemLongNullShort
-        private static readonly string UpdateStateItemLongNullShortSql = $@"
-            UPDATE {SqlSessionStateRepositoryUtil.TableName}
-            SET Expires = DATEADD(n, @{SqlParameterName.Timeout}, GETUTCDATE()), 
-                SessionItemLong = @{SqlParameterName.SessionItemLong}, 
-                SessionItemShort = NULL,
-                Timeout = @{SqlParameterName.Timeout},
-                Locked = 0
-            WHERE SessionId = @{SqlParameterName.SessionId} AND LockCookie = @{SqlParameterName.LockCookie}";
-        #endregion
-
+        
         #region UpdateStateItemLong
         private static readonly string UpdateStateItemLongSql = $@"
             UPDATE {SqlSessionStateRepositoryUtil.TableName}
@@ -278,34 +244,6 @@
                 Timeout = @{SqlParameterName.Timeout},
                 Locked = 0
             WHERE SessionId = @{SqlParameterName.SessionId} AND LockCookie = @{SqlParameterName.LockCookie}";
-        #endregion
-
-        #region InsertStateItemShort
-        private static readonly string InsertStateItemShortSql = $@"
-            DECLARE @now AS datetime
-            DECLARE @nowLocal AS datetime
-            
-            SET @now = GETUTCDATE()
-            SET @nowLocal = GETDATE()
-
-            INSERT {SqlSessionStateRepositoryUtil.TableName} 
-                (SessionId, 
-                 SessionItemShort, 
-                 Timeout, 
-                 Expires, 
-                 Locked, 
-                 LockDate,
-                 LockDateLocal,
-                 LockCookie) 
-            VALUES 
-                (@{SqlParameterName.SessionId}, 
-                 @{SqlParameterName.SessionItemShort}, 
-                 @{SqlParameterName.Timeout}, 
-                 DATEADD(n, @{SqlParameterName.Timeout}, @now), 
-                 0, 
-                 @now,
-                 @nowLocal,
-                 1)";
         #endregion
 
         #region InsertStateItemLong
@@ -359,10 +297,13 @@
                 catch (Exception ex)
                 {
                     // Indicate that the DB doesn't support InMemoryTable
-                    var innerException = ex.InnerException as SqlException;
-                    if (innerException != null && innerException.Number == 40536)
+                    var sqlException = ex as SqlException;
+                    if (sqlException != null && 
+                        // 40536 error code from SQL Azure
+                        // 41337 error code from SQL server
+                        (sqlException.Number == 40536 || sqlException.Number == 41337))
                     {
-                        throw innerException;
+                        throw sqlException;
                     }
                     else
                     {
@@ -431,10 +372,7 @@
                 }
                 actions = (SessionStateActions)cmd.GetOutPutParameterValue(SqlParameterName.ActionFlags).Value;
 
-                if (buf == null)
-                {
-                    buf = (byte[])cmd.GetOutPutParameterValue(SqlParameterName.SessionItemShort).Value;
-                }
+                Debug.Assert(buf != null);
 
                 return new SessionItem(buf, true, lockAge, lockId, actions);
             }
@@ -447,24 +385,11 @@
 
             if (!newItem)
             {
-                if (length <= SqlSessionStateRepositoryUtil.ItemShortLength)
-                {
-                    cmd = orginalStreamLen <= SqlSessionStateRepositoryUtil.ItemShortLength ?
-                        _commandHelper.CreateUpdateStateItemShortCmd(UpdateStateItemShortSql, id, buf, length, timeout, lockCookie) :
-                        _commandHelper.CreateUpdateStateItemShortNullLongCmd(UpdateStateItemShortNullLongSql, id, buf, length, timeout, lockCookie);
-                }
-                else
-                {
-                    cmd = orginalStreamLen <= SqlSessionStateRepositoryUtil.ItemShortLength ?
-                        _commandHelper.CreateUpdateStateItemLongNullShortCmd(UpdateStateItemLongNullShortSql, id, buf, length, timeout, lockCookie) :
-                        _commandHelper.CreateUpdateStateItemLongCmd(UpdateStateItemLongSql, id, buf, length, timeout, lockCookie);
-                }
+                cmd = _commandHelper.CreateUpdateStateItemLongCmd(UpdateStateItemLongSql, id, buf, length, timeout, lockCookie);
             }
             else
             {
-                cmd = length <= SqlSessionStateRepositoryUtil.ItemShortLength ?
-                    _commandHelper.CreateInsertStateItemShortCmd(InsertStateItemShortSql, id, buf, length, timeout) :
-                    _commandHelper.CreateInsertStateItemLongCmd(InsertStateItemLongSql, id, buf, length, timeout);
+                cmd = _commandHelper.CreateInsertStateItemLongCmd(InsertStateItemLongSql, id, buf, length, timeout);
             }
 
             using (var connection = new SqlConnection(_connectString))

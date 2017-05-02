@@ -153,7 +153,7 @@
                         SessionStateUtility.GetSessionStaticObjects(context.ApplicationInstance.Context),
                         timeout);
 
-            SerializeStoreData(item, SqlSessionStateRepositoryUtil.ItemShortLength, out buf, out length, s_compressionEnabled);
+            SerializeStoreData(item, SqlSessionStateRepositoryUtil.DefaultItemLength, out buf, out length, s_compressionEnabled);
             await s_sqlSessionStateRepository.CreateUninitializedSessionItemAsync(id, length, buf, timeout);
         }
 
@@ -282,7 +282,7 @@
 
             try
             {
-                SerializeStoreData(item, SqlSessionStateRepositoryUtil.ItemShortLength, out buf, out length, s_compressionEnabled);
+                SerializeStoreData(item, SqlSessionStateRepositoryUtil.DefaultItemLength, out buf, out length, s_compressionEnabled);
             }
             catch
             {
