@@ -61,6 +61,15 @@ namespace Microsoft.AspNet.SessionState.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unable to connect to SQL Server session database..
+        /// </summary>
+        internal static string Cant_connect_sql_session_database {
+            get {
+                return ResourceManager.GetString("Cant_connect_sql_session_database", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The attribute &apos;connectionStringName&apos; is missing or empty..
         /// </summary>
         internal static string Connection_name_not_specified {
@@ -84,6 +93,15 @@ namespace Microsoft.AspNet.SessionState.Resources {
         internal static string Invalid_session_state {
             get {
                 return ResourceManager.GetString("Invalid_session_state", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to login to session state SQL server for user &apos;{0}&apos;..
+        /// </summary>
+        internal static string Login_failed_sql_session_database {
+            get {
+                return ResourceManager.GetString("Login_failed_sql_session_database", resourceCulture);
             }
         }
         

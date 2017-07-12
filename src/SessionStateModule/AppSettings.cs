@@ -22,6 +22,12 @@ namespace Microsoft.AspNet.SessionState
             {
                 _requestQueueLimitPerSession = DefaultRequestQueueLimitPerSession;
             }
+
+            //
+            // AllowConcurrentRequests
+            //
+            string allowConcurrentRequestPerSession = appSettings["aspnet:AllowConcurrentRequestsPerSession"];
+            bool.TryParse(allowConcurrentRequestPerSession, out _allowConcurrentRequestsPerSession);
         }
 
         private static void EnsureSettingsLoaded()
@@ -60,6 +66,16 @@ namespace Microsoft.AspNet.SessionState
             {
                 EnsureSettingsLoaded();
                 return _requestQueueLimitPerSession;
+            }
+        }
+
+        private static bool _allowConcurrentRequestsPerSession = false;
+        public static bool AllowConcurrentRequestsPerSession
+        {
+            get
+            {
+                EnsureSettingsLoaded();
+                return _allowConcurrentRequestsPerSession;
             }
         }
     }

@@ -10,13 +10,13 @@
     <BuildQuality Condition="'$(BuildQuality)' == ''">rtm</BuildQuality>
     <VersionStartYear>2016</VersionStartYear>
     <VersionMajor>1</VersionMajor>
-    <VersionMinor>0</VersionMinor>
+    <VersionMinor>1</VersionMinor>
     <VersionRelease>0</VersionRelease>
     <VersionRelease Condition="'$(BuildQuality)' != 'rtm'">$(VersionRelease)-$(BuildQuality)</VersionRelease>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet package dependencies">
-    <SessionStateModuleNuGetPackageVersion>1.0.0</SessionStateModuleNuGetPackageVersion>
+    <SessionStateModuleNuGetPackageVersion>1.1.0</SessionStateModuleNuGetPackageVersion>
     <EntityFrameworkNuGetPackageVersion>6.1.3</EntityFrameworkNuGetPackageVersion>
   </PropertyGroup>
 

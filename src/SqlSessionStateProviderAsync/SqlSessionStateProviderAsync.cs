@@ -1,10 +1,6 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-
-namespace Microsoft.AspNet.SessionState
+﻿namespace Microsoft.AspNet.SessionState
 {
     using System;
-    using System.Linq;
     using System.Threading.Tasks;
     using System.Threading;
     using System.Web;
@@ -15,11 +11,8 @@ namespace Microsoft.AspNet.SessionState
     using System.IO.Compression;
     using System.Diagnostics;
     using System.Web.Configuration;
-    using System.Security;
     using System.Configuration.Provider;
     using System.Collections.Specialized;
-    using System.Data.Entity.Infrastructure;
-    using Entities;
     using Resources;
 
     /// <summary>
@@ -27,15 +20,21 @@ namespace Microsoft.AspNet.SessionState
     /// </summary>
     public class SqlSessionStateProviderAsync : SessionStateStoreProviderAsyncBase
     {
-        private const int ItemShortLength = 7000;
+        private const string INMEMORY_TABLE_CONFIGURATION_NAME = "UseInMemoryTable";
+        private const string MAX_RETRY_NUMBER_CONFIGURATION_NAME = "MaxRetryNumber";
+        private const string RETRY_INTERVAL_CONFIGURATION_NAME = "RetryInterval";
+        private const string CONNECTIONSTRING_NAME_CONFIGURATION_NAME = "connectionStringName";
         private const double SessionExpiresFrequencyCheckIntervalTicks = 30 * TimeSpan.TicksPerSecond;
         private static long s_lastSessionPurgeTicks;
-        private static string s_appSuffix;
         private static int s_inPurge;
-
-        private ConnectionStringSettings ConnectionString { get; set; }
-        private bool CompressionEnabled { get; set; }
-
+        private static string s_appSuffix;
+        private static bool s_compressionEnabled;
+        private static bool s_oneTimeInited = false;
+        private static object s_lock = new object();
+        private static ISqlSessionStateRepository s_sqlSessionStateRepository;
+        
+        private int _rqOrigStreamLen;
+                
         /// <summary>
         /// Initialize the provider through the configuration
         /// </summary>
@@ -54,33 +53,64 @@ namespace Microsoft.AspNet.SessionState
 
             base.Initialize(name, config);
 
-            ConnectionString = ModelHelper.GetConnectionString(config["connectionStringName"]);
-            config.Remove("connectionStringName");
-
-            try
+            if (!s_oneTimeInited)
             {
-                SessionStateSection ssc = (SessionStateSection)ConfigurationManager.GetSection("system.web/sessionState");
-                CompressionEnabled = ssc.CompressionEnabled;
-            }
-            catch (SecurityException)
-            {
-                // We don't want to blow up in medium trust, just turn compression enabled off instead
-            }
-
-            if (config.Count > 0)
-            {
-                string key = config.GetKey(0);
-                if (!string.IsNullOrEmpty(key))
+                lock (s_lock)
                 {
-                    throw new ProviderException(String.Format(CultureInfo.CurrentCulture, SR.Provider_unrecognized_attribute, key));
+                    if(!s_oneTimeInited)
+                    {
+                        var connectionString = GetConnectionString(config[CONNECTIONSTRING_NAME_CONFIGURATION_NAME]);
+                        SessionStateSection ssc = (SessionStateSection)ConfigurationManager.GetSection("system.web/sessionState");
+                        s_compressionEnabled = ssc.CompressionEnabled;
+
+                        if (ShouldUseInMemoryTable(config))
+                        {
+                            s_sqlSessionStateRepository = new SqlInMemoryTableSessionStateRepository(connectionString.ConnectionString,
+                                (int)ssc.SqlCommandTimeout.TotalSeconds, GetRetryInterval(config), GetMaxRetryNum(config));
+                        }
+                        else
+                        {
+                            s_sqlSessionStateRepository = new SqlSessionStateRepository(connectionString.ConnectionString, 
+                                (int)ssc.SqlCommandTimeout.TotalSeconds, GetRetryInterval(config), GetMaxRetryNum(config));
+                        }
+                        s_sqlSessionStateRepository.CreateSessionStateTable();
+
+                        Debug.Assert(HttpRuntime.AppDomainAppId != null);
+                        s_appSuffix = HttpRuntime.AppDomainAppId.GetHashCode().ToString("X8", CultureInfo.InvariantCulture);
+
+                        s_oneTimeInited = true;
+                    }
                 }
             }
+        }
 
-            if (s_appSuffix == null)
+        private bool ShouldUseInMemoryTable(NameValueCollection config)
+        {
+            var useInMemoryTable = false;
+            var val = config[INMEMORY_TABLE_CONFIGURATION_NAME];
+            return (val != null && bool.TryParse(val, out useInMemoryTable) && useInMemoryTable);
+        }
+
+        private int? GetMaxRetryNum(NameValueCollection config)
+        {
+            int maxRetryNum;
+            var val = config[MAX_RETRY_NUMBER_CONFIGURATION_NAME];
+            if (val != null && int.TryParse(val, out maxRetryNum))
             {
-                string appId = HttpRuntime.AppDomainAppId;
-                s_appSuffix = appId.GetHashCode().ToString("X8", CultureInfo.InvariantCulture);
+                return maxRetryNum;
             }
+            return null;
+        }
+
+        private int? GetRetryInterval(NameValueCollection config)
+        {
+            int retryInterval;
+            var val = config[RETRY_INTERVAL_CONFIGURATION_NAME];
+            if(val != null && int.TryParse(val, out retryInterval))
+            {
+                return retryInterval;
+            }
+            return null;
         }
 
         /// <summary>
@@ -116,26 +146,15 @@ namespace Microsoft.AspNet.SessionState
                 throw new ArgumentException(SR.Session_id_too_long);
             }
             id = AppendAppIdHash(id);
+            byte[] buf;
+            int length;
 
-            using (SessionContext db = ModelHelper.CreateSessionContext(ConnectionString))
-            {
-                var session = await db.Sessions.FindAsync(cancellationToken, id);
-                if (session == null)
-                {
-                    Session s = NewSession(id, timeout, SessionStateActions.InitializeItem);
-                    SessionStateStoreData item = new SessionStateStoreData(new SessionStateItemCollection(),
+            var item = new SessionStateStoreData(new SessionStateItemCollection(),
                         SessionStateUtility.GetSessionStaticObjects(context.ApplicationInstance.Context),
-                        s.Timeout);
-                    SaveItemToSession(s, item, CompressionEnabled);
-                    db.Sessions.Add(s);
-                    try
-                    {
-                        await db.SaveChangesAsync(cancellationToken);
-                    }
-                    // in case mutli-requests with same sessionid need to create uninitialized session item
-                    catch (DbUpdateException) { }
-                }
-            }
+                        timeout);
+
+            SerializeStoreData(item, SqlSessionStateRepositoryUtil.DefaultItemLength, out buf, out length, s_compressionEnabled);
+            await s_sqlSessionStateRepository.CreateUninitializedSessionItemAsync(id, length, buf, timeout);
         }
 
         /// <inheritdoc />
@@ -168,6 +187,7 @@ namespace Microsoft.AspNet.SessionState
         /// <inheritdoc />
         public override void InitializeRequest(HttpContextBase context)
         {
+            _rqOrigStreamLen = 0;
         }
 
         /// <inheritdoc />
@@ -186,12 +206,9 @@ namespace Microsoft.AspNet.SessionState
                 throw new ArgumentException(SR.Session_id_too_long);
             }
 
-            using (SessionContext db = ModelHelper.CreateSessionContext(ConnectionString))
-            {
-                id = AppendAppIdHash(id);
-                await ReleaseItemNoSave(db, id, lockId, cancellationToken);
-                await UpdateEntityWithoutConcurrencyExceptionAsync(db, cancellationToken);
-            }
+            id = AppendAppIdHash(id);
+
+            await s_sqlSessionStateRepository.ReleaseSessionItemAsync(id, lockId);
         }
 
         /// <inheritdoc />
@@ -212,15 +229,8 @@ namespace Microsoft.AspNet.SessionState
             }
 
             id = AppendAppIdHash(id);
-            using (SessionContext db = ModelHelper.CreateSessionContext(ConnectionString))
-            {
-                Session session = await db.Sessions.FindAsync(cancellationToken, id);
-                if (session != null && session.LockCookie == (int)lockId)
-                {
-                    db.Sessions.Remove(session);
-                    await db.SaveChangesAsync(cancellationToken);
-                }
-            }
+
+            await s_sqlSessionStateRepository.RemoveSessionItemAsync(id, lockId);
         }
 
         /// <inheritdoc />
@@ -239,15 +249,8 @@ namespace Microsoft.AspNet.SessionState
             }
 
             id = AppendAppIdHash(id);
-            using (SessionContext db = ModelHelper.CreateSessionContext(ConnectionString))
-            {
-                Session session = await db.Sessions.FindAsync(cancellationToken, id);
-                if (session != null)
-                {
-                    session.Expires = DateTime.UtcNow.AddMinutes(session.Timeout);
-                    await UpdateEntityWithoutConcurrencyExceptionAsync(db, cancellationToken);
-                }
-            }
+
+            await s_sqlSessionStateRepository.ResetSessionItemTimeoutAsync(id);
         }
 
         /// <inheritdoc />
@@ -259,6 +262,10 @@ namespace Microsoft.AspNet.SessionState
             bool newItem, 
             CancellationToken cancellationToken)
         {
+            byte[] buf;
+            int length;
+            int lockCookie;
+
             if (item == null)
             {
                 throw new ArgumentNullException("item");
@@ -273,45 +280,57 @@ namespace Microsoft.AspNet.SessionState
             }
             id = AppendAppIdHash(id);
 
-            using (SessionContext db = ModelHelper.CreateSessionContext(ConnectionString))
+            try
             {
-                Session session = await db.Sessions.FindAsync(cancellationToken, id);
-                if (session == null)
-                {
-                    if (newItem)
-                    {
-                        // NOTE: The session will already exist if its expired, so we don't need to recreate
-                        session = NewSession(id, item.Timeout);
-                        db.Sessions.Add(session);
-                    }
-                    else {
-                        if (session == null)
-                        {
-                            throw new InvalidOperationException(SR.Session_not_found);
-                        }
-                    }
-                }
-                else {
-                    if (lockId == null)
-                    {
-                        session.LockCookie = 0;
-                    }
-                    else {
-                        session.LockCookie = (int)lockId;
-                    }
-                    session.Locked = false;
-                    session.Timeout = item.Timeout;
-                }
-
-                SaveItemToSession(session, item, CompressionEnabled);                
-                await UpdateEntityWithoutConcurrencyExceptionAsync(db, cancellationToken);
+                SerializeStoreData(item, SqlSessionStateRepositoryUtil.DefaultItemLength, out buf, out length, s_compressionEnabled);
             }
+            catch
+            {
+                if(!newItem)
+                {
+                    await ReleaseItemExclusiveAsync(context, id, lockId, cancellationToken);
+                }
+                throw;
+            }
+
+            lockCookie = lockId == null ? 0 : (int)lockId;
+
+            await s_sqlSessionStateRepository.CreateOrUpdateSessionStateItemAsync(newItem, id, buf, length, item.Timeout, lockCookie, _rqOrigStreamLen);
         }
 
         /// <inheritdoc />
         public override bool SetItemExpireCallback(System.Web.SessionState.SessionStateItemExpireCallback expireCallback)
         {
             return false;
+        }
+
+        private async Task<GetItemResult> DoGet(HttpContextBase context, string id, bool exclusive, CancellationToken cancellationToken)
+        {
+            if (id.Length > SessionIDManager.SessionIDMaxLength)
+            {
+                throw new ArgumentException(SR.Session_id_too_long);
+            }
+            id = AppendAppIdHash(id);
+            
+            SessionStateStoreData data = null;
+            var sessionItem = await s_sqlSessionStateRepository.GetSessionStateItemAsync(id, exclusive);
+
+            if(sessionItem == null)
+            {
+                return null;
+            }
+            if(sessionItem.Item == null)
+            {
+                return new GetItemResult(null, sessionItem.Locked, sessionItem.LockAge, sessionItem.LockId, sessionItem.Actions);
+            }
+
+            using (var stream = new MemoryStream(sessionItem.Item))
+            {
+                data = DeserializeStoreData(context, stream, s_compressionEnabled);
+                _rqOrigStreamLen = (int)stream.Position;
+            }
+
+            return new GetItemResult(data, sessionItem.Locked, sessionItem.LockAge, sessionItem.LockId, sessionItem.Actions);
         }
 
         // We just want to append an 8 char hash from the AppDomainAppId to prevent any session id collisions
@@ -322,30 +341,7 @@ namespace Microsoft.AspNet.SessionState
                 return id + s_appSuffix;
             }
             return id;
-        }
-
-        private static Session NewSession(string id, int timeout, SessionStateActions action = SessionStateActions.None)
-        {
-            Session s = new Session();
-            DateTime now = DateTime.UtcNow;
-            s.Created = now;
-            s.SessionId = id;
-            s.Timeout = timeout;
-            s.Expires = now.AddMinutes(timeout);
-            s.Locked = false;
-            s.LockDate = now;
-            s.LockCookie = 0;
-            s.Flags = (int)action;
-            return s;
-        }
-
-        private static void SaveItemToSession(Session session, SessionStateStoreData item, bool compression)
-        {
-            byte[] buf = null;
-            int length = 0;
-            SerializeStoreData(item, ItemShortLength, out buf, out length, compression);
-            session.SessionItem = buf;
-        }
+        }        
 
         // Internal code copied from SessionStateUtility
         private static void SerializeStoreData(
@@ -412,120 +408,6 @@ namespace Microsoft.AspNet.SessionState
             writer.Write(unchecked((byte)0xff));
         }
 
-        private bool CanPurge()
-        {
-            return (
-                DateTime.UtcNow.Ticks - s_lastSessionPurgeTicks > SessionExpiresFrequencyCheckIntervalTicks
-                && Interlocked.CompareExchange(ref s_inPurge, 1, 0) == 0
-                );
-        }
-
-        private void PurgeIfNeeded()
-        {
-            // Only check for expired sessions every 30 seconds.
-            if (CanPurge())
-            {
-                Task.Run(() => PurgeExpiredSessions());
-            }
-        }
-
-        private void PurgeExpiredSessions()
-        {
-            try
-            {
-                using (SessionContext db = ModelHelper.CreateSessionContext(ConnectionString))
-                {
-                    var now = DateTime.UtcNow;
-                    var expired = from s in db.Sessions
-                                  where s.Expires < now
-                                  select s;
-                    db.Sessions.RemoveRange(expired);
-                    db.SaveChanges();
-                    s_lastSessionPurgeTicks = now.Ticks;
-                }
-            }
-            catch
-            {
-                // Swallow all failures, this is called from an async Task and we don't want to crash
-            }
-            finally
-            {
-                Interlocked.CompareExchange(ref s_inPurge, 0, 1);
-            }
-        }
-
-        private async Task<GetItemResult> DoGet(HttpContextBase context, string id, bool exclusive, CancellationToken cancellationToken)
-        {
-            if (id.Length > SessionIDManager.SessionIDMaxLength)
-            {
-                throw new ArgumentException(SR.Session_id_too_long);
-            }
-            id = AppendAppIdHash(id);
-            var locked = false;
-            var lockAge = TimeSpan.Zero;
-            object lockId = null;
-            var now = DateTime.UtcNow;
-            SessionStateActions actions = SessionStateActions.None;
-
-            using (SessionContext db = ModelHelper.CreateSessionContext(ConnectionString))
-            {
-                Session session = await db.Sessions.FindAsync(cancellationToken, id);
-                if (session != null && session.Expires > now)
-                {
-                    session.Expires = now.AddMinutes(session.Timeout);
-                    locked = session.Locked;
-                    lockId = session.LockCookie;
-                    SessionStateStoreData item = null;
-
-                    if (locked)
-                    {
-                        lockAge = TimeSpan.FromSeconds((now - session.LockDate).Seconds);
-                    }
-                    else {
-                        // not locked
-                        if (exclusive)
-                        {
-                            session.Locked = true;
-                            session.LockDate = now;
-                        }
-
-                        actions = (SessionStateActions)session.Flags;
-                        session.Flags = (int)SessionStateActions.None;
-
-                        byte[] buf = session.SessionItem;
-                        using (MemoryStream s = new MemoryStream(buf))
-                        {
-                            item = DeserializeStoreData(context, s, CompressionEnabled);
-                        }
-                    }
-                    try
-                    {
-                        await db.SaveChangesAsync(cancellationToken);
-                    }
-                    // whenever we see optimistic concurrency in locking item, treat it as locked
-                    catch (DbUpdateConcurrencyException)
-                    {
-                        return new GetItemResult(null, true, lockAge, lockId, actions); ;
-                    }
-
-                    return new GetItemResult(item, locked, lockAge, lockId, actions);
-                }
-            }
-            return null;
-        }
-
-        private static SessionStateStoreData InitializeSessionItem(HttpContextBase context, Session session, bool compression)
-        {
-            var item = new SessionStateStoreData(
-                new SessionStateItemCollection(),
-                SessionStateUtility.GetSessionStaticObjects(context.ApplicationInstance.Context),
-                session.Timeout);
-            SaveItemToSession(session, item, compression);
-            session.Flags = (int)SessionStateActions.None;
-
-            return item;
-        }
-
         private static SessionStateStoreData DeserializeStoreData(HttpContextBase context, Stream stream, bool compressionEnabled)
         {
             if (compressionEnabled)
@@ -588,42 +470,53 @@ namespace Microsoft.AspNet.SessionState
             return new SessionStateStoreData(sessionItems, staticObjects, timeout);
         }
 
-        private static async Task ReleaseItemNoSave(SessionContext db, string id, object lockId, CancellationToken cancellationToken)
+        private bool CanPurge()
         {
-            // only unlock if we have the lock
-            Session session = await db.Sessions.FindAsync(cancellationToken, id);
-            if (session != null && session.Locked && session.LockCookie == (int)lockId)
+            return (
+                DateTime.UtcNow.Ticks - s_lastSessionPurgeTicks > SessionExpiresFrequencyCheckIntervalTicks
+                && Interlocked.CompareExchange(ref s_inPurge, 1, 0) == 0
+                );
+        }
+
+        private void PurgeIfNeeded()
+        {
+            // Only check for expired sessions every 30 seconds.
+            if (CanPurge())
             {
-                session.Locked = false;
+                Task.Run(() => PurgeExpiredSessions());
             }
         }
 
-        /// <summary>
-        /// Handles optimistic concurrency issue caused multi concurrent requests with same sessionid.
-        /// Always use the value in the entity to overwrite the values in database
-        /// Use this method only when updating ONE entity
-        /// </summary>
-        /// <param name="db"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        private static async Task UpdateEntityWithoutConcurrencyExceptionAsync(SessionContext db, CancellationToken cancellationToken)
+        private void PurgeExpiredSessions()
         {
-            bool saveSucceeded = false;
-            do
+            try
             {
-                try
-                {
-                    await db.SaveChangesAsync(cancellationToken);
-                    saveSucceeded = true;
-                }
-                catch (DbUpdateConcurrencyException ex)
-                {
-                    // Update original values from the database 
-                    var entry = ex.Entries.Single();
-                    entry.OriginalValues.SetValues(entry.GetDatabaseValues());
-                }
-
-            } while (!saveSucceeded);
+                s_sqlSessionStateRepository.DeleteExpiredSessions();
+                s_lastSessionPurgeTicks = DateTime.UtcNow.Ticks;
+            }
+            catch
+            {
+                // Swallow all failures, this is called from an async Task and we don't want to crash
+            }
+            finally
+            {
+                Interlocked.CompareExchange(ref s_inPurge, 0, 1);
+            }
         }
+
+        private static ConnectionStringSettings GetConnectionString(string connectionstringName)
+        {
+            if (string.IsNullOrEmpty(connectionstringName))
+            {
+                throw new ProviderException(SR.Connection_name_not_specified);
+            }
+            ConnectionStringSettings conn = ConfigurationManager.ConnectionStrings[connectionstringName];
+            if (conn == null)
+            {
+                throw new ProviderException(
+                    String.Format(CultureInfo.CurrentCulture, SR.Connection_string_not_found, connectionstringName));
+            }
+            return conn;
+        }        
     }
 }
