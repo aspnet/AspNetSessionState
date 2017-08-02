@@ -125,7 +125,7 @@ namespace Microsoft.AspNet.SessionState
                         InitModuleFromConfig(app, s_config);
                         initModuleCalled = true;
 
-                        s_timeout = (int)s_config.Timeout.TotalMinutes;
+                        s_timeout = (int)s_config.Timeout.TotalSeconds;
 
                         var section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
                         if (section == null)

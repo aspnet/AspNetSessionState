@@ -16,7 +16,7 @@
     using Resources;
 
     /// <summary>
-    /// Async version of SqlSessionState provider based on EF
+    /// Async version of SqlSessionState provider
     /// </summary>
     public class SqlSessionStateProviderAsync : SessionStateStoreProviderAsyncBase
     {

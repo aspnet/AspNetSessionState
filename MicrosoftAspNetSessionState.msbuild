@@ -4,6 +4,7 @@
   <ItemGroup>
     <AssemblyProject Include="src\SessionStateModule\Microsoft.AspNet.SessionState.SessionStateModule.csproj" />
     <AssemblyProject Include="src\SqlSessionStateProviderAsync\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.csproj" />
+    <AssemblyProject Include="src\CosmosDBSessionStateProviderAsync\Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(BuildCoreOnly)' != 'true'">
     <AssemblyProject Include="test\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.Test\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.Test.csproj" />
