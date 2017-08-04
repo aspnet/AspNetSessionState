@@ -26,18 +26,16 @@ namespace Microsoft.AspNet.SessionState
     {
         private static readonly int DefaultItemLength = 7000;
         private static readonly int DefaultLockCookie = 1;
-        private static readonly string PartitionKeyPath = "/appId";
+        private static readonly string PartitionKeyPath = "/partitionKey";
 
         private static bool s_oneTimeInited;
         private static object s_lock = new object();
-        private static string s_appId;
         private static string s_dbName;
         private static string s_collectionID;
-        private static int s_offerThroughput = 1000;
+        private static int s_offerThroughput;
         private static bool s_compressionEnabled;
         private static int s_timeout;
         private static Uri s_documentCollectionUri;
-        private static PartitionKey s_partitionKey;
         private static IDocumentClient s_client;
 
         #region CosmosDB Stored Procedures            
@@ -50,7 +48,7 @@ namespace Microsoft.AspNet.SessionState
         private static readonly string UpdateSessionStateItemSPID = "UpdateSessionStateItem";
 
         private static readonly string CreateSessionStateItemSP = @"
-            function CreateUninitializedItem(sessionId, appId, timeout, lockCookie, sessionItem, uninitialized) {
+            function CreateUninitializedItem(sessionId, partitionKey, timeout, lockCookie, sessionItem, uninitialized) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
                 var response = getContext().getResponse();
@@ -58,8 +56,8 @@ namespace Microsoft.AspNet.SessionState
                 if (!sessionId) {
                     throw new Error('sessionId cannot be null');
                 }
-                if (!appId) {
-                    throw new Error('appId cannot be null');
+                if (!partitionKey) {
+                    throw new Error('partitionKey cannot be null');
                 }
                 if (!timeout) {
                     throw new Error('timeout cannot be null');
@@ -68,7 +66,7 @@ namespace Microsoft.AspNet.SessionState
                     throw new Error('lockCookie cannot be null');
                 }
 
-                var sessionStateItem = { id: sessionId, appId: appId, lockDate: (new Date()).getTime(), lockAge: 0, lockCookie:lockCookie, 
+                var sessionStateItem = { id: sessionId, partitionKey: partitionKey, lockDate: (new Date()).getTime(), lockAge: 0, lockCookie:lockCookie, 
                     ttl: timeout, locked: false, sessionItem: sessionItem, uninitialized: uninitialized };
                 collection.createDocument(collectionLink, sessionStateItem,
                     function (err, documentCreated) {
@@ -113,8 +111,8 @@ namespace Microsoft.AspNet.SessionState
                                 {
                                     throw err;
                                 }
-                                var responseDoc = { id: doc.id, appId: null, lockAge: null, lockCookie: null, ttl: null, 
-                                                    locked: true, sessionItem: null, uninitialized: null };
+                                var responseDoc = { id: doc.id, partitionKey: updatedDocument.partitionKey, lockAge: 0, lockCookie: updatedDocument.lockCookie, ttl: null, 
+                                                locked: true, sessionItem: null, uninitialized: null };
                                 response.setBody(responseDoc);
                             });
                             if (!isAccepted)
@@ -145,7 +143,7 @@ namespace Microsoft.AspNet.SessionState
                     }
                     else
                     {
-                        var responseDoc = { id: '', appId: null, lockAge: null, lockCookie: null, ttl: null, 
+                        var responseDoc = { id: '', partitionKey: null, lockAge: null, lockCookie: null, ttl: null, 
                                             locked: false, sessionItem: null, uninitialized: null };
                         response.setBody(responseDoc);
                     }
@@ -191,7 +189,7 @@ namespace Microsoft.AspNet.SessionState
                                 {
                                     throw err;
                                 }
-                            var responseDoc = { id: doc.id, appId: null, lockAge: null, lockCookie: null, ttl: null, 
+                            var responseDoc = { id: doc.id, partitionKey: null, lockAge: 0, lockCookie: updatedDocument.lockCookie, ttl: null, 
                                                 locked: true, sessionItem: null, uninitialized: null };
                                 response.setBody(responseDoc);
                             });
@@ -202,7 +200,7 @@ namespace Microsoft.AspNet.SessionState
                         }
                         else
                         {
-                            var responseDoc = { id: doc.id, appId: doc.appId, lockAge: doc.lockAge, lockCookie: doc.lockCookie + 1, ttl: doc.ttl,
+                            var responseDoc = { id: doc.id, partitionKey: doc.partitionKey, lockAge: doc.lockAge, lockCookie: doc.lockCookie + 1, ttl: doc.ttl,
                                                 locked: false, sessionItem: doc.sessionItem, uninitialized: doc.uninitialized };
                             doc.lockAge = 0;
                             doc.lockCookie += 1;
@@ -227,7 +225,7 @@ namespace Microsoft.AspNet.SessionState
                     }
                     else
                     {
-                        var responseDoc = { id: '', appId: null, lockAge: null, lockCookie: null, ttl: null, 
+                        var responseDoc = { id: '', partitionKey: null, lockAge: null, lockCookie: null, ttl: null, 
                                             locked: false, sessionItem: null, uninitialized: null };
                         response.setBody(responseDoc);
                     }
@@ -501,8 +499,6 @@ namespace Microsoft.AspNet.SessionState
                         ParseCosmosDbEndPointSettings(config, out endPoint, out authKey, out s_dbName, out s_collectionID, out s_offerThroughput);
 
                         s_client = new DocumentClient(new Uri(endPoint), authKey, ParseCosmosDBClientSettings(config));
-                        s_appId = HttpRuntime.AppDomainAppId.GetHashCode().ToString("X8", CultureInfo.InvariantCulture);
-                        s_partitionKey = new PartitionKey(s_appId);
 
                         // setup CosmosDB
                         CreateDatabaseIfNotExistsAsync().Wait();
@@ -548,9 +544,9 @@ namespace Microsoft.AspNet.SessionState
             SerializeStoreData(item, DefaultItemLength, out buf);
 
             var spLink = UriFactory.CreateStoredProcedureUri(s_dbName, s_collectionID, CreateSessionStateItemSPID);
-            var spResponse = await s_client.ExecuteStoredProcedureAsync<object>(spLink, CreateRequestOptions(),
-                // sessionId, appId, timeout, lockCookie, sessionItem, uninitialized
-                id, s_appId, timeout, DefaultLockCookie, buf, true);
+            var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(spLink, CreateRequestOptions(CreatePartitionKey(id)),
+                // sessionId, partitionKey, timeout, lockCookie, sessionItem, uninitialized
+                id, CreatePartitionKey(id), timeout, DefaultLockCookie, buf, true);
 
             CheckSPResponseAndThrowIfNeeded(spResponse);
         }
@@ -582,12 +578,12 @@ namespace Microsoft.AspNet.SessionState
         {
             var spName = exclusive ? GetStateItemExclusiveSPID : GetStateItemSPID;
             var spLink = UriFactory.CreateStoredProcedureUri(s_dbName, s_collectionID, spName);
-            var spResponse = await s_client.ExecuteStoredProcedureAsync<SessionStateItem>(spLink, CreateRequestOptions(), id);
+            var spResponse = await ExecuteStoredProcedureWithWrapperAsync<SessionStateItem>(spLink, CreateRequestOptions(CreatePartitionKey(id)), id);
 
             CheckSPResponseAndThrowIfNeeded(spResponse);
 
             var sessionStateItem = spResponse.Response;
-            if (string.IsNullOrEmpty(sessionStateItem.AppId))
+            if (string.IsNullOrEmpty(sessionStateItem.SessionId))
             {
                 return null;
             }
@@ -614,7 +610,7 @@ namespace Microsoft.AspNet.SessionState
         {
             var spLink = UriFactory.CreateStoredProcedureUri(s_dbName, s_collectionID, ReleaseItemExclusiveSPID);
 
-            var spResponse = await s_client.ExecuteStoredProcedureAsync<object>(spLink, CreateRequestOptions(), id, (int)lockId);
+            var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(spLink, CreateRequestOptions(CreatePartitionKey(id)), id, (int)lockId);
 
             CheckSPResponseAndThrowIfNeeded(spResponse);
         }
@@ -623,7 +619,7 @@ namespace Microsoft.AspNet.SessionState
         public override async Task RemoveItemAsync(HttpContextBase context, string id, object lockId, SessionStateStoreData item, CancellationToken cancellationToken)
         {
             var spLink = UriFactory.CreateStoredProcedureUri(s_dbName, s_collectionID, RemoveStateItemSPID);
-            var spResponse = await s_client.ExecuteStoredProcedureAsync<object>(spLink, CreateRequestOptions(), id, (int)lockId);
+            var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(spLink, CreateRequestOptions(CreatePartitionKey(id)), id, (int)lockId);
 
             CheckSPResponseAndThrowIfNeeded(spResponse);
         }
@@ -632,7 +628,7 @@ namespace Microsoft.AspNet.SessionState
         public override async Task ResetItemTimeoutAsync(HttpContextBase context, string id, CancellationToken cancellationToken)
         {
             var spLink = UriFactory.CreateStoredProcedureUri(s_dbName, s_collectionID, ResetItemTimeoutSPID);
-            var spResponse = await s_client.ExecuteStoredProcedureAsync<object>(spLink, CreateRequestOptions(), id);
+            var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(spLink, CreateRequestOptions(CreatePartitionKey(id)), id);
 
             CheckSPResponseAndThrowIfNeeded(spResponse);
         }
@@ -669,16 +665,16 @@ namespace Microsoft.AspNet.SessionState
             if (newItem)
             {
                 var spLink = UriFactory.CreateStoredProcedureUri(s_dbName, s_collectionID, CreateSessionStateItemSPID);
-                var spResponse = await s_client.ExecuteStoredProcedureAsync<object>(spLink, CreateRequestOptions(),
-                    //sessionId, appId, timeout, lockCookie, sessionItem, uninitialized
-                    id, s_appId, s_timeout, lockCookie, buf, false);
+                var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(spLink, CreateRequestOptions(CreatePartitionKey(id)),
+                    //sessionId, partitionKey, timeout, lockCookie, sessionItem, uninitialized
+                    id, CreatePartitionKey(id), s_timeout, lockCookie, buf, false);
 
                 CheckSPResponseAndThrowIfNeeded(spResponse);
             }
             else
             {
                 var spLink = UriFactory.CreateStoredProcedureUri(s_dbName, s_collectionID, UpdateSessionStateItemSPID);
-                var spResponse = await s_client.ExecuteStoredProcedureAsync<object>(spLink, CreateRequestOptions(),
+                var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(spLink, CreateRequestOptions(CreatePartitionKey(id)),
                     //sessionId, lockCookie, sessionItem
                     id, lockCookie, buf);
 
@@ -695,16 +691,26 @@ namespace Microsoft.AspNet.SessionState
         private static void ParseCosmosDbEndPointSettings(NameValueCollection config,
             out string endPoint, out string authKey, out string dbId, out string collectionId, out int offerThroughPut)
         {
-            endPoint = config["endPoint"];
+            var endPointSettingKey = config["cosmosDBEndPointSettingKey"];
+            if (string.IsNullOrEmpty(endPointSettingKey))
+            {
+                throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, "cosmosDBEndPointSettingKey"));
+            }
+            endPoint = WebConfigurationManager.AppSettings[endPointSettingKey];
             if (string.IsNullOrEmpty(endPoint))
             {
-                throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, "endPoint"));
+                throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, endPointSettingKey));
             }
 
-            authKey = config["authKey"];
+            var authKeySettingKey = config["cosmosDBAuthKeySettingKey"];
+            if (string.IsNullOrEmpty(authKeySettingKey))
+            {
+                throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, "cosmosDBAuthKeySettingKey"));
+            }
+            authKey = WebConfigurationManager.AppSettings[authKeySettingKey];
             if (string.IsNullOrEmpty(authKey))
             {
-                throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, "authKey"));
+                throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, authKeySettingKey));
             }
 
             dbId = config["databaseId"];
@@ -777,12 +783,19 @@ namespace Microsoft.AspNet.SessionState
             };
         }
 
-        private static RequestOptions CreateRequestOptions()
+        private static RequestOptions CreateRequestOptions(string partitionKey)
         {
             return new RequestOptions
             {
-                PartitionKey = s_partitionKey
+                PartitionKey = new PartitionKey(partitionKey)
             };
+        }
+
+        private static string CreatePartitionKey(string sessionId)
+        {
+            // Default SessionIdManager uses all the 26 letters and number 0~5
+            // which can create 32 different partitions
+            return sessionId.Substring(0, 1);
         }
 
         private static Uri DocumentCollectionUri
@@ -870,7 +883,39 @@ namespace Microsoft.AspNet.SessionState
                     sp.Id = spId;
                     sp.Body = spBody;
 
-                    await s_client.CreateStoredProcedureAsync(DocumentCollectionUri, sp, CreateRequestOptions());
+                    await s_client.CreateStoredProcedureAsync(DocumentCollectionUri, sp);
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        private static async Task<StoredProcedureResponse<TValue>> ExecuteStoredProcedureWithWrapperAsync<TValue>(Uri spLink, RequestOptions requestOptions, params dynamic[] spParams)
+        {
+            try
+            {
+                return await s_client.ExecuteStoredProcedureAsync<TValue>(spLink, requestOptions, spParams);
+            }
+            catch (DocumentClientException dce)
+            {
+                //Status 429: The request rate is too large
+                if ((int)dce.StatusCode == 429)
+                {
+                    throw new Exception(SR.Request_To_CosmosDB_Is_Too_Large);
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (AggregateException ae)
+            {
+                var innerException = ae.InnerException as DocumentClientException;
+                if (innerException != null & (int)innerException.StatusCode == 429)
+                {
+                    throw new Exception(SR.Request_To_CosmosDB_Is_Too_Large);
                 }
                 else
                 {

@@ -12,8 +12,8 @@ namespace Microsoft.AspNet.SessionState
         [JsonProperty(PropertyName = "id", Required = Required.Always)]
         public string SessionId { get; set; }
 
-        [JsonProperty(PropertyName = "appId", Required = Required.AllowNull)]
-        public string AppId { get; set; }
+        [JsonProperty(PropertyName = "partitionKey", Required = Required.AllowNull)]
+        public string PartitionKey { get; set; }
 
         // in second
         [JsonProperty(PropertyName = "lockAge", Required = Required.AllowNull)]
