@@ -2,7 +2,7 @@
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory),Microsoft.Aspnet.SessionState.sln))\tools\CosmosDBSessionStateProviderAsync.settings.targets" />
-  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory),Microsoft.Aspnet.SessionState.sln))\tools\MicrosoftAspNetSessionState.settings.targets" />  
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory),Microsoft.Aspnet.SessionState.sln))\tools\MicrosoftAspNetSessionState.settings.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -63,7 +63,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CosmosDBSessionStateProviderAsync.cs" />
-    <Compile Include="IntTimeSpanConverter.cs" />
+    <Compile Include="TimeSpanConverter.cs" />
+    <Compile Include="PartitionKeyConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources\SR.Designer.cs">
       <AutoGen>True</AutoGen>
