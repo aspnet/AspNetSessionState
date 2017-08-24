@@ -78,6 +78,7 @@ namespace Microsoft.AspNet.SessionState
                 });
             }";
 
+        // Will be used in String.Format, hence needs to escape certain char
         private static string CreateSessionStateItemInPartitionSP = @"
             function CreateUninitializedItemInPartition(sessionId, partitionKeyValue, timeout, lockCookie, sessionItem, uninitialized) {{
                 var collection = getContext().getCollection();
@@ -125,61 +126,60 @@ namespace Microsoft.AspNet.SessionState
                     var requestOptions = { continuation: continuation};
                     var query = 'select * from root r where r.id = ""' + sessionId + '""';
                     var isAccepted = collection.queryDocuments(collectionLink, query, continuation,
-                        function(err, documents, responseOptions)
-                {
-                    if (err)
-                    {
-                        throw err;
-                    }
-                    if (documents.length > 0)
-                    {
-                        var doc = documents[0];
-                        if (doc.locked)
-                        {
-                            doc.lockAge = Math.round(((new Date()).getTime() - doc.lockDate) / 1000);
-                            var isAccepted = collection.replaceDocument(doc._self, doc,
-                                function(err, updatedDocument, responseOptions) {
-                                if (err)
+                        function(err, documents, responseOptions) {
+                            if (err)
+                            {
+                                throw err;
+                            }
+                            if (documents.length > 0)
+                            {
+                                var doc = documents[0];
+                                if (doc.locked)
                                 {
-                                    throw err;
+                                    doc.lockAge = Math.round(((new Date()).getTime() - doc.lockDate) / 1000);
+                                    var isAccepted = collection.replaceDocument(doc._self, doc,
+                                        function(err, updatedDocument, responseOptions) {
+                                        if (err)
+                                        {
+                                            throw err;
+                                        }
+                                        var responseDoc = { id: doc.id, lockAge: 0, lockCookie: updatedDocument.lockCookie, ttl: null, 
+                                                        locked: true, sessionItem: null, uninitialized: null };
+                                        response.setBody(responseDoc);
+                                    });
+                                    if (!isAccepted)
+                                    {
+                                        throw new Error('The SP timed out.');
+                                    }
                                 }
-                                var responseDoc = { id: doc.id, lockAge: 0, lockCookie: updatedDocument.lockCookie, ttl: null, 
-                                                locked: true, sessionItem: null, uninitialized: null };
+                                else
+                                {
+                                    // using write operation to reset the TTL
+                                    var isAccepted = collection.replaceDocument(doc._self, doc,
+                                        function(err, updatedDocument, responseOptions) {
+                                        if (err)
+                                        {
+                                            throw err;
+                                        }
+                                        response.setBody(updatedDocument);
+                                    });
+                                    if (!isAccepted)
+                                    {
+                                        throw new Error('The SP timed out.');
+                                    }
+                                }
+                            }
+                            else if (responseOptions.continuation)
+                            {
+                                tryGetStateItem(responseOptions.continuation);
+                            }
+                            else
+                            {
+                                var responseDoc = { id: '', lockAge: null, lockCookie: null, ttl: null, 
+                                                    locked: false, sessionItem: null, uninitialized: null };
                                 response.setBody(responseDoc);
-                            });
-                            if (!isAccepted)
-                            {
-                                throw new Error('The SP timed out.');
                             }
-                        }
-                        else
-                        {
-                            // using write operation to reset the TTL
-                            var isAccepted = collection.replaceDocument(doc._self, doc,
-                                function(err, updatedDocument, responseOptions) {
-                                if (err)
-                                {
-                                    throw err;
-                                }
-                                response.setBody(updatedDocument);
-                            });
-                            if (!isAccepted)
-                            {
-                                throw new Error('The SP timed out.');
-                            }
-                        }
-                    }
-                    else if (responseOptions.continuation)
-                    {
-                        tryGetStateItem(responseOptions.continuation);
-                    }
-                    else
-                    {
-                        var responseDoc = { id: '', lockAge: null, lockCookie: null, ttl: null, 
-                                            locked: false, sessionItem: null, uninitialized: null };
-                        response.setBody(responseDoc);
-                    }
-                });
+                        });
 
                     if (!isAccepted) {
                         throw new Error('The SP timed out.');
@@ -203,69 +203,68 @@ namespace Microsoft.AspNet.SessionState
                     var requestOptions = { continuation: continuation};
                     var query = 'select * from root r where r.id = ""' + sessionId + '""';
                     var isAccepted = collection.queryDocuments(collectionLink, query, requestOptions,
-                        function(err, documents, responseOptions)
-                {
-                    if (err)
-                    {
-                        throw err;
-                    }
-                    if (documents.length > 0)
-                    {
-                        var doc = documents[0];
-                        if (doc.locked)
-                        {
-                            doc.lockAge = Math.round(((new Date()).getTime() - doc.lockDate) / 1000);
-                            var isAccepted = collection.replaceDocument(doc._self, doc,
-                                function(err, updatedDocument, responseOptions) {
-                                if (err)
-                                {
-                                    throw err;
-                                }
-                            var responseDoc = { id: doc.id, lockAge: 0, lockCookie: updatedDocument.lockCookie, ttl: null, 
-                                                locked: true, sessionItem: null, uninitialized: null };
-                                response.setBody(responseDoc);
-                            });
-                            if (!isAccepted)
+                        function(err, documents, responseOptions) {
+                            if (err)
                             {
-                                throw new Error('The SP timed out.');
+                                throw err;
                             }
-                        }
-                        else
-                        {
-                            var responseDoc = { id: doc.id, lockAge: doc.lockAge, lockCookie: doc.lockCookie + 1, ttl: doc.ttl,
-                                                locked: false, sessionItem: doc.sessionItem, uninitialized: doc.uninitialized };
-                            doc.lockAge = 0;
-                            doc.lockCookie += 1;
-                            doc.locked = true;
-                            var isAccepted = collection.replaceDocument(doc._self, doc,
-                                function(err, updatedDocument, responseOptions) {
-                                if (err)
-                                {
-                                    throw err;
-                                }
-                                response.setBody(responseDoc);
-                            });
-                            if (!isAccepted)
+                            if (documents.length > 0)
                             {
-                                throw new Error('The SP timed out.');
+                                var doc = documents[0];
+                                if (doc.locked)
+                                {
+                                    doc.lockAge = Math.round(((new Date()).getTime() - doc.lockDate) / 1000);
+                                    var isAccepted = collection.replaceDocument(doc._self, doc,
+                                        function(err, updatedDocument, responseOptions) {
+                                        if (err)
+                                        {
+                                            throw err;
+                                        }
+                                    var responseDoc = { id: doc.id, lockAge: updatedDocument.lockAge, lockCookie: updatedDocument.lockCookie, ttl: null, 
+                                                        locked: true, sessionItem: null, uninitialized: null };
+                                        response.setBody(responseDoc);
+                                    });
+                                    if (!isAccepted)
+                                    {
+                                        throw new Error('The SP timed out.');
+                                    }
+                                }
+                                else
+                                {
+                                    var responseDoc = { id: doc.id, lockAge: doc.lockAge, lockCookie: doc.lockCookie + 1, ttl: doc.ttl,
+                                                        locked: false, sessionItem: doc.sessionItem, uninitialized: doc.uninitialized };
+                                    doc.lockAge = 0;
+                                    doc.lockCookie += 1;
+                                    doc.locked = true;
+                                    var isAccepted = collection.replaceDocument(doc._self, doc,
+                                        function(err, updatedDocument, responseOptions) {
+                                        if (err)
+                                        {
+                                            throw err;
+                                        }
+                                        response.setBody(responseDoc);
+                                    });
+                                    if (!isAccepted)
+                                    {
+                                        throw new Error('The SP timed out.');
+                                    }
+                                }
                             }
-                        }
-                    }
-                    else if (responseOptions.continuation)
-                    {
-                        tryGetStateItemExclusive(responseOptions.continuation);
-                    }
-                    else
-                    {
-                        var responseDoc = { id: '', lockAge: null, lockCookie: null, ttl: null, 
-                                            locked: false, sessionItem: null, uninitialized: null };
-                        response.setBody(responseDoc);
-                    }
-                });
+                            else if (responseOptions.continuation)
+                            {
+                                tryGetStateItemExclusive(responseOptions.continuation);
+                            }
+                            else
+                            {
+                                var responseDoc = { id: '', lockAge: null, lockCookie: null, ttl: null, 
+                                                    locked: false, sessionItem: null, uninitialized: null };
+                                response.setBody(responseDoc);
+                            }
+                        });
 
                     if (!isAccepted) {
                         throw new Error('The SP timed out.');
-            }
+                    }
                 }
             }";
 
@@ -284,46 +283,45 @@ namespace Microsoft.AspNet.SessionState
                     var requestOptions = { continuation: continuation};
                     var query = 'select * from root r where r.id = ""' + sessionId + '"" and r.lockCookie = ' + lockCookie;
                     var isAccepted = collection.queryDocuments(collectionLink, query, requestOptions,
-                        function(err, documents, responseOptions)
-                {
-                    if (err)
-                    {
-                        throw err;
-                    }
-                    if (documents.length > 0)
-                    {
-                        var doc = documents[0];
-                        doc.locked = false
-                        if(doc.uninitialized)
-                        {
-                            doc.uninitialized = false;
-                        }
-                        var isAccepted = collection.replaceDocument(doc._self, doc,
-                            function(err, updatedDocument, responseOptions) {
+                        function(err, documents, responseOptions) {
                             if (err)
                             {
                                 throw err;
                             }
-                            response.setBody({ updated: true});
-                        });
-                        if (!isAccepted)
-                        {
-                            throw new Error('The SP timed out.');
-                        }
-                    }
-                    else if (responseOptions.continuation)
-                    {
-                        TryReleaseItemExclusive(responseOptions.continuation);
-                    }
-                    else
-                    {
-                        response.setBody({ updated: false });
-                    }
-                });
+                            if (documents.length > 0)
+                            {
+                                var doc = documents[0];
+                                doc.locked = false
+                                if(doc.uninitialized)
+                                {
+                                    doc.uninitialized = false;
+                                }
+                                var isAccepted = collection.replaceDocument(doc._self, doc,
+                                    function(err, updatedDocument, responseOptions) {
+                                    if (err)
+                                    {
+                                        throw err;
+                                    }
+                                    response.setBody({ updated: true});
+                                });
+                                if (!isAccepted)
+                                {
+                                    throw new Error('The SP timed out.');
+                                }
+                            }
+                            else if (responseOptions.continuation)
+                            {
+                                TryReleaseItemExclusive(responseOptions.continuation);
+                            }
+                            else
+                            {
+                                response.setBody({ updated: false });
+                            }
+                    });
 
                     if (!isAccepted) {
                         throw new Error('The SP timed out.');
-            }
+                    }
                 }
             }";
 
@@ -346,8 +344,7 @@ namespace Microsoft.AspNet.SessionState
                     var requestOptions = { continuation: continuation};
                     var query = 'select * from root r where r.id = ""' + sessionId + '"" and r.lockCookie = ' + lockCookie;
                     var isAccepted = collection.queryDocuments(collectionLink, query, continuation,
-                        function(err, documents, responseOptions)
-                {
+                        function(err, documents, responseOptions) {
                     if (err)
                     {
                         throw err;
@@ -357,12 +354,12 @@ namespace Microsoft.AspNet.SessionState
                         var doc = documents[0];
                         var isAccepted = collection.deleteDocument(doc._self,
                             function(err, updatedDocument, responseOptions) {
-                            if (err)
-                            {
-                                throw err;
-                            }
-                            response.setBody({ updated: true });
-                        });
+                                if (err)
+                                {
+                                    throw err;
+                                }
+                                response.setBody({ updated: true });
+                            });
                         if (!isAccepted)
                         {
                             throw new Error('The SP timed out.');
@@ -380,7 +377,7 @@ namespace Microsoft.AspNet.SessionState
 
                     if (!isAccepted) {
                         throw new Error('The SP timed out.');
-            }
+                    }
                 }
             }";
 
@@ -400,42 +397,41 @@ namespace Microsoft.AspNet.SessionState
                     var requestOptions = { continuation: continuation};
                     var query = 'select * from root r where r.id = ""' + sessionId + '""';
                     var isAccepted = collection.queryDocuments(collectionLink, query, requestOptions,
-                        function(err, documents, responseOptions)
-                {
-                    if (err)
-                    {
-                        throw err;
-                    }
-                    if (documents.length > 0)
-                    {
-                        var doc = documents[0];
-                        // using write operation to reset the TTL
-                        var isAccepted = collection.replaceDocument(doc._self, doc,
-                            function(err, updatedDocument, responseOptions) {
+                        function(err, documents, responseOptions) {
                             if (err)
                             {
                                 throw err;
                             }
-                            response.setBody({ updated: true });
+                            if (documents.length > 0)
+                            {
+                                var doc = documents[0];
+                                // using write operation to reset the TTL
+                                var isAccepted = collection.replaceDocument(doc._self, doc,
+                                    function(err, updatedDocument, responseOptions) {
+                                    if (err)
+                                    {
+                                        throw err;
+                                    }
+                                    response.setBody({ updated: true });
+                                });
+                                if (!isAccepted)
+                                {
+                                    throw new Error('The SP timed out.');
+                                }
+                            }
+                            else if (responseOptions.continuation)
+                            {
+                                tryResetItemTimeout(responseOptions.continuation);
+                            }
+                            else
+                            {
+                                response.setBody({ updated: false });
+                            }
                         });
-                        if (!isAccepted)
-                        {
-                            throw new Error('The SP timed out.');
-                        }
-                    }
-                    else if (responseOptions.continuation)
-                    {
-                        tryResetItemTimeout(responseOptions.continuation);
-                    }
-                    else
-                    {
-                        response.setBody({ updated: false });
-                    }
-                });
 
                     if (!isAccepted) {
                         throw new Error('The SP timed out.');
-            }
+                    }
                 }
             }";
 
@@ -459,44 +455,43 @@ namespace Microsoft.AspNet.SessionState
                     var requestOptions = { continuation: continuation};
                     var query = 'select * from root r where r.id = ""' + sessionId + '"" and r.lockCookie = ' + lockCookie;
                     var isAccepted = collection.queryDocuments(collectionLink, query, requestOptions,
-                        function(err, documents, responseOptions)
-                {
-                    if (err)
-                    {
-                        throw err;
-                    }
-                    if (documents.length > 0)
-                    {
-                        var doc = documents[0];
-                        doc.sessionItem = sessionItem;
-                        doc.locked = false;
-                        doc.ttl = timeout;
-                        var isAccepted = collection.replaceDocument(doc._self, doc,
-                            function(err, updatedDocument, responseOptions) {
+                        function(err, documents, responseOptions) {
                             if (err)
                             {
                                 throw err;
                             }
-                            response.setBody({ updated: true });
+                            if (documents.length > 0)
+                            {
+                                var doc = documents[0];
+                                doc.sessionItem = sessionItem;
+                                doc.locked = false;
+                                doc.ttl = timeout;
+                                var isAccepted = collection.replaceDocument(doc._self, doc,
+                                    function(err, updatedDocument, responseOptions) {
+                                    if (err)
+                                    {
+                                        throw err;
+                                    }
+                                    response.setBody({ updated: true });
+                                });
+                                if (!isAccepted)
+                                {
+                                    throw new Error('The SP timed out.');
+                                }
+                            }
+                            else if (responseOptions.continuation)
+                            {
+                                tryUpdateSessionStateItem(responseOptions.continuation);
+                            }
+                            else
+                            {
+                                response.setBody({ updated: false });
+                            }
                         });
-                        if (!isAccepted)
-                        {
-                            throw new Error('The SP timed out.');
-                        }
-                    }
-                    else if (responseOptions.continuation)
-                    {
-                        tryUpdateSessionStateItem(responseOptions.continuation);
-                    }
-                    else
-                    {
-                        response.setBody({ updated: false });
-                    }
-                });
 
                     if (!isAccepted) {
                         throw new Error('The SP timed out.');
-            }
+                    }
                 }
             }";
         #endregion
@@ -530,7 +525,6 @@ namespace Microsoft.AspNet.SessionState
                         ParseCosmosDbEndPointSettings(config);
                         if (PartitionEnabled)
                         {
-                            PartitionKeyConverter.PartitionKey = s_partitionKey;
                             CreateSessionStateItemInPartitionSP = string.Format(CreateSessionStateItemInPartitionSP, s_partitionKey);
                         }
 
@@ -755,7 +749,7 @@ namespace Microsoft.AspNet.SessionState
                 s_offerThroughput = 5000;
             }
             
-            s_partitionKey = config["partitionKey"];
+            s_partitionKey = config["partitionKeyPath"];
 
             if (PartitionEnabled)
             {
@@ -914,8 +908,14 @@ namespace Microsoft.AspNet.SessionState
 
         private static async Task CreateStoredProceduresIfNotExistsAsync()
         {
-            await CreateSPIfNotExistsAsync(CreateSessionStateItemSPID, CreateSessionStateItemSP);
-            await CreateSPIfNotExistsAsync(CreateSessionStateItemInPartitionSPID, CreateSessionStateItemInPartitionSP);
+            if (!PartitionEnabled)
+            {
+                await CreateSPIfNotExistsAsync(CreateSessionStateItemSPID, CreateSessionStateItemSP);
+            }
+            else
+            {
+                await CreateSPIfNotExistsAsync(CreateSessionStateItemInPartitionSPID, CreateSessionStateItemInPartitionSP);
+            }
             await CreateSPIfNotExistsAsync(GetStateItemSPID, GetStateItemSP);
             await CreateSPIfNotExistsAsync(GetStateItemExclusiveSPID, GetStateItemExclusiveSP);
             await CreateSPIfNotExistsAsync(ReleaseItemExclusiveSPID, ReleaseItemExclusiveSP);

@@ -64,7 +64,6 @@
   <ItemGroup>
     <Compile Include="CosmosDBSessionStateProviderAsync.cs" />
     <Compile Include="TimeSpanConverter.cs" />
-    <Compile Include="PartitionKeyConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources\SR.Designer.cs">
       <AutoGen>True</AutoGen>
