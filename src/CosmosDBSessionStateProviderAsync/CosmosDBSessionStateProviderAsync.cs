@@ -42,8 +42,8 @@ namespace Microsoft.AspNet.SessionState
         private static IDocumentClient s_client;
 
         #region CosmosDB Stored Procedures            
-        private static readonly string CreateSessionStateItemSPID = "CreateUninitializedItem";
-        private static readonly string CreateSessionStateItemInPartitionSPID = "CreateUninitializedItemInPartition";
+        private static readonly string CreateSessionStateItemSPID = "CreateSessionStateItem";
+        private static readonly string CreateSessionStateItemInPartitionSPID = "CreateSessionStateItemInPartition";
         private static readonly string GetStateItemSPID = "GetStateItem";
         private static readonly string GetStateItemExclusiveSPID = "GetStateItemExclusive";
         private static readonly string ReleaseItemExclusiveSPID = "ReleaseItemExclusive";
@@ -52,7 +52,7 @@ namespace Microsoft.AspNet.SessionState
         private static readonly string UpdateSessionStateItemSPID = "UpdateSessionStateItem";
 
         private static readonly string CreateSessionStateItemSP = @"
-            function CreateUninitializedItem(sessionId, timeout, lockCookie, sessionItem, uninitialized) {
+            function CreateSessionStateItem(sessionId, timeout, lockCookie, sessionItem, uninitialized) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
                 var response = getContext().getResponse();
@@ -80,7 +80,7 @@ namespace Microsoft.AspNet.SessionState
 
         // Will be used in String.Format, hence needs to escape certain char
         private static string CreateSessionStateItemInPartitionSP = @"
-            function CreateUninitializedItemInPartition(sessionId, partitionKeyValue, timeout, lockCookie, sessionItem, uninitialized) {{
+            function CreateSessionStateItemInPartition(sessionId, partitionKeyValue, timeout, lockCookie, sessionItem, uninitialized) {{
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
                 var response = getContext().getResponse();
@@ -771,7 +771,7 @@ namespace Microsoft.AspNet.SessionState
             Protocol conProtocol;
             if (!Enum.TryParse<Protocol>(config["connectionProtocol"], out conProtocol))
             {
-                conProtocol = Protocol.Https;
+                conProtocol = Protocol.Tcp;
             }
 
             int requestTimeout;
@@ -798,7 +798,7 @@ namespace Microsoft.AspNet.SessionState
                 maxRetryWaitTimeInSeconds = 10;
             }
 
-            return new ConnectionPolicy
+            var connectionPolicy = new ConnectionPolicy
             {
                 ConnectionMode = conMode,
                 ConnectionProtocol = conProtocol,
@@ -810,6 +810,21 @@ namespace Microsoft.AspNet.SessionState
                     MaxRetryWaitTimeInSeconds = maxRetryWaitTimeInSeconds
                 }
             };
+
+            var preferredLocations = config["preferredLocations"];
+            if (!string.IsNullOrEmpty(preferredLocations))
+            {                
+                foreach(var location in preferredLocations.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    connectionPolicy.PreferredLocations.Add(location);
+                }
+                if(connectionPolicy.PreferredLocations.Count > 0)
+                {
+                    connectionPolicy.EnableEndpointDiscovery = true;
+                }
+            }
+
+            return connectionPolicy;
         }
 
         private static RequestOptions CreateRequestOptions(string sessionId)
