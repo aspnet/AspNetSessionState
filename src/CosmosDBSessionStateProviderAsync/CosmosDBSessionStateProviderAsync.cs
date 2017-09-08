@@ -573,7 +573,8 @@ namespace Microsoft.AspNet.SessionState
 
             SerializeStoreData(item, out buf);
 
-            await CreateSessionStateItemAsync(id, timeout, DefaultLockCookie, buf, true);
+            var timeoutInSecs = 60 * timeout;
+            await CreateSessionStateItemAsync(id, timeoutInSecs, DefaultLockCookie, buf, true);
         }
 
         /// <inheritdoc />
@@ -696,7 +697,8 @@ namespace Microsoft.AspNet.SessionState
                 var spLink = UriFactory.CreateStoredProcedureUri(s_dbId, s_collectionId, UpdateSessionStateItemSPID);
                 var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(spLink, CreateRequestOptions(id),
                     //sessionId, lockCookie, timeout, sessionItem
-                    id, lockCookie, item.Timeout, buf);
+                    // SessionStateStoreData.Timeout is in minutes, TTL in DocumentDB is in seconds
+                    id, lockCookie, 60 * item.Timeout, buf);
 
                 CheckSPResponseAndThrowIfNeeded(spResponse);
             }
