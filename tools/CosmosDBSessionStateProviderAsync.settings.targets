@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet package dependencies">
-    <SessionStateModuleNuGetPackageVersion>1.1.0</SessionStateModuleNuGetPackageVersion>
+    <SessionStateModuleNuGetPackageVersion>1.0.0</SessionStateModuleNuGetPackageVersion>
     <DocumentDBNuGetPackageVersion>1.15.0</DocumentDBNuGetPackageVersion>
   </PropertyGroup>
 </Project>
