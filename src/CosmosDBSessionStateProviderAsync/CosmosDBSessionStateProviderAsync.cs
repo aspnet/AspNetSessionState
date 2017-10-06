@@ -623,7 +623,8 @@ namespace Microsoft.AspNet.SessionState
                 using (var stream = new MemoryStream(sessionStateItem.SessionItem))
                 {
                     var data = DeserializeStoreData(context, stream, s_compressionEnabled);
-                    return new GetItemResult(data, sessionStateItem.Locked.Value, sessionStateItem.LockAge.Value, sessionStateItem.LockCookie.Value, SessionStateActions.None);
+                    var action = sessionStateItem.Actions.HasValue ? sessionStateItem.Actions.Value : SessionStateActions.None;
+                    return new GetItemResult(data, sessionStateItem.Locked.Value, sessionStateItem.LockAge.Value, sessionStateItem.LockCookie.Value, action);
                 }
             }
         }

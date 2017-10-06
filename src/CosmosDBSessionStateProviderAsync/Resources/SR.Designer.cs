@@ -88,6 +88,15 @@ namespace Microsoft.AspNet.SessionStateCosmosDBSessionStateProviderAsync.Resourc
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Object &apos;{0}&apos; cannot be converted to SessionStateActions.
+        /// </summary>
+        internal static string Object_Cannot_Be_Converted_To_SessionStateActions {
+            get {
+                return ResourceManager.GetString("Object_Cannot_Be_Converted_To_SessionStateActions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Object &apos;{0}&apos; cannot be converted to TimeSpan.
         /// </summary>
         internal static string Object_Cannot_Be_Converted_To_TimeSpan {

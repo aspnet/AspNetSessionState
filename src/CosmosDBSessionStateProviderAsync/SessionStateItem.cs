@@ -6,6 +6,7 @@ namespace Microsoft.AspNet.SessionState
     using Microsoft.AspNet.SessionStateCosmosDBSessionStateProviderAsync;
     using Newtonsoft.Json;
     using System;
+    using System.Web.SessionState;
 
     class SessionStateItem
     {
@@ -31,5 +32,9 @@ namespace Microsoft.AspNet.SessionState
 
         [JsonProperty(PropertyName = "sessionItem", Required = Required.AllowNull)]
         public byte[] SessionItem { get; set; }
+
+        [JsonProperty(PropertyName ="uninitialized", Required = Required.AllowNull)]
+        [JsonConverter(typeof(SessionStateActionsConverter))]
+        public SessionStateActions? Actions {get;set;}
     }
 }

@@ -126,6 +126,9 @@
   <data name="Invalid_session_state" xml:space="preserve">
     <value>The session state information is invalid and might be corrupted.</value>
   </data>
+  <data name="Object_Cannot_Be_Converted_To_SessionStateActions" xml:space="preserve">
+    <value>Object '{0}' cannot be converted to SessionStateActions</value>
+  </data>
   <data name="Object_Cannot_Be_Converted_To_TimeSpan" xml:space="preserve">
     <value>Object '{0}' cannot be converted to TimeSpan</value>
   </data>
