@@ -23,7 +23,7 @@
                 NuGetPackageVersion=$(NuGetPackageVersion);
                 NuGetPackageId=$(NuGetPackageId);
 		SessionStateModuleNuGetPackageVersion=$(SessionStateModuleNuGetPackageVersion);
-		EntityFrameworkNuGetPackageVersion=$(EntityFrameworkNuGetPackageVersion)
+		DocumentDBNuGetPackageVersion=$(DocumentDBNuGetPackageVersion)
             </NuSpecProperties>
         </PropertyGroup>
     </Target>

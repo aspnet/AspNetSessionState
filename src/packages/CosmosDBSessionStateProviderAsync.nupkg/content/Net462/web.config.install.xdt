@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration xmlns:xdt="http://schemas.microsoft.com/XML-Document-Transform">
+
+  <system.web>
+    <sessionState xdt:Transform="Remove">
+    </sessionState>
+  </system.web>
+
+  <appSettings xdt:Transform="InsertIfMissing">
+  </appSettings>
+  <appSettings>
+    <add key="cosmosDBEndPointSetting" xdt:Transform="Remove" xdt:Locator="Match(key)" />
+    <add key="cosmosDBEndPointSetting" value="https://[EndPoint].documents.azure.com" xdt:Transform="Insert" />
+    <add key="cosmosDBAuthKeySetting" xdt:Transform="Remove" xdt:Locator="Match(key)" />
+    <add key="cosmosDBAuthKeySetting" value="[AuthKey]" xdt:Transform="Insert" />
+  </appSettings>
+
+  <system.web>
+    <sessionState cookieless="false" regenerateExpiredSessionId="true"
+        mode="Custom" customProvider="CosmosDBSessionStateProviderAsync" xdt:Transform="Insert">
+      <providers>
+      <!--
+            cosmosDBEndPointSettingKey: the appsetting key name which points to a CosmosDB end point
+            cosmosDBAuthKeySettingKey: the appsetting key name which points to a CosmosDB auth key
+            offerThroughput: The offer throughput provisioned for a collection in measurement of Requests-per-Unit in the Azure DocumentDB database service. 
+                            If the collection provided doesn't exist, the provider will create a collection with this offerThroughput.
+            connectionMode: Direct | Gateway
+            connectionProtocol: Https | Tcp
+            requestTimeout: the request timeout in seconds when connecting to the Azure DocumentDB database service.
+            maxConnectionLimit: maximum number of concurrent connections allowed for the target service endpoint in the Azure DocumentDB database service.
+            maxRetryAttemptsOnThrottledRequests: the maximum number of retries in the case where the request fails because the Azure DocumentDB database service has applied rate limiting on the client.
+            maxRetryWaitTimeInSeconds: the maximum retry time in seconds for the Azure DocumentDB database service.
+            preferredLocations: sets the preferred locations(regions) for geo-replicated database accounts in the Azure DocumentDB database service. Use ';' to split multiple locations. e.g. "East US;South Central US;North Europe"
+            partitionKey: the partition key name of the collection
+            partitionNumUsedByProvider: the number of partition can be used for sessionstate
+      -->
+        <add name="CosmosDBSessionStateProviderAsync" cosmosDBEndPointSettingKey="cosmosDBEndPointSetting" cosmosDBAuthKeySettingKey="cosmosDBAuthKeySetting" databaseId="[DataBaseId]" collectionId="[CollectionId]" offerThroughput="5000"
+          connectionMode="Direct" connectionProtocol="Tcp" requestTimeout="5" maxConnectionLimit="50" maxRetryAttemptsOnThrottledRequests="10" maxRetryWaitTimeInSeconds="10" preferredLocations="" partitionKey="" partitionNumUsedByProvider=""
+          type="Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync, Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
+             xdt:Transform="InsertIfMissing" />
+      </providers>
+    </sessionState>
+  </system.web>
+</configuration>

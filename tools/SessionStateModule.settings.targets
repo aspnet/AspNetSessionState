@@ -1,0 +1,10 @@
+<Project DefaultTargets="UnitTest" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <BuildQuality Condition="'$(BuildQuality)' == ''">rtm</BuildQuality>
+    <VersionStartYear>2016</VersionStartYear>
+    <VersionMajor>1</VersionMajor>
+    <VersionMinor>1</VersionMinor>
+    <VersionRelease>0</VersionRelease>
+    <VersionRelease Condition="'$(BuildQuality)' != 'rtm'">$(VersionRelease)-$(BuildQuality)</VersionRelease>
+  </PropertyGroup>
+</Project>

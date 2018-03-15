@@ -3,4 +3,4 @@
 .vs/
 msbuild.*
 obj/
-packages/
+/packages/

@@ -4,22 +4,6 @@
   </PropertyGroup>
   <Import Project="$(CustomBeforeProjectTargets)" Condition="Exists('$(CustomBeforeProjectTargets)')" Label="Pre-targets Build Extensibility Point"/>
 
-  <!-- Configurable properties-->
-
-  <PropertyGroup>
-    <BuildQuality Condition="'$(BuildQuality)' == ''">rtm</BuildQuality>
-    <VersionStartYear>2016</VersionStartYear>
-    <VersionMajor>1</VersionMajor>
-    <VersionMinor>1</VersionMinor>
-    <VersionRelease>0</VersionRelease>
-    <VersionRelease Condition="'$(BuildQuality)' != 'rtm'">$(VersionRelease)-$(BuildQuality)</VersionRelease>
-  </PropertyGroup>
-
-  <PropertyGroup Label="NuGet package dependencies">
-    <SessionStateModuleNuGetPackageVersion>1.1.0</SessionStateModuleNuGetPackageVersion>
-    <EntityFrameworkNuGetPackageVersion>6.1.3</EntityFrameworkNuGetPackageVersion>
-  </PropertyGroup>
-
   <!-- Default properties -->
 
   <PropertyGroup>

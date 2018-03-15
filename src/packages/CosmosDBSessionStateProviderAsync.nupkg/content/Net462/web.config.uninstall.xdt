@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration xmlns:xdt="http://schemas.microsoft.com/XML-Document-Transform">
+  <appSettings>
+    <add key="cosmosDBEndPointSetting" xdt:Transform="Remove" xdt:Locator="Match(key)" />
+    <add key="cosmosDBAuthKeySetting" xdt:Transform="Remove" xdt:Locator="Match(key)" />
+  </appSettings>
+  <system.web>
+    <sessionState cookieless="false" regenerateExpiredSessionId="true"
+        mode="Custom" customProvider="CosmosDBSessionStateProviderAsync" xdt:Transform="Remove">
+      <providers>
+        <add name="SqlSessionStateAsyncProvider" connectionStringName="DefaultConnection"
+          type="Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider, Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
+             xdt:Transform="Remove" xdt:Locator="Match(type)" />
+      </providers>
+    </sessionState>
+  </system.web>
+</configuration>
