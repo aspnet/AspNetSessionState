@@ -19,6 +19,7 @@
         private int _retryIntervalMilSec;
         private string _connectString;
         private int _maxRetryNum;
+        private int _commandTimeout;
         private SqlCommandHelper _commandHelper;
 
         #region sql statement
@@ -280,7 +281,28 @@
             this._retryIntervalMilSec = retryInterval.HasValue ? retryInterval.Value : DEFAULT_RETRY_INTERVAL;
             this._connectString = connectionString;
             this._maxRetryNum = retryNum.HasValue ? retryNum.Value : DEFAULT_RETRY_NUM;
+            this._commandTimeout = commandTimeout;
             this._commandHelper = new SqlCommandHelper(commandTimeout);
+        }
+
+        internal int RetryIntervalMilSec
+        {
+            get { return _retryIntervalMilSec; }
+        }
+
+        internal string ConnectString
+        {
+            get { return _connectString; }
+        }
+
+        internal int MaxRetryNum
+        {
+            get { return _maxRetryNum; }
+        }
+
+        internal int CommandTimeout
+        {
+            get { return _commandTimeout; }
         }
 
         private bool CanRetry(RetryCheckParameter parameter)

@@ -24,6 +24,7 @@
         private const string MAX_RETRY_NUMBER_CONFIGURATION_NAME = "MaxRetryNumber";
         private const string RETRY_INTERVAL_CONFIGURATION_NAME = "RetryInterval";
         private const string CONNECTIONSTRING_NAME_CONFIGURATION_NAME = "connectionStringName";
+        private const string SESSIONSTATE_SECTION_PATH = "system.web/sessionState";
         private const double SessionExpiresFrequencyCheckIntervalTicks = 30 * TimeSpan.TicksPerSecond;
         private static long s_lastSessionPurgeTicks;
         private static int s_inPurge;
@@ -51,16 +52,24 @@
                 name = "SqlSessionStateAsyncProvider";
             }
 
+            SessionStateSection ssc = (SessionStateSection)ConfigurationManager.GetSection(SESSIONSTATE_SECTION_PATH);
+            var connectionString = GetConnectionString(config[CONNECTIONSTRING_NAME_CONFIGURATION_NAME]);
+
+            Initialize(name, config, ssc, connectionString, true);
+        }
+
+        // for unit tests
+        internal void Initialize(string name, NameValueCollection config, SessionStateSection ssc, ConnectionStringSettings connectionString, 
+                                    bool shouldCreateTable = false)
+        {
             base.Initialize(name, config);
 
             if (!s_oneTimeInited)
             {
                 lock (s_lock)
                 {
-                    if(!s_oneTimeInited)
+                    if (!s_oneTimeInited)
                     {
-                        var connectionString = GetConnectionString(config[CONNECTIONSTRING_NAME_CONFIGURATION_NAME]);
-                        SessionStateSection ssc = (SessionStateSection)ConfigurationManager.GetSection("system.web/sessionState");
                         s_compressionEnabled = ssc.CompressionEnabled;
 
                         if (ShouldUseInMemoryTable(config))
@@ -70,19 +79,55 @@
                         }
                         else
                         {
-                            s_sqlSessionStateRepository = new SqlSessionStateRepository(connectionString.ConnectionString, 
+                            s_sqlSessionStateRepository = new SqlSessionStateRepository(connectionString.ConnectionString,
                                 (int)ssc.SqlCommandTimeout.TotalSeconds, GetRetryInterval(config), GetMaxRetryNum(config));
                         }
-                        s_sqlSessionStateRepository.CreateSessionStateTable();
+                        if(shouldCreateTable)
+                        {
+                            s_sqlSessionStateRepository.CreateSessionStateTable();
+                        }
 
-                        Debug.Assert(HttpRuntime.AppDomainAppId != null);
-                        s_appSuffix = HttpRuntime.AppDomainAppId.GetHashCode().ToString("X8", CultureInfo.InvariantCulture);
+                        var appId = AppId ?? HttpRuntime.AppDomainAppId;
+                        Debug.Assert(appId != null);
+                        s_appSuffix = appId.GetHashCode().ToString("X8", CultureInfo.InvariantCulture);
 
                         s_oneTimeInited = true;
                     }
                 }
             }
         }
+
+        internal ISqlSessionStateRepository SqlSessionStateRepository
+        {
+            get { return s_sqlSessionStateRepository; }
+            set { s_sqlSessionStateRepository = value; }
+        }
+
+        internal bool CompressionEnabled
+        {
+            get { return s_compressionEnabled; }
+        }
+
+        internal void ResetOneTimeInited()
+        {
+            s_oneTimeInited = false;
+        }
+
+        internal string AppId
+        {
+            get; set;
+        }
+
+        internal int OrigStreamLen
+        {
+            get { return _rqOrigStreamLen; }
+        }
+
+        internal static Func<HttpContext, HttpStaticObjectsCollection> GetSessionStaticObjects
+        {
+            get; set;
+        } = SessionStateUtility.GetSessionStaticObjects;
+        
 
         private bool ShouldUseInMemoryTable(NameValueCollection config)
         {
@@ -124,7 +169,7 @@
             HttpStaticObjectsCollection staticObjects = null;
             if (context != null)
             {
-                staticObjects = SessionStateUtility.GetSessionStaticObjects(context.ApplicationInstance.Context);
+                staticObjects = GetSessionStaticObjects(context.ApplicationInstance.Context);
             }
 
             return new SessionStateStoreData(new SessionStateItemCollection(), staticObjects, timeout);
@@ -150,7 +195,7 @@
             int length;
 
             var item = new SessionStateStoreData(new SessionStateItemCollection(),
-                        SessionStateUtility.GetSessionStaticObjects(context.ApplicationInstance.Context),
+                        GetSessionStaticObjects(context.ApplicationInstance.Context),
                         timeout);
 
             SerializeStoreData(item, SqlSessionStateRepositoryUtil.DefaultItemLength, out buf, out length, s_compressionEnabled);
@@ -334,7 +379,7 @@
         }
 
         // We just want to append an 8 char hash from the AppDomainAppId to prevent any session id collisions
-        private static string AppendAppIdHash(string id)
+        internal static string AppendAppIdHash(string id)
         {
             if (!id.EndsWith(s_appSuffix))
             {
@@ -344,7 +389,7 @@
         }        
 
         // Internal code copied from SessionStateUtility
-        private static void SerializeStoreData(
+        internal static void SerializeStoreData(
             SessionStateStoreData item, 
             int initialStreamSize, 
             out byte[] buf, 
@@ -408,7 +453,7 @@
             writer.Write(unchecked((byte)0xff));
         }
 
-        private static SessionStateStoreData DeserializeStoreData(HttpContextBase context, Stream stream, bool compressionEnabled)
+        internal static SessionStateStoreData DeserializeStoreData(HttpContextBase context, Stream stream, bool compressionEnabled)
         {
             if (compressionEnabled)
             {
@@ -436,6 +481,7 @@
             try
             {
                 BinaryReader reader = new BinaryReader(stream);
+                
                 timeout = reader.ReadInt32();
                 hasItems = reader.ReadBoolean();
                 hasStaticObjects = reader.ReadBoolean();
@@ -453,7 +499,7 @@
                     staticObjects = HttpStaticObjectsCollection.Deserialize(reader);
                 }
                 else {
-                    staticObjects = SessionStateUtility.GetSessionStaticObjects(context.ApplicationInstance.Context);
+                    staticObjects = GetSessionStaticObjects(context.ApplicationInstance.Context);
                 }
 
                 eof = reader.ReadByte();

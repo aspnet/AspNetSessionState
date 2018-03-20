@@ -4,7 +4,7 @@
     using System.Threading.Tasks;
     using System.Web.SessionState;
 
-    interface ISqlSessionStateRepository
+    internal interface ISqlSessionStateRepository
     {
         void CreateSessionStateTable();
 
