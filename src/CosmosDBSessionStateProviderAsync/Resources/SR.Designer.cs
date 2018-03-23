@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.AspNet.SessionStateCosmosDBSessionStateProviderAsync.Resources {
+namespace Microsoft.AspNet.SessionState.Resources {
     using System;
     
     

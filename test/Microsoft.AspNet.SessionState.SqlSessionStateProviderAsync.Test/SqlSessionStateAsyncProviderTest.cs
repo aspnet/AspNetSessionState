@@ -3,12 +3,9 @@
 
 using Moq;
 using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Configuration;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -16,7 +13,7 @@ using System.Web.Configuration;
 using System.Web.SessionState;
 using Xunit;
 
-namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider
+namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
 {
     public class SqlSessionStateAsyncProviderTest
     {
@@ -412,7 +409,8 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider
 
             var repoMoq = new Mock<ISqlSessionStateRepository>();
             var sessionItemCreated = false;
-            repoMoq.Setup(repo => repo.CreateOrUpdateSessionStateItemAsync(true, SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId), buff, length, TestTimeout, 0, 0))
+            repoMoq.Setup(repo => repo.CreateOrUpdateSessionStateItemAsync(true, SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId), 
+                                                                            buff, length, TestTimeout, 0, 0))
                     .Returns(Task.CompletedTask)
                     .Callback(() => sessionItemCreated = true);
             provider.SqlSessionStateRepository = repoMoq.Object;
@@ -448,7 +446,8 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider
 
             var getItemResult = await provider.GetItemAsync(httpContext, TestSessionId, CancellationToken.None);
             var sessionReleased = false;
-            repoMoq.Setup(repo => repo.CreateOrUpdateSessionStateItemAsync(false, SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId), buff, length, TestTimeout, 0, provider.OrigStreamLen))
+            repoMoq.Setup(repo => repo.CreateOrUpdateSessionStateItemAsync(false, SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId), 
+                                                                            buff, length, TestTimeout, 0, provider.OrigStreamLen))
                     .Returns(Task.CompletedTask)
                     .Callback(() => sessionReleased = true);
                         
@@ -462,7 +461,7 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider
         {
             var provider = CreateProvider();
             provider.Initialize(DefaultProviderName, CreateSessionStateProviderConfig(), CreateSessionStateSection(),
-                createConnectionStringSettings());
+                                createConnectionStringSettings());
 
             var sessionCollection = new SessionStateItemCollection();
             var now = DateTime.UtcNow;
@@ -476,7 +475,8 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider
 
             var repoMoq = new Mock<ISqlSessionStateRepository>();
             var ssItem = new SessionItem(buff, true, TimeSpan.Zero, 1, SessionStateActions.None);
-            repoMoq.Setup(repo => repo.GetSessionStateItemAsync(SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId), true)).Returns(Task.FromResult(ssItem));
+            repoMoq.Setup(repo => repo.GetSessionStateItemAsync(SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId), true))
+                .Returns(Task.FromResult(ssItem));
             provider.SqlSessionStateRepository = repoMoq.Object;
             var httpContext = CreateMoqHttpContextBase();
 
@@ -485,6 +485,8 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider
             repoMoq.Setup(repo => repo.CreateOrUpdateSessionStateItemAsync(false, SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId), buff, length, TestTimeout, (int)ssItem.LockId, provider.OrigStreamLen))
                     .Returns(Task.CompletedTask)
                     .Callback(() => sessionReleased = true);
+
+            await provider.SetAndReleaseItemExclusiveAsync(httpContext, TestSessionId, getItemResult.Item, getItemResult.LockId, false, CancellationToken.None);
 
             Assert.True(sessionReleased);
         }

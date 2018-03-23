@@ -52,7 +52,7 @@
                 name = "SqlSessionStateAsyncProvider";
             }
 
-            SessionStateSection ssc = (SessionStateSection)ConfigurationManager.GetSection(SESSIONSTATE_SECTION_PATH);
+            var ssc = (SessionStateSection)ConfigurationManager.GetSection(SESSIONSTATE_SECTION_PATH);
             var connectionString = GetConnectionString(config[CONNECTIONSTRING_NAME_CONFIGURATION_NAME]);
 
             Initialize(name, config, ssc, connectionString, true);
@@ -97,6 +97,7 @@
             }
         }
 
+        #region properties/methods for unit tests
         internal ISqlSessionStateRepository SqlSessionStateRepository
         {
             get { return s_sqlSessionStateRepository; }
@@ -127,7 +128,7 @@
         {
             get; set;
         } = SessionStateUtility.GetSessionStaticObjects;
-        
+        #endregion
 
         private bool ShouldUseInMemoryTable(NameValueCollection config)
         {

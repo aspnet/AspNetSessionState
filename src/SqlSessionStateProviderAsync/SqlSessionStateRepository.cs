@@ -285,6 +285,7 @@
             this._commandHelper = new SqlCommandHelper(commandTimeout);
         }
 
+        #region properties/methods for unit tests
         internal int RetryIntervalMilSec
         {
             get { return _retryIntervalMilSec; }
@@ -304,6 +305,7 @@
         {
             get { return _commandTimeout; }
         }
+        #endregion
 
         private bool CanRetry(RetryCheckParameter parameter)
         {

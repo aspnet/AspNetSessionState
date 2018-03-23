@@ -12,6 +12,13 @@
             this._commandTimeout = commandTimeout;
         }
 
+        #region property for unit tests
+        internal int CommandTimeout
+        {
+            get { return _commandTimeout; }
+        }
+        #endregion
+
         public SqlCommand CreateNewSessionTableCmd(string createSessionTableSql)
         {
             return CreateSqlCommand(createSessionTableSql);

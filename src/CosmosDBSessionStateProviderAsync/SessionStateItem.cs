@@ -3,7 +3,6 @@
 
 namespace Microsoft.AspNet.SessionState
 {
-    using Microsoft.AspNet.SessionStateCosmosDBSessionStateProviderAsync;
     using Newtonsoft.Json;
     using System;
     using System.Web.SessionState;
