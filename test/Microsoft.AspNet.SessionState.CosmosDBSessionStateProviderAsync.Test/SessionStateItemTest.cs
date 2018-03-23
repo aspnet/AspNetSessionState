@@ -1,14 +1,13 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web.SessionState;
-using Xunit;
+﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
 {
+    using Newtonsoft.Json;
+    using System;
+    using System.Web.SessionState;
+    using Xunit;
+
     public class SessionStateItemTest
     {
         private const string TestSessionId = "piqhlifa30ooedcp1k42mtef";

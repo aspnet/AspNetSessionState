@@ -1,25 +1,26 @@
-﻿using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
-using Moq;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Reflection;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Web;
-using System.Web.Configuration;
-using System.Web.SessionState;
-using Xunit;
+﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
 {
+    using Microsoft.Azure.Documents;
+    using Microsoft.Azure.Documents.Client;
+    using Moq;
+    using Newtonsoft.Json;
+    using System;
+    using System.Collections.Specialized;
+    using System.IO;
+    using System.Linq;
+    using System.Net;
+    using System.Net.Http.Headers;
+    using System.Reflection;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Web;
+    using System.Web.Configuration;
+    using System.Web.SessionState;
+    using Xunit;
+
     public class CosmosDBSessionStateProviderAsyncTest
     {
         private const string CreateSessionStateItemSPID = "CreateSessionStateItem";

@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Xunit;
+﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
 {
+    using System;
+    using System.Data;
+    using System.Data.SqlClient;
+    using Xunit;
+
     public class SqlCommandHelperTest
     {
         private const int SqlCommandTimeout = 10;

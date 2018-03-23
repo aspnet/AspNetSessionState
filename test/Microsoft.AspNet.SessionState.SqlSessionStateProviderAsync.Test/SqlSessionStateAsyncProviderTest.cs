@@ -1,20 +1,20 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using Moq;
-using System;
-using System.Collections.Specialized;
-using System.Configuration;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Web;
-using System.Web.Configuration;
-using System.Web.SessionState;
-using Xunit;
-
 namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
 {
+    using Moq;
+    using System;
+    using System.Collections.Specialized;
+    using System.Configuration;
+    using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Web;
+    using System.Web.Configuration;
+    using System.Web.SessionState;
+    using Xunit;
+
     public class SqlSessionStateAsyncProviderTest
     {
         private const string InMemoryTableConfigurationName = "UseInMemoryTable";
