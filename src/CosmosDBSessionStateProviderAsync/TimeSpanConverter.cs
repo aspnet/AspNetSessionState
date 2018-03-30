@@ -5,7 +5,7 @@ namespace Microsoft.AspNet.SessionState
 {
     using System;
     using Newtonsoft.Json;
-    using Microsoft.AspNet.SessionStateCosmosDBSessionStateProviderAsync.Resources;
+    using Microsoft.AspNet.SessionState.Resources;
 
     class TimeSpanConverter : JsonConverter
     {
@@ -40,7 +40,7 @@ namespace Microsoft.AspNet.SessionState
             var ts = (TimeSpan)value;
             if(ts != null)
             {
-                writer.WriteValue(ts.TotalSeconds);
+                writer.WriteValue((int)ts.TotalSeconds);
             }
             else
             {

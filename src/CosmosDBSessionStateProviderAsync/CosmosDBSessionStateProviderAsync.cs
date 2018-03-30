@@ -3,8 +3,7 @@
 
 namespace Microsoft.AspNet.SessionState
 {
-    using Microsoft.AspNet.SessionStateCosmosDBSessionStateProviderAsync;
-    using Microsoft.AspNet.SessionStateCosmosDBSessionStateProviderAsync.Resources;
+    using Microsoft.AspNet.SessionState.Resources;
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
     using System;
@@ -79,7 +78,7 @@ namespace Microsoft.AspNet.SessionState
             }";
 
         // Will be used in String.Format, hence needs to escape certain char
-        private static string CreateSessionStateItemInPartitionSP = @"
+        private const string CreateSessionStateItemInPartitionSPTemplate = @"
             function CreateSessionStateItemInPartition(sessionId, partitionKeyValue, timeout, lockCookie, sessionItem, uninitialized) {{
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
@@ -512,34 +511,124 @@ namespace Microsoft.AspNet.SessionState
                 name = "CosmosDBSessionStateProviderAsync";
             }
 
+            var ssc = (SessionStateSection)ConfigurationManager.GetSection("system.web/sessionState");
+            Initialize(name, config, ssc, WebConfigurationManager.AppSettings);
+        }
+
+        internal void Initialize(string name, NameValueCollection providerConfig, SessionStateSection ssc, NameValueCollection appSettings)
+        {
+            base.Initialize(name, providerConfig);
+
             if (!s_oneTimeInited)
             {
                 lock (s_lock)
                 {
                     if (!s_oneTimeInited)
-                    {
-                        SessionStateSection ssc = (SessionStateSection)ConfigurationManager.GetSection("system.web/sessionState");
+                    {                        
                         s_compressionEnabled = ssc.CompressionEnabled;
                         s_timeout = (int)ssc.Timeout.TotalSeconds;
 
-                        ParseCosmosDbEndPointSettings(config);
+                        ParseCosmosDbEndPointSettings(providerConfig, appSettings);
                         if (PartitionEnabled)
                         {
-                            CreateSessionStateItemInPartitionSP = string.Format(CreateSessionStateItemInPartitionSP, s_partitionKey);
+                            CreateSessionStateItemInPartitionSP = string.Format(CreateSessionStateItemInPartitionSPTemplate, s_partitionKey);
                         }
 
-                        s_client = new DocumentClient(new Uri(s_endPoint), s_authKey, ParseCosmosDBClientSettings(config));
+                        s_client = DocumentClientFactory(new Uri(s_endPoint), s_authKey, ParseCosmosDBClientSettings(providerConfig));
 
                         // setup CosmosDB
                         CreateDatabaseIfNotExistsAsync().Wait();
                         CreateCollectionIfNotExistsAsync().Wait();
                         CreateStoredProceduresIfNotExistsAsync().Wait();
-                       
+
                         s_oneTimeInited = true;
                     }
                 }
             }
-        }        
+        }
+
+        #region properties/methods for unit tests
+        internal bool CompressionEnabled
+        {
+            get { return s_compressionEnabled; }
+        }
+
+        internal int Timeout
+        {
+            get { return s_timeout; }
+        }
+
+        internal static void ResetStaticFields()
+        {
+            s_endPoint = "";
+            s_authKey = "";
+            s_partitionKey = "";
+            s_partitionNumUsedBySessionProvider = 0;
+            s_dbId = "";
+            s_collectionId = "";
+            s_offerThroughput = 0;
+            s_compressionEnabled = false;
+            s_oneTimeInited = false;
+            s_timeout = 0;
+            s_client = null;
+        }
+
+        internal string AppId
+        {
+            get; set;
+        }
+        
+        internal static string EndPoint 
+        {
+            get { return s_endPoint; }
+        }
+
+        internal static string AuthKey
+        {
+            get { return s_authKey; }
+        }
+
+        internal static string PartitionKey
+        {
+            get { return s_partitionKey; }
+        }
+
+        internal static string DbId
+        {
+            get { return s_dbId; }
+        }
+
+        internal static int PartitionNum
+        {
+            get { return s_partitionNumUsedBySessionProvider; }
+        }
+
+        internal static string CollectionId
+        {
+            get { return s_collectionId; }
+        }
+
+        internal static int ThroughPut
+        {
+            get { return s_offerThroughput; }
+        }
+
+        internal static IDocumentClient Client
+        {
+            get { return s_client; }
+            set { s_client = value; }
+        }
+
+        internal static Func<HttpContext, HttpStaticObjectsCollection> GetSessionStaticObjects
+        {
+            get; set;
+        } = SessionStateUtility.GetSessionStaticObjects;
+
+        internal Func<Uri, string, ConnectionPolicy, IDocumentClient> DocumentClientFactory
+        {
+            get; set;
+        } = (endpoint, authKey, policy) => new DocumentClient(endpoint, authKey, policy);
+        #endregion
 
         /// <inheritdoc />
         public override SessionStateStoreData CreateNewStoreData(HttpContextBase context, int timeout)
@@ -547,7 +636,7 @@ namespace Microsoft.AspNet.SessionState
             HttpStaticObjectsCollection staticObjects = null;
             if (context != null)
             {
-                staticObjects = SessionStateUtility.GetSessionStaticObjects(context.ApplicationInstance.Context);
+                staticObjects = GetSessionStaticObjects(context.ApplicationInstance.Context);
             }
 
             return new SessionStateStoreData(new SessionStateItemCollection(), staticObjects, timeout);
@@ -568,13 +657,13 @@ namespace Microsoft.AspNet.SessionState
             byte[] buf;
 
             var item = new SessionStateStoreData(new SessionStateItemCollection(),
-                        SessionStateUtility.GetSessionStaticObjects(context.ApplicationInstance.Context),
+                        GetSessionStaticObjects(context.ApplicationInstance.Context),
                         timeout);
 
-            SerializeStoreData(item, out buf);
+            SerializeStoreData(item, out buf, s_compressionEnabled);
 
             var timeoutInSecs = 60 * timeout;
-            await CreateSessionStateItemAsync(id, timeoutInSecs, DefaultLockCookie, buf, true);
+            await CreateSessionStateItemAsync(id, timeoutInSecs, buf, true);
         }
 
         /// <inheritdoc />
@@ -633,7 +722,11 @@ namespace Microsoft.AspNet.SessionState
         public override void InitializeRequest(HttpContextBase context) { }
 
         /// <inheritdoc />
-        public override async Task ReleaseItemExclusiveAsync(HttpContextBase context, string id, object lockId, CancellationToken cancellationToken)
+        public override async Task ReleaseItemExclusiveAsync(
+            HttpContextBase context, 
+            string id, 
+            object lockId, 
+            CancellationToken cancellationToken)
         {
             var spLink = UriFactory.CreateStoredProcedureUri(s_dbId, s_collectionId, ReleaseItemExclusiveSPID);
 
@@ -643,7 +736,12 @@ namespace Microsoft.AspNet.SessionState
         }
 
         /// <inheritdoc />
-        public override async Task RemoveItemAsync(HttpContextBase context, string id, object lockId, SessionStateStoreData item, CancellationToken cancellationToken)
+        public override async Task RemoveItemAsync(
+            HttpContextBase context, 
+            string id, 
+            object lockId, 
+            SessionStateStoreData item, 
+            CancellationToken cancellationToken)
         {
             var spLink = UriFactory.CreateStoredProcedureUri(s_dbId, s_collectionId, RemoveStateItemSPID);
             var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(spLink, CreateRequestOptions(id), id, (int)lockId);
@@ -661,7 +759,13 @@ namespace Microsoft.AspNet.SessionState
         }
 
         /// <inheritdoc />
-        public override async Task SetAndReleaseItemExclusiveAsync(HttpContextBase context, string id, SessionStateStoreData item, object lockId, bool newItem, CancellationToken cancellationToken)
+        public override async Task SetAndReleaseItemExclusiveAsync(
+            HttpContextBase context, 
+            string id, 
+            SessionStateStoreData item, 
+            object lockId, 
+            bool newItem, 
+            CancellationToken cancellationToken)
         {
             byte[] buf;
             int lockCookie;
@@ -677,7 +781,7 @@ namespace Microsoft.AspNet.SessionState
 
             try
             {
-                SerializeStoreData(item, out buf);
+                SerializeStoreData(item, out buf, s_compressionEnabled);
             }
             catch
             {
@@ -691,7 +795,7 @@ namespace Microsoft.AspNet.SessionState
 
             if (newItem)
             {
-                await CreateSessionStateItemAsync(id, s_timeout, lockCookie, buf, false);
+                await CreateSessionStateItemAsync(id, s_timeout, buf, false);
             }
             else
             {
@@ -711,59 +815,61 @@ namespace Microsoft.AspNet.SessionState
             return false;
         }
 
-        private static void ParseCosmosDbEndPointSettings(NameValueCollection config)
+        internal string CreateSessionStateItemInPartitionSP { get; set; }
+
+        internal static void ParseCosmosDbEndPointSettings(NameValueCollection providerConfig, NameValueCollection appSettings)
         {
-            var endPointSettingKey = config["cosmosDBEndPointSettingKey"];
+            var endPointSettingKey = providerConfig["cosmosDBEndPointSettingKey"];
             if (string.IsNullOrEmpty(endPointSettingKey))
             {
                 throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, "cosmosDBEndPointSettingKey"));
             }
-            s_endPoint = WebConfigurationManager.AppSettings[endPointSettingKey];
+            s_endPoint = appSettings[endPointSettingKey];
             if (string.IsNullOrEmpty(s_endPoint))
             {
                 throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, endPointSettingKey));
             }
 
-            var authKeySettingKey = config["cosmosDBAuthKeySettingKey"];
+            var authKeySettingKey = providerConfig["cosmosDBAuthKeySettingKey"];
             if (string.IsNullOrEmpty(authKeySettingKey))
             {
                 throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, "cosmosDBAuthKeySettingKey"));
             }
-            s_authKey = WebConfigurationManager.AppSettings[authKeySettingKey];
+            s_authKey = appSettings[authKeySettingKey];
             if (string.IsNullOrEmpty(s_authKey))
             {
                 throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, authKeySettingKey));
             }
 
-            s_dbId = config["databaseId"];
+            s_dbId = providerConfig["databaseId"];
             if (string.IsNullOrEmpty(s_dbId))
             {
                 throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, "databaseId"));
             }
 
-            s_collectionId = config["collectionId"];
+            s_collectionId = providerConfig["collectionId"];
             if (string.IsNullOrEmpty(s_collectionId))
             {
                 throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, "collectionId"));
             }
 
-            if (!int.TryParse(config["offerThroughput"], out s_offerThroughput))
+            if (!int.TryParse(providerConfig["offerThroughput"], out s_offerThroughput))
             {
                 s_offerThroughput = 5000;
             }
             
-            s_partitionKey = config["partitionKeyPath"];
+            s_partitionKey = providerConfig["partitionKeyPath"];
 
             if (PartitionEnabled)
             {
-                if(!int.TryParse(config["partitionNumUsedByProvider"], out s_partitionNumUsedBySessionProvider) || s_partitionNumUsedBySessionProvider < 1)
+                if(!int.TryParse(providerConfig["partitionNumUsedByProvider"], out s_partitionNumUsedBySessionProvider) || s_partitionNumUsedBySessionProvider < 1)
                 {
                     s_partitionNumUsedBySessionProvider = 10;
                 }
             }
         }
 
-        private static ConnectionPolicy ParseCosmosDBClientSettings(NameValueCollection config)
+        internal static ConnectionPolicy ParseCosmosDBClientSettings(NameValueCollection config)
         {
             ConnectionMode conMode;
             if (!Enum.TryParse<ConnectionMode>(config["connectionMode"], out conMode))
@@ -807,6 +913,7 @@ namespace Microsoft.AspNet.SessionState
                 ConnectionProtocol = conProtocol,
                 RequestTimeout = new TimeSpan(0, 0, requestTimeout),
                 MaxConnectionLimit = maxConnectionLimit,
+                EnableEndpointDiscovery = false,
                 RetryOptions = new RetryOptions
                 {
                     MaxRetryAttemptsOnThrottledRequests = maxRetryAttemptsOnThrottledRequests,
@@ -923,8 +1030,8 @@ namespace Microsoft.AspNet.SessionState
                 return !string.IsNullOrEmpty(s_partitionKey);
             }
         }
-
-        private static async Task CreateStoredProceduresIfNotExistsAsync()
+        
+        private async Task CreateStoredProceduresIfNotExistsAsync()
         {
             if (!PartitionEnabled)
             {
@@ -947,7 +1054,7 @@ namespace Microsoft.AspNet.SessionState
             try
             {
                 var spLink = UriFactory.CreateStoredProcedureUri(s_dbId, s_collectionId, spId);
-                var sproc = await s_client.ReadStoredProcedureAsync(spLink);
+                await s_client.ReadStoredProcedureAsync(spLink);
             }
             catch (DocumentClientException e)
             {
@@ -966,7 +1073,10 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
-        private static async Task<StoredProcedureResponse<TValue>> ExecuteStoredProcedureWithWrapperAsync<TValue>(Uri spLink, RequestOptions requestOptions, params dynamic[] spParams)
+        internal static async Task<IStoredProcedureResponse<TValue>> ExecuteStoredProcedureWithWrapperAsync<TValue>(
+            Uri spLink, 
+            RequestOptions requestOptions, 
+            params dynamic[] spParams)
         {
             try
             {
@@ -998,14 +1108,14 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
-        private async Task CreateSessionStateItemAsync(string sessionid, int timeout, int lockCookie, byte[] ssItems, bool uninitialized)
+        internal async Task CreateSessionStateItemAsync(string sessionid, int timeoutInSec, byte[] ssItems, bool uninitialized)
         {
             if (PartitionEnabled)
             {
                 var spLink = UriFactory.CreateStoredProcedureUri(s_dbId, s_collectionId, CreateSessionStateItemInPartitionSPID);
                 var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(spLink, CreateRequestOptions(sessionid),
                     // sessionId, partitionValue, timeout, lockCookie, sessionItem, uninitialized
-                    sessionid, CreatePartitionValue(sessionid), timeout, DefaultLockCookie, ssItems, true);
+                    sessionid, CreatePartitionValue(sessionid), timeoutInSec, DefaultLockCookie, ssItems, uninitialized);
 
                 CheckSPResponseAndThrowIfNeeded(spResponse);
             }
@@ -1014,7 +1124,7 @@ namespace Microsoft.AspNet.SessionState
                 var spLink = UriFactory.CreateStoredProcedureUri(s_dbId, s_collectionId, CreateSessionStateItemSPID);
                 var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(spLink, CreateRequestOptions(sessionid),
                     // sessionId, timeout, lockCookie, sessionItem, uninitialized
-                    sessionid, timeout, DefaultLockCookie, ssItems, true);
+                    sessionid, timeoutInSec, DefaultLockCookie, ssItems, uninitialized);
 
                 CheckSPResponseAndThrowIfNeeded(spResponse);
             }
@@ -1028,12 +1138,12 @@ namespace Microsoft.AspNet.SessionState
             }
         }
         // Internal code copied from SessionStateUtility
-        private static void SerializeStoreData(SessionStateStoreData item, out byte[] buf)
+        internal static void SerializeStoreData(SessionStateStoreData item, out byte[] buf, bool compressionEnabled)
         {
             using (MemoryStream s = new MemoryStream())
             {
                 Serialize(item, s);
-                if (s_compressionEnabled)
+                if (compressionEnabled)
                 {
                     byte[] serializedBuffer = s.GetBuffer();
                     int serializedLength = (int)s.Length;
@@ -1086,7 +1196,7 @@ namespace Microsoft.AspNet.SessionState
             writer.Write(unchecked((byte)0xff));
         }
 
-        private static SessionStateStoreData DeserializeStoreData(HttpContextBase context, Stream stream, bool compressionEnabled)
+        internal static SessionStateStoreData DeserializeStoreData(HttpContextBase context, Stream stream, bool compressionEnabled)
         {
             if (compressionEnabled)
             {
@@ -1133,7 +1243,7 @@ namespace Microsoft.AspNet.SessionState
                 }
                 else
                 {
-                    staticObjects = SessionStateUtility.GetSessionStaticObjects(context.ApplicationInstance.Context);
+                    staticObjects = GetSessionStaticObjects(context.ApplicationInstance.Context);
                 }
 
                 eof = reader.ReadByte();

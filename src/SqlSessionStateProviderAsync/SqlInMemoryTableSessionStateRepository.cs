@@ -1,4 +1,7 @@
-﻿namespace Microsoft.AspNet.SessionState
+﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+namespace Microsoft.AspNet.SessionState
 {
     using Resources;
     using System;
@@ -17,6 +20,7 @@
         private int _retryIntervalMilSec;
         private string _connectString;
         private int _maxRetryNum;
+        private int _commandTimeout;
         private SqlCommandHelper _commandHelper;
 
         #region Sql statement
@@ -281,7 +285,28 @@
             this._retryIntervalMilSec = retryInterval.HasValue ? retryInterval.Value : DEFAULT_RETRY_INERVAL;
             this._connectString = connectionString;
             this._maxRetryNum = retryNum.HasValue ? retryNum.Value : DEFAULT_RETRY_NUM;
+            this._commandTimeout = commandTimeout;
             this._commandHelper = new SqlCommandHelper(commandTimeout);
+        }
+
+        internal int RetryIntervalMilSec
+        {
+            get { return _retryIntervalMilSec; }
+        }
+
+        internal string ConnectString
+        {
+            get { return _connectString; }
+        }
+
+        internal int MaxRetryNum
+        {
+            get { return _maxRetryNum; }
+        }
+
+        internal int CommandTimeout
+        {
+            get { return _commandTimeout; }
         }
 
         public void CreateSessionStateTable()
