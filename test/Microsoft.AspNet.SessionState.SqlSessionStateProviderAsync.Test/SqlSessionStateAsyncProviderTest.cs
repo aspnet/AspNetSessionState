@@ -1,5 +1,5 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
 {
@@ -46,7 +46,7 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
                 createConnectionStringSettings());
 
             Assert.Equal(DefaultProviderName, provider.Name);
-            Assert.IsType(typeof(SqlSessionStateRepository), provider.SqlSessionStateRepository);
+            Assert.IsType<SqlSessionStateRepository>(provider.SqlSessionStateRepository);
             Assert.False(provider.CompressionEnabled);
 
             var repo = (SqlSessionStateRepository)provider.SqlSessionStateRepository;
@@ -65,7 +65,7 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
                 createConnectionStringSettings());
 
             Assert.Equal(DefaultProviderName, provider.Name);
-            Assert.IsType(typeof(SqlSessionStateRepository), provider.SqlSessionStateRepository);
+            Assert.IsType<SqlSessionStateRepository>(provider.SqlSessionStateRepository);
             Assert.True(provider.CompressionEnabled);
 
             var repo = (SqlSessionStateRepository)provider.SqlSessionStateRepository;
@@ -83,7 +83,7 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
                 CreateSessionStateSection(), createConnectionStringSettings());
 
             Assert.Equal(DefaultProviderName, provider.Name);
-            Assert.IsType(typeof(SqlInMemoryTableSessionStateRepository), provider.SqlSessionStateRepository);
+            Assert.IsType<SqlInMemoryTableSessionStateRepository>(provider.SqlSessionStateRepository);
             Assert.False(provider.CompressionEnabled);
 
             var repo = (SqlInMemoryTableSessionStateRepository)provider.SqlSessionStateRepository;
@@ -102,7 +102,7 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
                 createConnectionStringSettings());
 
             Assert.Equal(DefaultProviderName, provider.Name);
-            Assert.IsType(typeof(SqlInMemoryTableSessionStateRepository), provider.SqlSessionStateRepository);
+            Assert.IsType<SqlInMemoryTableSessionStateRepository>(provider.SqlSessionStateRepository);
             Assert.True(provider.CompressionEnabled);
 
             var repo = (SqlInMemoryTableSessionStateRepository)provider.SqlSessionStateRepository;
