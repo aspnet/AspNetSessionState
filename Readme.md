@@ -6,6 +6,9 @@ SessionStateModule is ASP.NET’s default session-state handler which retrieves 
 2. Run build.cmd. This will build Nuget package and run all the unit tests.
 3. All the build artifacts will be under aspnetsessionstate\bin\Release\ folder.
 
+## How to contribute
+Information on contributing to this repo is in the [Contributing Guide](CONTRIBUTING.md).
+
 ## Settings of the module and providers
 
 + #### Microsoft.AspNet.SessionState.SessionStateModule
