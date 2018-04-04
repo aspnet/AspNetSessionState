@@ -1,5 +1,5 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license. See the License.txt file in the project root for full license information.
 
 namespace Microsoft.AspNet.SessionState
 {
@@ -7,7 +7,7 @@ namespace Microsoft.AspNet.SessionState
     using System.Threading.Tasks;
     using System.Web.SessionState;
 
-    internal interface ISqlSessionStateRepository
+    interface ISqlSessionStateRepository
     {
         void CreateSessionStateTable();
 
