@@ -7,7 +7,7 @@ namespace Microsoft.AspNet.SessionState
     using System.Threading.Tasks;
     using System.Web.SessionState;
 
-    internal interface ISqlSessionStateRepository
+    interface ISqlSessionStateRepository
     {
         void CreateSessionStateTable();
 
