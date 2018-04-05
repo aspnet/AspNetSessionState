@@ -24,7 +24,7 @@ If you are an outside contributer, please fork the repository. See the GitHub do
 
 **Submitting a pull request**
 
-You will need to sign a [Contributor License Agreement](https://cla.dotnetfoundation.org/) when submitting your pull request. To complete the Contributor License Agreement (CLA), you will need to follow the instructions provided by the CLA bot when you send the pull request. This needs to only be done once for any .NET Foundation OSS project.
+You will need to sign a [Contributor License Agreement](https://cla.opensource.microsoft.com//) when submitting your pull request. To complete the Contributor License Agreement (CLA), you will need to follow the instructions provided by the CLA bot when you send the pull request. This needs to only be done once for any Microsoft OSS project.
 
 If you don't know what a pull request is read this article: https://help.github.com/articles/using-pull-requests. Make sure the respository can build and all tests pass. 
 
