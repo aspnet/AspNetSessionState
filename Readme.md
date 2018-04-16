@@ -21,7 +21,7 @@ Information on contributing to this repo is in the [Contributing Guide](CONTRIBU
 
 2. appSetting *aspnet:AllowConcurrentRequestsPerSession*
     
-    *How to use* - Add ```<add key="aspnet:AllowConcurrentRequestsPerSession" value="[int]"/>``` into web.config under appSettings section.
+    *How to use* - Add ```<add key="aspnet:AllowConcurrentRequestsPerSession" value="[bool]"/>``` into web.config under appSettings section.
     
     *Description* - If multiple requests with same sessionid try to acquire sessionstate concurrently, asp.net only allows one request to get the sessionstate. With this setting, asp.net will allow multiple requests with same sessionid to acquire the sessionstate, but it doesn't guarantee thread safe of accessing sessionstate.
 
