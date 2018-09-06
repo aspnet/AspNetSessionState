@@ -11,11 +11,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.AspNet.SessionSta
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync", "src\CosmosDBSessionStateProviderAsync\Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync.csproj", "{4CFB2896-D5C1-4E96-A3DA-D57C58539209}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.AspNet.SessionState.RedisSessionStateProviderAsync", "src\RedisSessionStateProviderAsync\Microsoft.AspNet.SessionState.RedisSessionStateProviderAsync.csproj", "{6BAE1FE4-2864-4F94-B9B6-F6B9C2354B68}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.AspNet.SessionState.SessionStateModule", "src\SessionStateModule\Microsoft.AspNet.SessionState.SessionStateModule.csproj", "{7238F90D-3BCE-4F40-A5BA-EA36AD484BD6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.Test", "test\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.Test\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.Test.csproj", "{CBB00B6C-8A44-43F0-BE73-0B0E8565F8A2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync.Test", "test\Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync.Test\Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync.Test.csproj", "{2AF89ACA-3545-432D-8D99-C5230E8643A8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.AspNet.SessionState.RedisSessionStateProviderAsync.Test", "test\Microsoft.AspNet.SessionState.RedisSessionStateProviderAsync.Test\Microsoft.AspNet.SessionState.RedisSessionStateProviderAsync.Test.csproj", "{A48B49CD-B2F1-4758-9B05-87433A284E1B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -42,6 +46,14 @@ Global
 		{2AF89ACA-3545-432D-8D99-C5230E8643A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2AF89ACA-3545-432D-8D99-C5230E8643A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2AF89ACA-3545-432D-8D99-C5230E8643A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6BAE1FE4-2864-4F94-B9B6-F6B9C2354B68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6BAE1FE4-2864-4F94-B9B6-F6B9C2354B68}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6BAE1FE4-2864-4F94-B9B6-F6B9C2354B68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6BAE1FE4-2864-4F94-B9B6-F6B9C2354B68}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A48B49CD-B2F1-4758-9B05-87433A284E1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A48B49CD-B2F1-4758-9B05-87433A284E1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A48B49CD-B2F1-4758-9B05-87433A284E1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A48B49CD-B2F1-4758-9B05-87433A284E1B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -52,6 +64,8 @@ Global
 		{7238F90D-3BCE-4F40-A5BA-EA36AD484BD6} = {58E8143E-86D8-4CA3-AAC3-1CF253D91207}
 		{CBB00B6C-8A44-43F0-BE73-0B0E8565F8A2} = {93AD624B-85A6-4EE9-B40E-42914D40C0CF}
 		{2AF89ACA-3545-432D-8D99-C5230E8643A8} = {93AD624B-85A6-4EE9-B40E-42914D40C0CF}
+		{6BAE1FE4-2864-4F94-B9B6-F6B9C2354B68} = {58E8143E-86D8-4CA3-AAC3-1CF253D91207}
+		{A48B49CD-B2F1-4758-9B05-87433A284E1B} = {93AD624B-85A6-4EE9-B40E-42914D40C0CF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4853AD21-0DCE-40D8-A3B9-19081B71C364}
