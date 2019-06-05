@@ -1,11 +1,11 @@
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="tools\MicrosoftAspNetSessionState.settings.targets"/>  
 
   <ItemGroup>
     <AssemblyProject Include="src\SessionStateModule\Microsoft.AspNet.SessionState.SessionStateModule.csproj" />
     <AssemblyProject Include="src\SqlSessionStateProviderAsync\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.csproj" />
     <AssemblyProject Include="src\CosmosDBSessionStateProviderAsync\Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync.csproj" />
   </ItemGroup>
+
   <ItemGroup>
     <TestProject Include="test\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.Test\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.Test.csproj" />
     <TestProject Include="test\Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync.Test\Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync.Test.csproj" />
@@ -15,18 +15,33 @@
   </ItemGroup>
   
   <Target Name="Build" DependsOnTargets="BuildAssemblies;UnitTest;BuildPackages" />
-  <Target Name="Clean" DependsOnTargets="CleanPackages;CleanAssemblies" />
+  <Target Name="BuildAll" DependsOnTargets="BuildAssemblies;BuildSamples;UnitTest;BuildPackages" />
+  <Target Name="Clean" DependsOnTargets="CleanPackages;CleanSamples;CleanTests;CleanAssemblies" />
   <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
   
   <Target Name="BuildAssemblies" DependsOnTargets="RestorePackages">
-    <MSBuild Targets="Build" Projects="@(AssemblyProject);@(TestProject)" />
+    <MSBuild Targets="Build" Projects="@(AssemblyProject)" />
   </Target> 
 
-  <Target Name="CleanAssemblies">
-    <MSBuild Targets="Clean" Projects="Microsoft.Aspnet.SessionState.sln" />
+  <Target Name="BuildTests" DependsOnTargets="RestorePackages">
+    <MSBuild Targets="Build" Projects="@(TestProject)" />
   </Target>
 
-  <Target Name="RebuildAssemblies" DependsOnTargets="Clean;Build" />
+  <Target Name="BuildSamples" DependsOnTargets="RestorePackages">
+    <MSBuild Targets="Build" Projects="@(SampleProject)" />
+  </Target>
+
+  <Target Name="CleanAssemblies">
+    <MSBuild Targets="Clean" Projects="@(AssemblyProject)" />
+  </Target>
+
+  <Target Name="CleanTests">
+    <MSBuild Targets="Clean" Projects="@(TestProject)" />
+  </Target>
+
+  <Target Name="CleanSamples">
+    <MSBuild Targets="Clean" Projects="@(SampleProject)" />
+  </Target>
 
   <!-- Packages build -->
 
@@ -45,9 +60,8 @@
   </Target>
 
   
-  <Target Name="UnitTest">
+  <Target Name="UnitTest" DependsOnTargets="BuildTests">
     <MSBuild Targets="XunitTest" Projects="@(TestProject)" />
   </Target>
 
-  <Import Project="tools\MicrosoftAspNetSessionState.targets"/>
 </Project>

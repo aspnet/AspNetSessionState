@@ -1,37 +1,106 @@
 <Project DefaultTargets="UnitTest" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <CustomBeforeProjectTargets>$(MSBuildThisFileDirectory)MicrosoftAspNetSessionState.Extensions.settings.targets</CustomBeforeProjectTargets>
-  </PropertyGroup>
-  <Import Project="$(CustomBeforeProjectTargets)" Condition="Exists('$(CustomBeforeProjectTargets)')" Label="Pre-targets Build Extensibility Point"/>
-
-  <!-- Default properties -->
 
   <PropertyGroup>
-    <RepositoryRoot Condition="'$(RepositoryRoot)' == ''">$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), Microsoft.Aspnet.SessionState.sln))\</RepositoryRoot>
+    <CustomAfterMicrosoftCommonTargets>$(MSBuildThisFileDirectory)version.targets;$(MSBuildThisFileDirectory)signing.targets</CustomAfterMicrosoftCommonTargets>
+    <CustomAfterNuGetProjTargets>$(MSBuildThisFileDirectory)signing.targets</CustomAfterNuGetProjTargets>
+    <RepositoryRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), Microsoft.Aspnet.SessionState.sln))\</RepositoryRoot>
     <SolutionDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), Microsoft.Aspnet.SessionState.sln))\</SolutionDir>
   </PropertyGroup>
 
-  <PropertyGroup Label="Common Configuration">
-    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
-    <OutputPath>$(RepositoryRoot)bin\$(Configuration)\</OutputPath>
-    <IntermediateOutputPath>$(RepositoryRoot)obj\$(Configuration)\$(MSBuildProjectName)\</IntermediateOutputPath>
-  </PropertyGroup>
+  <Import Project="$(RepositoryRoot)\packages\microbuild.core.0.3.0\build\MicroBuild.Core.props"
+      Condition="Exists('$(RepositoryRoot)\packages\microbuild.core.0.3.0\build\MicroBuild.Core.props')" />
+  <Import Project="$(RepositoryRoot)\packages\microbuild.core.0.3.0\build\MicroBuild.Core.targets"
+      Condition="Exists('$(RepositoryRoot)\packages\microbuild.core.0.3.0\build\MicroBuild.Core.targets')" />
+
+  <!-- Configurable properties-->
 
   <PropertyGroup>
+    <!-- Versioning:
+            Major:	'Major' for Assembly, File, Info, and Package.
+            Minor:	'Minor' for Assembly, File, Info, and Package.
+            Build:	Third (auto-generated) for File and Info. (Assembly is always 0)
+            Revision:	'Revision' for Assembly and File. Strategy - Try to leave this 0 and only rev Major/Minor for big changes and Release for non-dependency-breaking changes.
+            Release:	Third for Info and Package.
+         Update package and file without touching assembly, except for major releases.
+
+         Some of these are already set in each project's individual settings file.
+    -->
+    <BuildQuality Condition="'$(BuildQuality)' == ''">beta</BuildQuality>
+    <VersionStartYear Condition="'$(VersionStartYear)' == ''">2019</VersionStartYear>
+    <VersionMajor Condition="'$(VersionMajor)' == ''">1</VersionMajor>
+    <VersionMinor Condition="'$(VersionMinor)' == ''">0</VersionMinor>
+    <VersionRevision Condition="'$(VersionRevision)' == ''">0</VersionRevision>
+    <VersionRelease Condition="'$(VersionRelease)' == ''">0</VersionRelease>
+    <VersionBuild Condition="'$(VersionBuild)' == '' OR '$(VersionBuild)' == '0'">$([MSBuild]::Add(1, $([MSBuild]::Subtract($([System.DateTime]::Now.Year), $(VersionStartYear)))))$([System.DateTime]::Now.ToString("MMdd"))</VersionBuild>
+    <NuGetPackageVersion>$(VersionMajor).$(VersionMinor).$(VersionRelease)</NuGetPackageVersion>
+  </PropertyGroup>
+
+  <!-- Add release type for non-RTM releases. -->
+  <PropertyGroup Label="Prerelease version adjustments" Condition="'$(BuildQuality)' != 'rtm'">
+    <VersionRelease>$(VersionRelease)-$(BuildQuality)</VersionRelease>
+    <NuGetPackageVersion>$(NuGetPackageVersion)-$(BuildQuality)</NuGetPackageVersion>
+  </PropertyGroup>
+
+  <!-- Additionaly, add date stamp to 'preview' releases. -->
+  <PropertyGroup Label="Prerelease version adjustments" Condition="'$(BuildQuality)' == 'preview'">
+    <NuGetPackageVersion>$(NuGetPackageVersion)$(VersionBuild)</NuGetPackageVersion>
+  </PropertyGroup>
+
+  <!-- Default properties -->
+
+  <PropertyGroup Label="Common Configuration">
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <OutputPath>$(RepositoryRoot).binaries\bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>$(RepositoryRoot).binaries\obj\$(Configuration)\$(MSBuildProjectName)\</IntermediateOutputPath>
+    <AssemblyPath Condition="'$(CodeSignEnabled)' == 'true'">$(CodeSignOutputPath)</AssemblyPath>
     <AssemblyPath Condition="'$(AssemblyPath)' == ''">$(OutputPath)</AssemblyPath>
-    <NuGetOutputPath>$(AssemblyPath)Packages</NuGetOutputPath>
-    <NuGetSymbolsOutputPath>$(AssemblyPath)\SymbolPackages</NuGetSymbolsOutputPath>
     <TestOutputPath>$(OutputPath)test\</TestOutputPath>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <ReferencePackagesPath>$(RepositoryRoot)packages\</ReferencePackagesPath>
+  <PropertyGroup Label="Nuget Configuration">
+    <NuGetOutputPath>$(RepositoryRoot).binaries\Packages\$(Configuration)</NuGetOutputPath>
+    <!-- <NuGetSymbolsOutputPath>$(RepositoryRoot).binaries\SymbolPackages\$(Configuration)</NuGetSymbolsOutputPath> -->
     <NuGetPackSymbols Condition="'$(NuGetPackSymbols)' == ''">true</NuGetPackSymbols>
+    <ReferencePackagesPath>$(RepositoryRoot)packages\</ReferencePackagesPath>
     <SourceRootFullPath>$(RepositoryRoot)\src\$(MSBuildProjectName)\</SourceRootFullPath>
+    <NuGetScriptDirectory>$(MSBuildProjectDirectory)\tools\Net471</NuGetScriptDirectory>
+    <NuGetSharedScriptDirectory>$(MSBuildProjectDirectory)\shared\tools\Net471</NuGetSharedScriptDirectory>
+    <NuGetProcessedScriptSubDirectory>pp</NuGetProcessedScriptSubDirectory>
   </PropertyGroup>
 
+  <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.nuproj'">
+    <NuGetScriptFiles Include="$(NuGetScriptDirectory)\*.ps1" />
+    <NuGetSharedScriptFiles Include="$(NuGetSharedScriptDirectory)\*.ps1" />
+  </ItemGroup>
+
   <PropertyGroup>
-    <CustomAfterMicrosoftCommonTargets>$(RepositoryRoot)tools\MicrosoftAspNetSessionState.targets</CustomAfterMicrosoftCommonTargets>
-    <CustomAfterNuGetProjTargets>$(CustomAfterMicrosoftCommonTargets)</CustomAfterNuGetProjTargets>
+    <TestRoot>$(RepositoryRoot)\test\Microsoft.AspNet.SessionState.AsyncProviders.SqlSessionStateProviderAsync.Test</TestRoot>
+    <BuildingTestProject Condition="$(MSBuildProjectDirectory.ToLower().Contains($(TestRoot.ToLower())))">true</BuildingTestProject>
   </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)version.targets" Condition="'$(MSBuildProjectExtension)' == '.nuproj'"/>
+
+  <Target Name="SetNuSpecProperties" BeforeTargets="GenerateNuSpecFile">
+    <PropertyGroup>
+      <NuSpecProperties>
+          NuGetPackageVersion=$(NuGetPackageVersion);
+          NuGetPackageId=$(NuGetPackageId);
+          SessionStateModuleNuGetPackageVersion=$(SessionStateModuleNuGetPackageVersion);
+          DocumentDBNuGetPackageVersion=$(DocumentDBNuGetPackageVersion)
+      </NuSpecProperties>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="SuperClean" AfterTargets="Clean"  Condition="'$(MSBuildProjectExtension)' != '.nuproj'">
+    <RemoveDir Directories="$(OutputPath)" />
+    <RemoveDir Directories="$(IntermediateOutputRoot)" />
+  </Target>
+
+  <Target Name="SuperCleanPackage" AfterTargets="Clean" Condition="'$(MSBuildProjectExtension)' == '.nuproj'">
+    <RemoveDir Directories="$(NuGetOutputPath)" />
+    <RemoveDir Directories="$(NuGetSymbolsOutputPath)" />
+    <RemoveDir Directories="$(NuGetScriptDirectory)\$(NuGetProcessedScriptSubDirectory)" />
+    <RemoveDir Directories="$(NuGetSharedScriptDirectory)\$(NuGetProcessedScriptSubDirectory)" />
+  </Target>
+
 </Project>

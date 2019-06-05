@@ -1,14 +1,16 @@
 <Project DefaultTargets="UnitTest" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
   <PropertyGroup>
-    <BuildQuality Condition="'$(BuildQuality)' == ''">rtm</BuildQuality>
-    <VersionStartYear>2016</VersionStartYear>
+    <BuildQuality Condition="'$(BuildQuality)' == ''">preview</BuildQuality>
     <VersionMajor>1</VersionMajor>
-    <VersionMinor>1</VersionMinor>
+    <VersionMinor>2</VersionMinor>
     <VersionRelease>0</VersionRelease>
-    <VersionRelease Condition="'$(BuildQuality)' != 'rtm'">$(VersionRelease)-$(BuildQuality)</VersionRelease>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet package dependencies">
     <SessionStateModuleNuGetPackageVersion>1.1.0</SessionStateModuleNuGetPackageVersion>
   </PropertyGroup>
+
+  <Import Project="MicrosoftAspNetSessionState.settings.targets" />
+
 </Project>

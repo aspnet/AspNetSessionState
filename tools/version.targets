@@ -16,7 +16,7 @@ Project global versioning targets.
   </PropertyGroup>
 
   <PropertyGroup>
-    <VersionStartYear Condition="'$(VersionStartYear)' == ''">2016</VersionStartYear>
+    <VersionStartYear Condition="'$(VersionStartYear)' == ''">2019</VersionStartYear>
     <VersionMajor Condition="'$(VersionMajor)' == ''">INVALID_VersionMajor</VersionMajor>
     <VersionMinor Condition="'$(VersionMinor)' == ''">INVALID_VersionMinor</VersionMinor>
     <VersionBuild Condition="'$(VersionBuild)' == '' OR '$(VersionBuild)' == '0'">$([MSBuild]::Add(1, $([MSBuild]::Subtract($([System.DateTime]::Now.Year), $(VersionStartYear)))))$([System.DateTime]::Now.ToString("MMdd"))</VersionBuild>
@@ -36,6 +36,10 @@ Project global versioning targets.
 
   <PropertyGroup>
     <NuGetPackageVersion Condition="'$(NuGetPackageVersion)' == ''">$(VersionMajor).$(VersionMinor).$(VersionRelease)</NuGetPackageVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <SatelliteContractVersion Condition="'$(SatelliteContractVersion)' == ''">$(AssemblyVersion)</SatelliteContractVersion>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(VersionFileGenerationEnabled)' == 'true'">
