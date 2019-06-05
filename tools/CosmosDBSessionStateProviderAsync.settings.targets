@@ -1,14 +1,14 @@
 <Project DefaultTargets="UnitTest" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <BuildQuality Condition="'$(BuildQuality)' == ''">beta</BuildQuality>
+    <BuildQuality Condition="'$(BuildQuality)' == ''">preview</BuildQuality>
     <VersionMajor>1</VersionMajor>
-    <VersionMinor>2</VersionMinor>
+    <VersionMinor>1</VersionMinor>
     <VersionRelease>0</VersionRelease>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet package dependencies">
-    <SessionStateModuleNuGetPackageVersion>1.1.0</SessionStateModuleNuGetPackageVersion>
+    <SessionStateModuleNuGetPackageVersion>1.2.0</SessionStateModuleNuGetPackageVersion>
     <DocumentDBNuGetPackageVersion>1.15.0</DocumentDBNuGetPackageVersion>
   </PropertyGroup>
 
