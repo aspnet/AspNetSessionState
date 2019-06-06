@@ -164,7 +164,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             providerConfig["databaseId"] = DatabaseId;
             providerConfig["collectionId"] = CollectionId;
             providerConfig["partitionKeyPath"] = ParitionKeyPath;
-            providerConfig["partitionNumUsedByProvider"] = PartitionNum.ToString();
+            providerConfig["partitionNumUsedByProvider"] = PartitionNum.ToString(); // This is ignored now. But try this anyway to be sure there are no issues if its there.
             providerConfig["connectionMode"] = "Gateway";
             providerConfig["connectionProtocol"] = "Https";
             providerConfig["requestTimeout"] = "1";
@@ -241,7 +241,6 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             Assert.Equal(CollectionId, CosmosDBSessionStateProviderAsync.CollectionId);
             Assert.Equal(DefaultThroughPut, CosmosDBSessionStateProviderAsync.ThroughPut);
             Assert.Equal(ParitionKeyPath, CosmosDBSessionStateProviderAsync.PartitionKey);
-            Assert.Equal(PartitionNum, CosmosDBSessionStateProviderAsync.PartitionNum);
 
             Assert.NotNull(configuredPolicy);
             Assert.Equal(ConnectionMode.Gateway, configuredPolicy.ConnectionMode);
@@ -364,7 +363,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             providerConfig["databaseId"] = DatabaseId;
             providerConfig["collectionId"] = CollectionId;
             providerConfig["partitionKeyPath"] = ParitionKeyPath;
-            providerConfig["partitionNumUsedByProvider"] = PartitionNum.ToString();
+            providerConfig["partitionNumUsedByProvider"] = PartitionNum.ToString(); // This is ignored now. But try this anyway to be sure there are no issues if its there.
 
             CosmosDBSessionStateProviderAsync.ResetStaticFields();
             CosmosDBSessionStateProviderAsync.ParseCosmosDbEndPointSettings(providerConfig, appSettings);
@@ -375,7 +374,6 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             Assert.Equal(CollectionId, CosmosDBSessionStateProviderAsync.CollectionId);
             Assert.Equal(DefaultThroughPut, CosmosDBSessionStateProviderAsync.ThroughPut);
             Assert.Equal(ParitionKeyPath, CosmosDBSessionStateProviderAsync.PartitionKey);
-            Assert.Equal(PartitionNum, CosmosDBSessionStateProviderAsync.PartitionNum);
         }
 
         [Fact]
@@ -401,7 +399,6 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             Assert.Equal(CollectionId, CosmosDBSessionStateProviderAsync.CollectionId);
             Assert.Equal(DefaultThroughPut, CosmosDBSessionStateProviderAsync.ThroughPut);
             Assert.Equal(ParitionKeyPath, CosmosDBSessionStateProviderAsync.PartitionKey);
-            Assert.Equal(DefaultPartitionNum, CosmosDBSessionStateProviderAsync.PartitionNum);
         }
 
         [Fact]

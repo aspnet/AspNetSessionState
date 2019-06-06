@@ -28,8 +28,7 @@ namespace Microsoft.AspNet.SessionState
 
         private static string s_endPoint;
         private static string s_authKey;
-        private static string s_partitionKey = "";
-        private static int s_partitionNumUsedBySessionProvider;
+        private static string s_partitionKey = "pkey";
         private static bool s_oneTimeInited;
         private static object s_lock = new object();
         private static string s_dbId;
@@ -562,8 +561,7 @@ namespace Microsoft.AspNet.SessionState
         {
             s_endPoint = "";
             s_authKey = "";
-            s_partitionKey = "";
-            s_partitionNumUsedBySessionProvider = 0;
+            s_partitionKey = "pkey";
             s_dbId = "";
             s_collectionId = "";
             s_offerThroughput = 0;
@@ -596,11 +594,6 @@ namespace Microsoft.AspNet.SessionState
         internal static string DbId
         {
             get { return s_dbId; }
-        }
-
-        internal static int PartitionNum
-        {
-            get { return s_partitionNumUsedBySessionProvider; }
         }
 
         internal static string CollectionId
@@ -858,15 +851,11 @@ namespace Microsoft.AspNet.SessionState
                 s_offerThroughput = 5000;
             }
             
-            s_partitionKey = providerConfig["partitionKeyPath"];
+            // If 'partitionKeyPath' has not been explicitly given, then enable partitioning by using the default.
+            if (providerConfig["partitionKeyPath"] != null)
+                s_partitionKey = providerConfig["partitionKeyPath"];
 
-            if (PartitionEnabled)
-            {
-                if(!int.TryParse(providerConfig["partitionNumUsedByProvider"], out s_partitionNumUsedBySessionProvider) || s_partitionNumUsedBySessionProvider < 1)
-                {
-                    s_partitionNumUsedBySessionProvider = 10;
-                }
-            }
+            // 'partitionNumUsedByProvider' was previously a thing. Now we ignore. I suggest not using this as a config key again. :)
         }
 
         internal static ConnectionPolicy ParseCosmosDBClientSettings(NameValueCollection config)
@@ -943,24 +932,13 @@ namespace Microsoft.AspNet.SessionState
             {
                 return new RequestOptions
                 {
-                    PartitionKey = new PartitionKey(CreatePartitionValue(sessionId))
+                    PartitionKey = new PartitionKey(sessionId)
                 };
             }
             else
             {
                 return new RequestOptions();
             }
-        }
-
-        private static string CreatePartitionValue(string sessionId)
-        {
-            Debug.Assert(!string.IsNullOrEmpty(sessionId));
-            Debug.Assert(PartitionEnabled);
-            Debug.Assert(s_partitionNumUsedBySessionProvider != 0);
-
-            // Default SessionIdManager uses all the 26 letters and number 0~5
-            // which can create 32 different partitions
-            return (sessionId[0] % s_partitionNumUsedBySessionProvider).ToString();
         }
 
         private static Uri DocumentCollectionUri
@@ -1011,6 +989,15 @@ namespace Microsoft.AspNet.SessionState
                     if(PartitionEnabled)
                     {
                         docCollection.PartitionKey.Paths.Add($"/{s_partitionKey}");
+                        docCollection.IndexingPolicy = new IndexingPolicy()
+                        {
+                            IndexingMode = IndexingMode.Consistent,
+                            ExcludedPaths = new System.Collections.ObjectModel.Collection<ExcludedPath>()
+                            {
+                                new ExcludedPath() { Path = "/*" }
+                            },
+                            IncludedPaths = new System.Collections.ObjectModel.Collection<IncludedPath>()
+                        };
                     }
 
                     await s_client.CreateDocumentCollectionAsync(
@@ -1115,7 +1102,7 @@ namespace Microsoft.AspNet.SessionState
                 var spLink = UriFactory.CreateStoredProcedureUri(s_dbId, s_collectionId, CreateSessionStateItemInPartitionSPID);
                 var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(spLink, CreateRequestOptions(sessionid),
                     // sessionId, partitionValue, timeout, lockCookie, sessionItem, uninitialized
-                    sessionid, CreatePartitionValue(sessionid), timeoutInSec, DefaultLockCookie, ssItems, uninitialized);
+                    sessionid, sessionid, timeoutInSec, DefaultLockCookie, ssItems, uninitialized);
 
                 CheckSPResponseAndThrowIfNeeded(spResponse);
             }
