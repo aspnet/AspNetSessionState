@@ -45,10 +45,13 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
         private const string AuthKey = "[AuthKey]";
         private const string ParitionKeyPath = "SessionId";
         private const string TestSessionId = "piqhlifa30ooedcp1k42mtef";
+        private const string DefaultPartitionValue = "12";   // The partition assigned to TestSessionId using default settings
         private const int DefaultLockCookie = 1;
         private const int AnotherLockCookie = 2;
         private const int PartitionNum = 20;
         private const int DefaultPartitionNum = 10;
+        private const string WildcardPartitionString = "*";
+        private const int WildcardPartitionCount = -1;
         private const int DefaultThroughPut = 5000;
         private const int DefaultSessionTimeout = 20;
         private const int DefaultSessionTimeoutInSec = 60 * 20;
@@ -164,7 +167,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             providerConfig["databaseId"] = DatabaseId;
             providerConfig["collectionId"] = CollectionId;
             providerConfig["partitionKeyPath"] = ParitionKeyPath;
-            providerConfig["partitionNumUsedByProvider"] = PartitionNum.ToString(); // This is ignored now. But try this anyway to be sure there are no issues if its there.
+            providerConfig["partitionNumUsedByProvider"] = PartitionNum.ToString();
             providerConfig["connectionMode"] = "Gateway";
             providerConfig["connectionProtocol"] = "Https";
             providerConfig["requestTimeout"] = "1";
@@ -202,9 +205,8 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
                 .Returns(Task.FromResult((ResourceResponse<Database>)null))
                 .Callback(() => dbCreated = true);
 
-            docClientMoq.Setup(client => client.ReadDocumentCollectionAsync(docCollectionUri, null))
-                .Returns(Task.FromResult((ResourceResponse<DocumentCollection>)null))
-                .Callback(() => docCollectionRead = true);
+            SetupReadDocumentCollectionAsyncMock(docClientMoq, docCollectionUri, () => docCollectionRead = true);
+
             docClientMoq.Setup(client => client.CreateDocumentCollectionAsync(dbUri,
                     It.Is<DocumentCollection>(docCollection => docCollection.Id == CollectionId
                                               && docCollection.DefaultTimeToLive == DefaultSessionTimeoutInSec),
@@ -241,6 +243,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             Assert.Equal(CollectionId, CosmosDBSessionStateProviderAsync.CollectionId);
             Assert.Equal(DefaultThroughPut, CosmosDBSessionStateProviderAsync.ThroughPut);
             Assert.Equal(ParitionKeyPath, CosmosDBSessionStateProviderAsync.PartitionKey);
+            Assert.Equal(PartitionNum, CosmosDBSessionStateProviderAsync.PartitionNum);
 
             Assert.NotNull(configuredPolicy);
             Assert.Equal(ConnectionMode.Gateway, configuredPolicy.ConnectionMode);
@@ -289,6 +292,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             providerConfig["collectionId"] = CollectionId;
 
             var docClientMoq = new Mock<IDocumentClient>();
+            SetupReadDocumentCollectionAsyncMock(docClientMoq, UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), () => { });
             provider.DocumentClientFactory = (endpoint, authKey, policy) => docClientMoq.Object;
             provider.Initialize(DefaultProviderName, providerConfig, ssc, appSettings);
 
@@ -347,6 +351,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             Assert.Equal(DatabaseId, CosmosDBSessionStateProviderAsync.DbId);
             Assert.Equal(CollectionId, CosmosDBSessionStateProviderAsync.CollectionId);
             Assert.Equal(DefaultThroughPut, CosmosDBSessionStateProviderAsync.ThroughPut);
+            Assert.Equal(0, CosmosDBSessionStateProviderAsync.PartitionNum);
             Assert.Null(CosmosDBSessionStateProviderAsync.PartitionKey);
         }
 
@@ -363,7 +368,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             providerConfig["databaseId"] = DatabaseId;
             providerConfig["collectionId"] = CollectionId;
             providerConfig["partitionKeyPath"] = ParitionKeyPath;
-            providerConfig["partitionNumUsedByProvider"] = PartitionNum.ToString(); // This is ignored now. But try this anyway to be sure there are no issues if its there.
+            providerConfig["partitionNumUsedByProvider"] = PartitionNum.ToString();
 
             CosmosDBSessionStateProviderAsync.ResetStaticFields();
             CosmosDBSessionStateProviderAsync.ParseCosmosDbEndPointSettings(providerConfig, appSettings);
@@ -374,6 +379,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             Assert.Equal(CollectionId, CosmosDBSessionStateProviderAsync.CollectionId);
             Assert.Equal(DefaultThroughPut, CosmosDBSessionStateProviderAsync.ThroughPut);
             Assert.Equal(ParitionKeyPath, CosmosDBSessionStateProviderAsync.PartitionKey);
+            Assert.Equal(PartitionNum, CosmosDBSessionStateProviderAsync.PartitionNum);
         }
 
         [Fact]
@@ -399,6 +405,34 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             Assert.Equal(CollectionId, CosmosDBSessionStateProviderAsync.CollectionId);
             Assert.Equal(DefaultThroughPut, CosmosDBSessionStateProviderAsync.ThroughPut);
             Assert.Equal(ParitionKeyPath, CosmosDBSessionStateProviderAsync.PartitionKey);
+            Assert.Equal(DefaultPartitionNum, CosmosDBSessionStateProviderAsync.PartitionNum);
+        }
+
+        [Fact]
+        public void ParseCosmosDbEndPointSettings_Should_Initialize_EndPointSetting_With_Wildcard_PartitionNum()
+        {
+            var providerConfig = new NameValueCollection();
+            var appSettings = new NameValueCollection();
+
+            providerConfig["cosmosDBEndPointSettingKey"] = DefaultEndPointSettingKey;
+            appSettings[DefaultEndPointSettingKey] = EndPoint;
+            providerConfig["cosmosDBAuthKeySettingKey"] = DefaultAuthKeySettingKey;
+            appSettings[DefaultAuthKeySettingKey] = AuthKey;
+            providerConfig["databaseId"] = DatabaseId;
+            providerConfig["collectionId"] = CollectionId;
+            providerConfig["partitionKeyPath"] = ParitionKeyPath;
+            providerConfig["partitionNumUsedByProvider"] = WildcardPartitionString;
+
+            CosmosDBSessionStateProviderAsync.ResetStaticFields();
+            CosmosDBSessionStateProviderAsync.ParseCosmosDbEndPointSettings(providerConfig, appSettings);
+
+            Assert.Equal(EndPoint, CosmosDBSessionStateProviderAsync.EndPoint);
+            Assert.Equal(AuthKey, CosmosDBSessionStateProviderAsync.AuthKey);
+            Assert.Equal(DatabaseId, CosmosDBSessionStateProviderAsync.DbId);
+            Assert.Equal(CollectionId, CosmosDBSessionStateProviderAsync.CollectionId);
+            Assert.Equal(DefaultThroughPut, CosmosDBSessionStateProviderAsync.ThroughPut);
+            Assert.Equal(ParitionKeyPath, CosmosDBSessionStateProviderAsync.PartitionKey);
+            Assert.Equal(WildcardPartitionCount, CosmosDBSessionStateProviderAsync.PartitionNum);
         }
 
         [Fact]
@@ -504,6 +538,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var spLink = UriFactory.CreateStoredProcedureUri(DatabaseId, CollectionId, CreateSessionStateItemSPID);
             object[] ssData = null;
 
+            SetupReadDocumentCollectionAsyncMock(docClientMoq, UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), () => { });
             docClientMoq.Setup(client => client.ExecuteStoredProcedureAsync<object>(
                 It.Is<Uri>(link => link.ToString() == spLink.ToString()), 
                 It.Is<RequestOptions>(option => option.PartitionKey == null),
@@ -534,6 +569,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var spLink = UriFactory.CreateStoredProcedureUri(DatabaseId, CollectionId, CreateSessionStateItemInPartitionSPID);
             object[] ssData = null;
 
+            SetupReadDocumentCollectionAsyncMock(docClientMoq, UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), () => { });
             docClientMoq.Setup(client => client.ExecuteStoredProcedureAsync<object>(
                 It.Is<Uri>(link => link.ToString() == spLink.ToString()),
                 It.Is<RequestOptions>(option => option.PartitionKey != null),
@@ -550,6 +586,39 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             Assert.NotNull(ssData);
             // sessionId, partitionValue, timeout, lockCookie, sessionItem, uninitialized
             Assert.Equal(TestSessionId, (string)ssData[0]);
+            Assert.Equal(DefaultPartitionValue, (string)ssData[1]);
+            Assert.Equal(DefaultSessionTimeoutInSec, (int)ssData[2]);
+            Assert.Equal(DefaultLockCookie, (int)ssData[3]);
+            Assert.Equal(buff, (byte[])ssData[4]);
+            Assert.True((bool)ssData[5]);
+        }
+
+        [Fact]
+        public async void CreateSessionStateItemAsync_Should_Execute_CreateSessionStateItemInPartitionSP_With_Full_SessionID_If_Using_Wildcard()
+        {
+            var docClientMoq = new Mock<IDocumentClient>();
+            var spResponse = CreateStoredProcedureResponseInstance<object>(HttpStatusCode.OK, null);
+            var spLink = UriFactory.CreateStoredProcedureUri(DatabaseId, CollectionId, CreateSessionStateItemInPartitionSPID);
+            object[] ssData = null;
+
+            SetupReadDocumentCollectionAsyncMock(docClientMoq, UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), () => { });
+            docClientMoq.Setup(client => client.ExecuteStoredProcedureAsync<object>(
+                It.Is<Uri>(link => link.ToString() == spLink.ToString()),
+                It.Is<RequestOptions>(option => option.PartitionKey != null),
+                It.Is<object[]>(parameters => parameters.Count() == 6)))
+            .Returns(Task.FromResult(spResponse))
+            .Callback<Uri, RequestOptions, object[]>((_, __, parameters) => ssData = parameters);
+
+            var provider = CreateAndInitializeProviderWithDefaultConfig((_, __, ___) => docClientMoq.Object, true, false, WildcardPartitionString);
+            var buff = new byte[DefaultItemLength];
+            var exception = await Record.ExceptionAsync(
+                async () => await provider.CreateSessionStateItemAsync(TestSessionId, DefaultSessionTimeoutInSec, buff, true));
+
+            Assert.Null(exception);
+            Assert.NotNull(ssData);
+            // sessionId, partitionValue, timeout, lockCookie, sessionItem, uninitialized
+            Assert.Equal(TestSessionId, (string)ssData[0]);
+            Assert.Equal(TestSessionId, (string)ssData[1]);
             Assert.Equal(DefaultSessionTimeoutInSec, (int)ssData[2]);
             Assert.Equal(DefaultLockCookie, (int)ssData[3]);
             Assert.Equal(buff, (byte[])ssData[4]);
@@ -564,6 +633,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var spLink = UriFactory.CreateStoredProcedureUri(DatabaseId, CollectionId, CreateSessionStateItemSPID);
             object[] ssData = null;
 
+            SetupReadDocumentCollectionAsyncMock(docClientMoq, UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), () => { });
             docClientMoq.Setup(client => client.ExecuteStoredProcedureAsync<object>(
                 It.Is<Uri>(link => link.ToString() == spLink.ToString()),
                 It.Is<RequestOptions>(option => option.PartitionKey == null),
@@ -614,6 +684,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var spResponse = CreateStoredProcedureResponseInstance<SessionStateItem>(HttpStatusCode.OK, expectedSSItem);
             var spLink = UriFactory.CreateStoredProcedureUri(DatabaseId, CollectionId, GetStateItemSPID);
 
+            SetupReadDocumentCollectionAsyncMock(docClientMoq, UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), () => { });
             docClientMoq.Setup(client => client.ExecuteStoredProcedureAsync<SessionStateItem>(
                 It.Is<Uri>(link => link.ToString() == spLink.ToString()),
                 It.Is<RequestOptions>(option => option.PartitionKey == null),
@@ -651,6 +722,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var spResponse = CreateStoredProcedureResponseInstance<SessionStateItem>(HttpStatusCode.OK, expectedSSItem);
             var spLink = UriFactory.CreateStoredProcedureUri(DatabaseId, CollectionId, GetStateItemSPID);
 
+            SetupReadDocumentCollectionAsyncMock(docClientMoq, UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), () => { });
             docClientMoq.Setup(client => client.ExecuteStoredProcedureAsync<SessionStateItem>(
                 It.Is<Uri>(link => link.ToString() == spLink.ToString()),
                 It.Is<RequestOptions>(option => option.PartitionKey == null),
@@ -695,6 +767,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var spResponse = CreateStoredProcedureResponseInstance<SessionStateItem>(HttpStatusCode.OK, expectedSSItem);
             var spLink = UriFactory.CreateStoredProcedureUri(DatabaseId, CollectionId, GetStateItemExclusiveSPID);
 
+            SetupReadDocumentCollectionAsyncMock(docClientMoq, UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), () => { });
             docClientMoq.Setup(client => client.ExecuteStoredProcedureAsync<SessionStateItem>(
                 It.Is<Uri>(link => link.ToString() == spLink.ToString()),
                 It.Is<RequestOptions>(option => option.PartitionKey != null),
@@ -733,6 +806,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var spResponse = CreateStoredProcedureResponseInstance<SessionStateItem>(HttpStatusCode.OK, expectedSSItem);
             var spLink = UriFactory.CreateStoredProcedureUri(DatabaseId, CollectionId, GetStateItemExclusiveSPID);
 
+            SetupReadDocumentCollectionAsyncMock(docClientMoq, UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), () => { });
             docClientMoq.Setup(client => client.ExecuteStoredProcedureAsync<SessionStateItem>(
                 It.Is<Uri>(link => link.ToString() == spLink.ToString()),
                 It.Is<RequestOptions>(option => option.PartitionKey == null),
@@ -759,6 +833,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var spLink = UriFactory.CreateStoredProcedureUri(DatabaseId, CollectionId, ReleaseItemExclusiveSPID);
             var lockId = 10;
 
+            SetupReadDocumentCollectionAsyncMock(docClientMoq, UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), () => { });
             docClientMoq.Setup(client => client.ExecuteStoredProcedureAsync<object>(
                 It.Is<Uri>(link => link.ToString() == spLink.ToString()),
                 It.Is<RequestOptions>(option => option.PartitionKey == null),
@@ -783,6 +858,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var spLink = UriFactory.CreateStoredProcedureUri(DatabaseId, CollectionId, RemoveStateItemSPID);
             var lockId = 10;
 
+            SetupReadDocumentCollectionAsyncMock(docClientMoq, UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), () => { });
             docClientMoq.Setup(client => client.ExecuteStoredProcedureAsync<object>(
                 It.Is<Uri>(link => link.ToString() == spLink.ToString()),
                 It.Is<RequestOptions>(option => option.PartitionKey == null),
@@ -806,6 +882,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var spResponse = CreateStoredProcedureResponseInstance<object>(HttpStatusCode.OK, null);
             var spLink = UriFactory.CreateStoredProcedureUri(DatabaseId, CollectionId, ResetItemTimeoutSPID);
 
+            SetupReadDocumentCollectionAsyncMock(docClientMoq, UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), () => { });
             docClientMoq.Setup(client => client.ExecuteStoredProcedureAsync<object>(
                 It.Is<Uri>(link => link.ToString() == spLink.ToString()),
                 It.Is<RequestOptions>(option => option.PartitionKey == null),
@@ -834,6 +911,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var data = new SessionStateStoreData(sessionCollection, new HttpStaticObjectsCollection(), DefaultSessionTimeout);
             object[] ssData = null;
 
+            SetupReadDocumentCollectionAsyncMock(docClientMoq, UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), () => { });
             docClientMoq.Setup(client => client.ExecuteStoredProcedureAsync<object>(
                 It.Is<Uri>(link => link.ToString() == spLink.ToString()),
                 It.Is<RequestOptions>(option => option.PartitionKey == null),
@@ -871,6 +949,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var data = new SessionStateStoreData(sessionCollection, new HttpStaticObjectsCollection(), DefaultSessionTimeout);
             object[] ssData = null;
 
+            SetupReadDocumentCollectionAsyncMock(docClientMoq, UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), () => { });
             docClientMoq.Setup(client => client.ExecuteStoredProcedureAsync<object>(
                 It.Is<Uri>(link => link.ToString() == spLink.ToString()),
                 It.Is<RequestOptions>(option => option.PartitionKey == null),
@@ -912,7 +991,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
         }
 
         private CosmosDBSessionStateProviderAsync CreateAndInitializeProviderWithDefaultConfig(
-            Func<Uri, string, ConnectionPolicy, IDocumentClient> clientFactory, bool enablePartition = false, bool compressionEnabled = false)
+            Func<Uri, string, ConnectionPolicy, IDocumentClient> clientFactory, bool enablePartition = false, bool compressionEnabled = false, string partitionNum = null)
         {
             CosmosDBSessionStateProviderAsync.ResetStaticFields();
             var provider = new CosmosDBSessionStateProviderAsync();            
@@ -937,7 +1016,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             if (enablePartition)
             {
                 providerConfig["partitionKeyPath"] = ParitionKeyPath;
-                providerConfig["partitionNumUsedByProvider"] = PartitionNum.ToString();
+                providerConfig["partitionNumUsedByProvider"] = partitionNum ?? PartitionNum.ToString();
             }
 
             provider.Initialize(DefaultProviderName, providerConfig, ssc, appSettings);
@@ -973,6 +1052,15 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
                     It.Is<StoredProcedure>(sp => sp.Id == spId), null))
                 .Returns(Task.FromResult((ResourceResponse<StoredProcedure>)null))
                 .Callback(callback);
+        }
+
+        private void SetupReadDocumentCollectionAsyncMock(Mock<IDocumentClient> docClientMoq, Uri docCollectionUri, Action callback)
+        {
+            ResourceResponse<DocumentCollection> rr = new ResourceResponse<DocumentCollection>(new DocumentCollection());
+            docClientMoq.Setup(client => client.ReadDocumentCollectionAsync(docCollectionUri, null))
+                .Returns(Task.FromResult(rr))
+                .Callback(callback);
+
         }
 
         // Hacky way to create StoredProcedureResponse instance

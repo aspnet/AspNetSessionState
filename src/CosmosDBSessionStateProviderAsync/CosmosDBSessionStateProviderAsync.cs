@@ -607,6 +607,11 @@ namespace Microsoft.AspNet.SessionState
             get { return s_dbId; }
         }
 
+        internal static int PartitionNum
+        {
+            get { return s_partitionNumUsedBySessionProvider; }
+        }
+
         internal static string CollectionId
         {
             get { return s_collectionId; }
