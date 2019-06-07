@@ -28,7 +28,8 @@ namespace Microsoft.AspNet.SessionState
 
         private static string s_endPoint;
         private static string s_authKey;
-        private static string s_partitionKey = "pkey";
+        private static string s_partitionKey = "";
+        private static int s_partitionNumUsedBySessionProvider;
         private static bool s_oneTimeInited;
         private static object s_lock = new object();
         private static string s_dbId;
@@ -38,6 +39,15 @@ namespace Microsoft.AspNet.SessionState
         private static int s_timeout;
         private static Uri s_documentCollectionUri;
         private static IDocumentClient s_client;
+        private static IndexingPolicy s_indexNone = new IndexingPolicy()
+        {
+            IndexingMode = IndexingMode.Consistent,
+            ExcludedPaths = new System.Collections.ObjectModel.Collection<ExcludedPath>()
+                            {
+                                new ExcludedPath() { Path = "/*" }
+                            },
+            IncludedPaths = new System.Collections.ObjectModel.Collection<IncludedPath>()
+        };
 
         #region CosmosDB Stored Procedures            
         private static readonly string CreateSessionStateItemSPID = "CreateSessionStateItem";
@@ -561,7 +571,8 @@ namespace Microsoft.AspNet.SessionState
         {
             s_endPoint = "";
             s_authKey = "";
-            s_partitionKey = "pkey";
+            s_partitionKey = "";
+            s_partitionNumUsedBySessionProvider = 0;
             s_dbId = "";
             s_collectionId = "";
             s_offerThroughput = 0;
@@ -851,11 +862,19 @@ namespace Microsoft.AspNet.SessionState
                 s_offerThroughput = 5000;
             }
             
-            // If 'partitionKeyPath' has not been explicitly given, then enable partitioning by using the default.
-            if (providerConfig["partitionKeyPath"] != null)
-                s_partitionKey = providerConfig["partitionKeyPath"];
+            s_partitionKey = providerConfig["partitionKeyPath"];
 
-            // 'partitionNumUsedByProvider' was previously a thing. Now we ignore. I suggest not using this as a config key again. :)
+            if (PartitionEnabled)
+            {
+                if (providerConfig["partitionNumUsedByProvider"] == "*")
+                {
+                    s_partitionNumUsedBySessionProvider = -1;
+                }
+                else if (!int.TryParse(providerConfig["partitionNumUsedByProvider"], out s_partitionNumUsedBySessionProvider) || s_partitionNumUsedBySessionProvider < 1)
+                {
+                    s_partitionNumUsedBySessionProvider = 10;
+                }
+            }
         }
 
         internal static ConnectionPolicy ParseCosmosDBClientSettings(NameValueCollection config)
@@ -932,7 +951,7 @@ namespace Microsoft.AspNet.SessionState
             {
                 return new RequestOptions
                 {
-                    PartitionKey = new PartitionKey(sessionId)
+                    PartitionKey = new PartitionKey(CreatePartitionValue(sessionId))
                 };
             }
             else
@@ -941,7 +960,23 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
-        private static Uri DocumentCollectionUri
+        private static string CreatePartitionValue(string sessionId)
+        {
+            // If s_partitionNumUsedBySessionProvider is less than 0, that means the wildcard option was specified.
+            // In which case, we are not limiting partition count. Just use the entire sessionId.
+            if (s_partitionNumUsedBySessionProvider < 0)
+                return sessionId;
+
+            Debug.Assert(!string.IsNullOrEmpty(sessionId));
+            Debug.Assert(PartitionEnabled);
+            Debug.Assert(s_partitionNumUsedBySessionProvider != 0);
+
+            // Default SessionIdManager uses all the 26 letters and number 0~5
+            // which can create 32 different partitions
+            return (sessionId[0] % s_partitionNumUsedBySessionProvider).ToString();
+        }
+
+    private static Uri DocumentCollectionUri
         {
             get {
                 if (s_documentCollectionUri == null)
@@ -975,7 +1010,24 @@ namespace Microsoft.AspNet.SessionState
         {
             try
             {
-                await s_client.ReadDocumentCollectionAsync(DocumentCollectionUri);
+                DocumentCollection dc = await s_client.ReadDocumentCollectionAsync(DocumentCollectionUri);
+
+                // If we're using the updated partition strategy (see comment below) but we haven't updated our indexing policy - do that now.
+                if (PartitionEnabled && (s_partitionNumUsedBySessionProvider < 0))
+                {
+                    // Contains doesn't work, presumably because a 'new ExcludePath' is a different object from the existing one, even if the path strings
+                    // are exactly the same. So we do this the old-fashioned way.
+                    bool containsWildcard = false;
+                    foreach (var epath in dc.IndexingPolicy.ExcludedPaths)
+                        if (epath.Path.Equals("/*", StringComparison.InvariantCultureIgnoreCase))
+                            containsWildcard = true;
+
+                    if (!containsWildcard)
+                    {
+                        dc.IndexingPolicy = s_indexNone;
+                        await s_client.ReplaceDocumentCollectionAsync(DocumentCollectionUri, dc, new RequestOptions { OfferThroughput = s_offerThroughput });
+                    }
+                }
             }
             catch (DocumentClientException e)
             {
@@ -986,18 +1038,15 @@ namespace Microsoft.AspNet.SessionState
                         Id = s_collectionId,
                         DefaultTimeToLive = s_timeout
                     };
+
                     if(PartitionEnabled)
                     {
                         docCollection.PartitionKey.Paths.Add($"/{s_partitionKey}");
-                        docCollection.IndexingPolicy = new IndexingPolicy()
-                        {
-                            IndexingMode = IndexingMode.Consistent,
-                            ExcludedPaths = new System.Collections.ObjectModel.Collection<ExcludedPath>()
-                            {
-                                new ExcludedPath() { Path = "/*" }
-                            },
-                            IncludedPaths = new System.Collections.ObjectModel.Collection<IncludedPath>()
-                        };
+
+                        // If we're using the updated partition strategy - 1 logical partition per sessionId - then there is no
+                        // need for indexing. It will not speed up lookup, and it only contributes to overhead on writes.
+                        if (s_partitionNumUsedBySessionProvider < 0)
+                            docCollection.IndexingPolicy = s_indexNone;
                     }
 
                     await s_client.CreateDocumentCollectionAsync(
@@ -1102,7 +1151,7 @@ namespace Microsoft.AspNet.SessionState
                 var spLink = UriFactory.CreateStoredProcedureUri(s_dbId, s_collectionId, CreateSessionStateItemInPartitionSPID);
                 var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(spLink, CreateRequestOptions(sessionid),
                     // sessionId, partitionValue, timeout, lockCookie, sessionItem, uninitialized
-                    sessionid, sessionid, timeoutInSec, DefaultLockCookie, ssItems, uninitialized);
+                    sessionid, CreatePartitionValue(sessionid), timeoutInSec, DefaultLockCookie, ssItems, uninitialized);
 
                 CheckSPResponseAndThrowIfNeeded(spResponse);
             }
