@@ -879,6 +879,13 @@ namespace Microsoft.AspNet.SessionState
                 {
                     s_partitionNumUsedBySessionProvider = 10;
                 }
+
+                // If the value of 'id' and the partition key are the same, it is ok to combine them. Since we're not doing wildcard partitioning
+                // the values will not be the same. So we should throw if trying to use 'id' as the partition key. It will cause problems.
+                if (s_partitionNumUsedBySessionProvider >= 0 && s_partitionKey == "id")
+                {
+                    throw new ConfigurationErrorsException(string.Format(SR.Cant_use_id_for_partition_key, "s_partitionKey"));
+                }
             }
         }
 
