@@ -654,16 +654,16 @@ namespace Microsoft.AspNet.SessionState
                 throw new ArgumentNullException("id");
             }
 
-            byte[] buf;
+            string encodedBuf;
 
             var item = new SessionStateStoreData(new SessionStateItemCollection(),
                         GetSessionStaticObjects(context.ApplicationInstance.Context),
                         timeout);
 
-            SerializeStoreData(item, out buf, s_compressionEnabled);
+            SerializeStoreData(item, out encodedBuf, s_compressionEnabled);
 
             var timeoutInSecs = 60 * timeout;
-            await CreateSessionStateItemAsync(id, timeoutInSecs, buf, true);
+            await CreateSessionStateItemAsync(id, timeoutInSecs, encodedBuf, true);
         }
 
         /// <inheritdoc />
@@ -767,7 +767,7 @@ namespace Microsoft.AspNet.SessionState
             bool newItem, 
             CancellationToken cancellationToken)
         {
-            byte[] buf;
+            string encodedBuf;
             int lockCookie;
 
             if (item == null)
@@ -781,7 +781,7 @@ namespace Microsoft.AspNet.SessionState
 
             try
             {
-                SerializeStoreData(item, out buf, s_compressionEnabled);
+                SerializeStoreData(item, out encodedBuf, s_compressionEnabled);
             }
             catch
             {
@@ -795,7 +795,7 @@ namespace Microsoft.AspNet.SessionState
 
             if (newItem)
             {
-                await CreateSessionStateItemAsync(id, s_timeout, buf, false);
+                await CreateSessionStateItemAsync(id, s_timeout, encodedBuf, false);
             }
             else
             {
@@ -803,7 +803,7 @@ namespace Microsoft.AspNet.SessionState
                 var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(spLink, CreateRequestOptions(id),
                     //sessionId, lockCookie, timeout, sessionItem
                     // SessionStateStoreData.Timeout is in minutes, TTL in DocumentDB is in seconds
-                    id, lockCookie, 60 * item.Timeout, buf);
+                    id, lockCookie, 60 * item.Timeout, encodedBuf);
 
                 CheckSPResponseAndThrowIfNeeded(spResponse);
             }
@@ -1108,14 +1108,14 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
-        internal async Task CreateSessionStateItemAsync(string sessionid, int timeoutInSec, byte[] ssItems, bool uninitialized)
+        internal async Task CreateSessionStateItemAsync(string sessionid, int timeoutInSec, string encodedSsItems, bool uninitialized)
         {
             if (PartitionEnabled)
             {
                 var spLink = UriFactory.CreateStoredProcedureUri(s_dbId, s_collectionId, CreateSessionStateItemInPartitionSPID);
                 var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(spLink, CreateRequestOptions(sessionid),
                     // sessionId, partitionValue, timeout, lockCookie, sessionItem, uninitialized
-                    sessionid, CreatePartitionValue(sessionid), timeoutInSec, DefaultLockCookie, ssItems, uninitialized);
+                    sessionid, CreatePartitionValue(sessionid), timeoutInSec, DefaultLockCookie, encodedSsItems, uninitialized);
 
                 CheckSPResponseAndThrowIfNeeded(spResponse);
             }
@@ -1124,7 +1124,7 @@ namespace Microsoft.AspNet.SessionState
                 var spLink = UriFactory.CreateStoredProcedureUri(s_dbId, s_collectionId, CreateSessionStateItemSPID);
                 var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(spLink, CreateRequestOptions(sessionid),
                     // sessionId, timeout, lockCookie, sessionItem, uninitialized
-                    sessionid, timeoutInSec, DefaultLockCookie, ssItems, uninitialized);
+                    sessionid, timeoutInSec, DefaultLockCookie, encodedSsItems, uninitialized);
 
                 CheckSPResponseAndThrowIfNeeded(spResponse);
             }
@@ -1138,7 +1138,7 @@ namespace Microsoft.AspNet.SessionState
             }
         }
         // Internal code copied from SessionStateUtility
-        internal static void SerializeStoreData(SessionStateStoreData item, out byte[] buf, bool compressionEnabled)
+        internal static void SerializeStoreData(SessionStateStoreData item, out string encodedBuf, bool compressionEnabled)
         {
             using (MemoryStream s = new MemoryStream())
             {
@@ -1158,8 +1158,18 @@ namespace Microsoft.AspNet.SessionState
                     // This shouldn't happen, but to be sure, we are padding with an extra byte
                     s.WriteByte((byte)0xff);
                 }
-                buf = s.GetBuffer();
+                encodedBuf = GetEncodedStringFromMemoryStream(s);
             }
+        }
+
+        private static string GetEncodedStringFromMemoryStream(MemoryStream s)
+        {
+            ArraySegment<byte> bytes = new ArraySegment<byte>();
+
+            if (!s.TryGetBuffer(out bytes))
+                return null;
+
+            return Convert.ToBase64String(bytes.Array, bytes.Offset, bytes.Count);
         }
 
         private static void Serialize(SessionStateStoreData item, Stream stream)
