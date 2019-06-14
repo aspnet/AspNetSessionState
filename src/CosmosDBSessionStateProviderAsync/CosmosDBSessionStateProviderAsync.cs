@@ -988,7 +988,7 @@ namespace Microsoft.AspNet.SessionState
             return (sessionId[0] % s_partitionNumUsedBySessionProvider).ToString();
         }
 
-    private static Uri DocumentCollectionUri
+        private static Uri DocumentCollectionUri
         {
             get {
                 if (s_documentCollectionUri == null)
