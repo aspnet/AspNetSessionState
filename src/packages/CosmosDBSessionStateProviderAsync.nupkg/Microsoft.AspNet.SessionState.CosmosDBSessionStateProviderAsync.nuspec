@@ -6,17 +6,19 @@
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
     <copyright>&#169; Microsoft Corporation. All rights reserved.</copyright>
-    <dependencies>
-      <dependency id="Microsoft.AspNet.SessionState.SessionStateModule" version="$SessionStateModuleNuGetPackageVersion$" />
-      <dependency id="Microsoft.Azure.DocumentDB" version="$DocumentDBNuGetPackageVersion$" />
-    </dependencies>    
     <title>Microsoft ASP.NET Async CosmosDBSessionStateProvider Provider</title>
     <description>In .Net 4.6.2, asp.net enables developer plug in async version of SessionState module which is a good fit for the non-in-memory SessionState data store. This SessionState provider uses CosmosDB as the data store and leverages async database operation to provide better scability.</description>
     <summary>Async version CosmosDBSessionState provider</summary>
     <language>en-US</language>
     <projectUrl>http://www.asp.net/</projectUrl>
+    <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288859</iconUrl>
     <licenseUrl>http://www.microsoft.com/web/webpi/eula/net_library_eula_ENU.htm</licenseUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <tags>ASP.NET Async SessionState Provider</tags>
+
+    <dependencies>
+      <dependency id="Microsoft.AspNet.SessionState.SessionStateModule" version="$SessionStateModuleNuGetPackageVersion$" />
+      <dependency id="Microsoft.Azure.DocumentDB" version="$DocumentDBNuGetPackageVersion$" />
+    </dependencies>    
   </metadata>
 </package>
