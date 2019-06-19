@@ -313,11 +313,11 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             sessionCollection["test2"] = now;
             var data = new SessionStateStoreData(sessionCollection, new HttpStaticObjectsCollection(), DefaultSessionTimeout);
 
-            byte[] buff;
+            string buff;
             SessionStateStoreData deserializedData;
 
             CosmosDBSessionStateProviderAsync.SerializeStoreData(data, out buff, enableCompression);
-            using (var stream = new MemoryStream(buff))
+            using (var stream = new MemoryStream(Convert.FromBase64String(buff)))
             {
                 var httpContext = CreateMoqHttpContextBase();
                 deserializedData = CosmosDBSessionStateProviderAsync.DeserializeStoreData(httpContext, stream, enableCompression);
@@ -547,7 +547,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             .Callback<Uri, RequestOptions, object[]>((_, __, parameters) => ssData = parameters);
 
             var provider = CreateAndInitializeProviderWithDefaultConfig((_, __, ___) => docClientMoq.Object);
-            var buff = new byte[DefaultItemLength];
+            var buff = Convert.ToBase64String(new byte[DefaultItemLength]);
             var exception = await Record.ExceptionAsync(
                 async() => await provider.CreateSessionStateItemAsync(TestSessionId, DefaultSessionTimeoutInSec, buff, true));
 
@@ -557,7 +557,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             Assert.Equal(TestSessionId, (string)ssData[0]);
             Assert.Equal(DefaultSessionTimeoutInSec, (int)ssData[1]);
             Assert.Equal(DefaultLockCookie, (int)ssData[2]);
-            Assert.Equal(buff, (byte[])ssData[3]);
+            Assert.Equal(buff, (string)ssData[3]);
             Assert.True((bool)ssData[4]);
         }
 
@@ -578,7 +578,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             .Callback<Uri, RequestOptions, object[]>((_, __, parameters) => ssData = parameters);
 
             var provider = CreateAndInitializeProviderWithDefaultConfig((_, __, ___) => docClientMoq.Object, true);
-            var buff = new byte[DefaultItemLength];
+            var buff = Convert.ToBase64String(new byte[DefaultItemLength]);
             var exception = await Record.ExceptionAsync(
                 async () => await provider.CreateSessionStateItemAsync(TestSessionId, DefaultSessionTimeoutInSec, buff, true));
 
@@ -589,7 +589,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             Assert.Equal(DefaultPartitionValue, (string)ssData[1]);
             Assert.Equal(DefaultSessionTimeoutInSec, (int)ssData[2]);
             Assert.Equal(DefaultLockCookie, (int)ssData[3]);
-            Assert.Equal(buff, (byte[])ssData[4]);
+            Assert.Equal(buff, (string)ssData[4]);
             Assert.True((bool)ssData[5]);
         }
 
@@ -610,7 +610,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             .Callback<Uri, RequestOptions, object[]>((_, __, parameters) => ssData = parameters);
 
             var provider = CreateAndInitializeProviderWithDefaultConfig((_, __, ___) => docClientMoq.Object, true, false, WildcardPartitionString);
-            var buff = new byte[DefaultItemLength];
+            var buff = Convert.ToBase64String(new byte[DefaultItemLength]);
             var exception = await Record.ExceptionAsync(
                 async () => await provider.CreateSessionStateItemAsync(TestSessionId, DefaultSessionTimeoutInSec, buff, true));
 
@@ -621,7 +621,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             Assert.Equal(TestSessionId, (string)ssData[1]);
             Assert.Equal(DefaultSessionTimeoutInSec, (int)ssData[2]);
             Assert.Equal(DefaultLockCookie, (int)ssData[3]);
-            Assert.Equal(buff, (byte[])ssData[4]);
+            Assert.Equal(buff, (string)ssData[4]);
             Assert.True((bool)ssData[5]);
         }
 
@@ -667,7 +667,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             sessionCollection["test1"] = "test1";
             sessionCollection["test2"] = now;
             var data = new SessionStateStoreData(sessionCollection, new HttpStaticObjectsCollection(), DefaultSessionTimeout);
-            byte[] buff;
+            string buff;
             CosmosDBSessionStateProviderAsync.SerializeStoreData(data, out buff, compressionEnabled);
 
             var expectedSSItem = new SessionStateItem()
@@ -675,7 +675,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
                 SessionId = TestSessionId,
                 Actions = action,
                 Locked = false,
-                SessionItem = buff,
+                SessionItem = Convert.FromBase64String(buff),
                 LockAge = TimeSpan.Zero,
                 LockCookie = DefaultLockCookie,
                 Timeout = DefaultSessionTimeoutInSec
@@ -750,7 +750,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             sessionCollection["test1"] = "test1";
             sessionCollection["test2"] = now;
             var data = new SessionStateStoreData(sessionCollection, new HttpStaticObjectsCollection(), DefaultSessionTimeout);
-            byte[] buff;
+            string buff;
             CosmosDBSessionStateProviderAsync.SerializeStoreData(data, out buff, true);
 
             var expectedSSItem = new SessionStateItem()
@@ -758,7 +758,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
                 SessionId = TestSessionId,
                 Actions =  SessionStateActions.None,
                 Locked = false,
-                SessionItem = buff,
+                SessionItem = Convert.FromBase64String(buff),
                 LockAge = TimeSpan.Zero,
                 LockCookie = DefaultLockCookie,
                 Timeout = DefaultSessionTimeoutInSec
@@ -930,7 +930,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             Assert.Equal(TestSessionId, (string)ssData[0]);
             Assert.Equal(DefaultSessionTimeoutInSec, (int)ssData[1]);
             Assert.Equal(DefaultLockCookie, (int)ssData[2]);
-            Assert.NotNull((byte[])ssData[3]);
+            Assert.NotNull((string)ssData[3]);
             Assert.False((bool)ssData[4]);
         }
 
@@ -968,7 +968,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             Assert.Equal(TestSessionId, (string)ssData[0]);
             Assert.Equal(lockcookie ?? DefaultLockCookie, ssData[1]);
             Assert.Equal(DefaultSessionTimeoutInSec, (int)ssData[2]);
-            Assert.NotNull((byte[])ssData[3]);
+            Assert.NotNull((string)ssData[3]);
         }
 
         private HttpContextBase CreateMoqHttpContextBase()
