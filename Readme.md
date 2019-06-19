@@ -14,12 +14,13 @@ Information on contributing to this repo is in the [Contributing Guide](CONTRIBU
 Before you can specify one of these custom providers. You need to remove the existing session state module from your web.config file. In addition, you must register the new module to take its place.
 
 ```
-<system.webServer>
-        <modules>
-            <!-- remove the existing Session state module -->
-            <remove name="Session" />
-            <add name="Session" preCondition="integratedMode" type="Microsoft.AspNet.SessionState.SessionStateModuleAsync, Microsoft.AspNet.SessionState.SessionStateModule, Version=1.0.0.0, Culture=neutral" />
-        </modules>
+  <system.webServer>
+    <modules>
+      <!-- remove the existing Session state module -->
+      <remove name="Session" />
+      <add name="Session" preCondition="integratedMode" type="Microsoft.AspNet.SessionState.SessionStateModuleAsync, Microsoft.AspNet.SessionState.SessionStateModule, Version=1.1.0.0, Culture=neutral" />
+    </modules>
+  </system.webServer>
 ```
 
 ## Settings of the module and providers
@@ -65,7 +66,7 @@ Before you can specify one of these custom providers. You need to remove the exi
           databaseId="[DataBaseId]" collectionId="[CollectionId]" offerThroughput="5000" connectionMode="Direct" connectionProtocol="Tcp" requestTimeout="5"
           maxConnectionLimit="50" maxRetryAttemptsOnThrottledRequests="10" maxRetryWaitTimeInSeconds="10" preferredLocations="" partitionKey="pKey"
           partitionNumUsedByProvider="*"
-          type="Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync, Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"/>
+          type="Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync, Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"/>
       </providers>
     </sessionState>
 ```

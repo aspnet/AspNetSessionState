@@ -22,6 +22,18 @@
     <NuGetProject Include="SqlSessionStateProviderAsync.nupkg\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.nuproj" />
     <NuGetProject Include="CosmosDBSessionStateProviderAsync.nupkg\Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync.nuproj" />
   </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <None Include="CosmosDBSessionStateProviderAsync.nupkg\content\Net462\web.config.install.xdt" />
+    <None Include="CosmosDBSessionStateProviderAsync.nupkg\content\Net462\web.config.uninstall.xdt" />
+    <None Include="CosmosDBSessionStateProviderAsync.nupkg\Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync.nuspec" />
+    <None Include="SessionStateModule.nupkg\content\Net462\web.config.install.xdt" />
+    <None Include="SessionStateModule.nupkg\content\Net462\web.config.uninstall.xdt" />
+    <None Include="SessionStateModule.nupkg\Microsoft.AspNet.SessionState.SessionStateModule.nuspec" />
+    <None Include="SqlSessionStateProviderAsync.nupkg\content\Net462\web.config.install.xdt" />
+    <None Include="SqlSessionStateProviderAsync.nupkg\content\Net462\web.config.uninstall.xdt" />
+    <None Include="SqlSessionStateProviderAsync.nupkg\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.nuspec" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="Build">
     <MSBuild Projects="@(NuGetProject)" Targets="Build" />
