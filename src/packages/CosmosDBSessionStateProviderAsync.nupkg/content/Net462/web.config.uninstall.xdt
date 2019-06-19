@@ -8,8 +8,8 @@
     <sessionState cookieless="false" regenerateExpiredSessionId="true"
         mode="Custom" customProvider="CosmosDBSessionStateProviderAsync" xdt:Transform="Remove">
       <providers>
-        <add name="SqlSessionStateAsyncProvider" connectionStringName="DefaultConnection"
-          type="Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider, Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
+        <add name="CosmosDBSessionStateProviderAsync" 
+          type="Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync, Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
              xdt:Transform="Remove" xdt:Locator="Match(type)" />
       </providers>
     </sessionState>
