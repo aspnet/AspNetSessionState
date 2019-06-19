@@ -9,6 +9,19 @@ SessionStateModule is ASP.NET’s default session-state handler which retrieves 
 ## How to contribute
 Information on contributing to this repo is in the [Contributing Guide](CONTRIBUTING.md).
 
+## Replace the existing Session module in `web.config`
+
+Before you can specify one of these custom providers. You need to remove the existing session state module from your web.config file. In addition, you must register the new module to take its place.
+
+```
+<system.webServer>
+        <modules>
+            <!-- remove the existing Session state module -->
+            <remove name="Session" />
+            <add name="Session" preCondition="integratedMode" type="Microsoft.AspNet.SessionState.SessionStateModuleAsync, Microsoft.AspNet.SessionState.SessionStateModule, Version=1.0.0.0, Culture=neutral" />
+        </modules>
+```
+
 ## Settings of the module and providers
 
 + #### Microsoft.AspNet.SessionState.SessionStateModule
