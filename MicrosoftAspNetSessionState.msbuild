@@ -15,7 +15,7 @@
   </ItemGroup>
   
   <Target Name="Build" DependsOnTargets="BuildAssemblies;UnitTest;BuildPackages" />
-  <Target Name="BuildAll" DependsOnTargets="BuildAssemblies;BuildSamples;UnitTest;BuildPackages" />
+  <Target Name="BuildAll" DependsOnTargets="BuildAssemblies;BuildSamples;BuildPackages;UnitTest" />
   <Target Name="Clean" DependsOnTargets="CleanPackages;CleanSamples;CleanTests;CleanAssemblies" />
   <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
   

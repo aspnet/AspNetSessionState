@@ -21,6 +21,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 	ProjectSection(SolutionItems) = preProject
 		tools\CosmosDBSessionStateProviderAsync.settings.targets = tools\CosmosDBSessionStateProviderAsync.settings.targets
 		tools\MicrosoftAspNetSessionState.settings.targets = tools\MicrosoftAspNetSessionState.settings.targets
+		Readme.md = Readme.md
 		tools\SessionStateModule.settings.targets = tools\SessionStateModule.settings.targets
 		tools\SqlSessionStateProviderAsync.settings.targets = tools\SqlSessionStateProviderAsync.settings.targets
 		tools\version.targets = tools\version.targets

@@ -70,6 +70,15 @@ namespace Microsoft.AspNet.SessionState.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The value &apos;{0}&apos; is invalid for &apos;partitionKeyPath&apos; when not using wildcard partitioning..
+        /// </summary>
+        internal static string Cant_use_id_for_partition_key {
+            get {
+                return ResourceManager.GetString("Cant_use_id_for_partition_key", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Configuration &apos;{0}&apos; cannot be null..
         /// </summary>
         internal static string EmptyConfig_WithName {
