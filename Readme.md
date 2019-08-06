@@ -78,7 +78,7 @@ NOTE: For the best scalability, it is recommended to configure your CosmosDB pro
 
 2. *cosmosDBAuthKeySettingKey* - The appsetting key name which points to a CosmosDB auth key
 
-3. *offerThroughput* - The offer throughput provisioned for a collection in measurement of Requests-per-Unit in the Azure DocumentDB database service. If the collection provided doesn't exist, the provider will create a collection with this offerThroughput.
+3. *offerThroughput* - The offer throughput provisioned for a collection in measurement of Requests-per-Unit in the Azure DocumentDB database service. If the collection provided doesn't exist, the provider will create a collection with this offerThroughput. If the database already exists and has provisioned throughput, this value can be set to "0" to use it.
 
 4. *connectionMode* - Direct | Gateway
 
