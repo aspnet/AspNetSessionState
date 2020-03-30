@@ -26,6 +26,7 @@ namespace Microsoft.AspNet.SessionState
         private const string INMEMORY_TABLE_CONFIGURATION_NAME = "UseInMemoryTable";
         private const string MAX_RETRY_NUMBER_CONFIGURATION_NAME = "MaxRetryNumber";
         private const string RETRY_INTERVAL_CONFIGURATION_NAME = "RetryInterval";
+        private const string SUFFIX_OVERRIDE_CONFIGURATION_NAME = "SuffixOverride";
         private const string CONNECTIONSTRING_NAME_CONFIGURATION_NAME = "connectionStringName";
         private const string SESSIONSTATE_SECTION_PATH = "system.web/sessionState";
         private const double SessionExpiresFrequencyCheckIntervalTicks = 30 * TimeSpan.TicksPerSecond;
@@ -36,9 +37,9 @@ namespace Microsoft.AspNet.SessionState
         private static bool s_oneTimeInited = false;
         private static object s_lock = new object();
         private static ISqlSessionStateRepository s_sqlSessionStateRepository;
-        
+
         private int _rqOrigStreamLen;
-                
+
         /// <summary>
         /// Initialize the provider through the configuration
         /// </summary>
@@ -62,7 +63,7 @@ namespace Microsoft.AspNet.SessionState
         }
 
         // for unit tests
-        internal void Initialize(string name, NameValueCollection config, SessionStateSection ssc, ConnectionStringSettings connectionString, 
+        internal void Initialize(string name, NameValueCollection config, SessionStateSection ssc, ConnectionStringSettings connectionString,
                                     bool shouldCreateTable = false)
         {
             base.Initialize(name, config);
@@ -85,15 +86,17 @@ namespace Microsoft.AspNet.SessionState
                             s_sqlSessionStateRepository = new SqlSessionStateRepository(connectionString.ConnectionString,
                                 (int)ssc.SqlCommandTimeout.TotalSeconds, GetRetryInterval(config), GetMaxRetryNum(config));
                         }
-                        if(shouldCreateTable)
+                        if (shouldCreateTable)
                         {
                             s_sqlSessionStateRepository.CreateSessionStateTable();
                         }
+                        var overrideAppSuffix = GetSuffixOverride(config);
+                        if (!string.IsNullOrEmpty(overrideAppSuffix))
+                        { AppId = overrideAppSuffix; }
 
                         var appId = AppId ?? HttpRuntime.AppDomainAppId;
                         Debug.Assert(appId != null);
                         s_appSuffix = appId.GetHashCode().ToString("X8", CultureInfo.InvariantCulture);
-
                         s_oneTimeInited = true;
                     }
                 }
@@ -155,9 +158,19 @@ namespace Microsoft.AspNet.SessionState
         {
             int retryInterval;
             var val = config[RETRY_INTERVAL_CONFIGURATION_NAME];
-            if(val != null && int.TryParse(val, out retryInterval))
+            if (val != null && int.TryParse(val, out retryInterval))
             {
                 return retryInterval;
+            }
+            return null;
+        }
+
+        private string GetSuffixOverride(NameValueCollection config)
+        {
+            var val = config[SUFFIX_OVERRIDE_CONFIGURATION_NAME];
+            if (!string.IsNullOrEmpty(val))
+            {
+                return val;
             }
             return null;
         }
@@ -181,9 +194,9 @@ namespace Microsoft.AspNet.SessionState
 
         /// <inheritdoc />
         public override async Task CreateUninitializedItemAsync(
-            HttpContextBase context, 
-            string id, 
-            int timeout, 
+            HttpContextBase context,
+            string id,
+            int timeout,
             CancellationToken cancellationToken)
         {
             if (id == null)
@@ -226,8 +239,8 @@ namespace Microsoft.AspNet.SessionState
 
         /// <inheritdoc />
         public override Task<GetItemResult> GetItemExclusiveAsync(
-            HttpContextBase context, 
-            string id, 
+            HttpContextBase context,
+            string id,
             CancellationToken cancellationToken)
         {
             return DoGet(context, id, true, cancellationToken);
@@ -241,9 +254,9 @@ namespace Microsoft.AspNet.SessionState
 
         /// <inheritdoc />
         public override async Task ReleaseItemExclusiveAsync(
-            HttpContextBase context, 
-            string id, 
-            object lockId, 
+            HttpContextBase context,
+            string id,
+            object lockId,
             CancellationToken cancellationToken)
         {
             if (id == null)
@@ -262,10 +275,10 @@ namespace Microsoft.AspNet.SessionState
 
         /// <inheritdoc />
         public override async Task RemoveItemAsync(
-            HttpContextBase context, 
-            string id, 
-            object lockId, 
-            SessionStateStoreData item, 
+            HttpContextBase context,
+            string id,
+            object lockId,
+            SessionStateStoreData item,
             CancellationToken cancellationToken)
         {
             if (id == null)
@@ -284,8 +297,8 @@ namespace Microsoft.AspNet.SessionState
 
         /// <inheritdoc />
         public override async Task ResetItemTimeoutAsync(
-            HttpContextBase context, 
-            string id, 
+            HttpContextBase context,
+            string id,
             CancellationToken cancellationToken)
         {
             if (id == null)
@@ -304,11 +317,11 @@ namespace Microsoft.AspNet.SessionState
 
         /// <inheritdoc />
         public override async Task SetAndReleaseItemExclusiveAsync(
-            HttpContextBase context, 
-            string id, 
-            SessionStateStoreData item, 
-            object lockId, 
-            bool newItem, 
+            HttpContextBase context,
+            string id,
+            SessionStateStoreData item,
+            object lockId,
+            bool newItem,
             CancellationToken cancellationToken)
         {
             byte[] buf;
@@ -335,7 +348,7 @@ namespace Microsoft.AspNet.SessionState
             }
             catch
             {
-                if(!newItem)
+                if (!newItem)
                 {
                     await ReleaseItemExclusiveAsync(context, id, lockId, cancellationToken);
                 }
@@ -360,15 +373,15 @@ namespace Microsoft.AspNet.SessionState
                 throw new ArgumentException(SR.Session_id_too_long);
             }
             id = AppendAppIdHash(id);
-            
+
             SessionStateStoreData data = null;
             var sessionItem = await s_sqlSessionStateRepository.GetSessionStateItemAsync(id, exclusive);
 
-            if(sessionItem == null)
+            if (sessionItem == null)
             {
                 return null;
             }
-            if(sessionItem.Item == null)
+            if (sessionItem.Item == null)
             {
                 return new GetItemResult(null, sessionItem.Locked, sessionItem.LockAge, sessionItem.LockId, sessionItem.Actions);
             }
@@ -390,14 +403,14 @@ namespace Microsoft.AspNet.SessionState
                 return id + s_appSuffix;
             }
             return id;
-        }        
+        }
 
         // Internal code copied from SessionStateUtility
         internal static void SerializeStoreData(
-            SessionStateStoreData item, 
-            int initialStreamSize, 
-            out byte[] buf, 
-            out int length, 
+            SessionStateStoreData item,
+            int initialStreamSize,
+            out byte[] buf,
+            out int length,
             bool compressionEnabled)
         {
             using (MemoryStream s = new MemoryStream(initialStreamSize))
@@ -485,7 +498,7 @@ namespace Microsoft.AspNet.SessionState
             try
             {
                 BinaryReader reader = new BinaryReader(stream);
-                
+
                 timeout = reader.ReadInt32();
                 hasItems = reader.ReadBoolean();
                 hasStaticObjects = reader.ReadBoolean();
@@ -494,7 +507,8 @@ namespace Microsoft.AspNet.SessionState
                 {
                     sessionItems = SessionStateItemCollection.Deserialize(reader);
                 }
-                else {
+                else
+                {
                     sessionItems = new SessionStateItemCollection();
                 }
 
@@ -502,7 +516,8 @@ namespace Microsoft.AspNet.SessionState
                 {
                     staticObjects = HttpStaticObjectsCollection.Deserialize(reader);
                 }
-                else {
+                else
+                {
                     staticObjects = GetSessionStaticObjects(context.ApplicationInstance.Context);
                 }
 
@@ -567,6 +582,6 @@ namespace Microsoft.AspNet.SessionState
                     String.Format(CultureInfo.CurrentCulture, SR.Connection_string_not_found, connectionstringName));
             }
             return conn;
-        }        
+        }
     }
 }
