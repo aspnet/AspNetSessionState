@@ -26,6 +26,7 @@ namespace Microsoft.AspNet.SessionState
         private const string INMEMORY_TABLE_CONFIGURATION_NAME = "UseInMemoryTable";
         private const string MAX_RETRY_NUMBER_CONFIGURATION_NAME = "MaxRetryNumber";
         private const string RETRY_INTERVAL_CONFIGURATION_NAME = "RetryInterval";
+        private const string APPLICATION_NAME_CONFIGURATION_NAME = "ApplicationName";
         private const string CONNECTIONSTRING_NAME_CONFIGURATION_NAME = "connectionStringName";
         private const string SESSIONSTATE_SECTION_PATH = "system.web/sessionState";
         private const double SessionExpiresFrequencyCheckIntervalTicks = 30 * TimeSpan.TicksPerSecond;
@@ -90,7 +91,7 @@ namespace Microsoft.AspNet.SessionState
                             s_sqlSessionStateRepository.CreateSessionStateTable();
                         }
 
-                        var appId = AppId ?? HttpRuntime.AppDomainAppId;
+                        var appId = GetApplicationId(config);
                         Debug.Assert(appId != null);
                         s_appSuffix = appId.GetHashCode().ToString("X8", CultureInfo.InvariantCulture);
 
@@ -160,6 +161,12 @@ namespace Microsoft.AspNet.SessionState
                 return retryInterval;
             }
             return null;
+        }
+
+        private string GetApplicationId(NameValueCollection config)
+        {
+            var val = config[APPLICATION_NAME_CONFIGURATION_NAME];
+            return (!string.IsNullOrWhiteSpace(val) ? val : AppId) ?? HttpRuntime.AppDomainAppId;
         }
 
         /// <summary>
