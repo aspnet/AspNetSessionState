@@ -45,7 +45,8 @@ Before you can specify one of these custom providers. You need to remove the exi
 ```
     <sessionState cookieless="false" regenerateExpiredSessionId="true" mode="Custom" customProvider="SqlSessionStateProviderAsync">
       <providers>
-        <add name="SqlSessionStateProviderAsync" connectionStringName="DefaultConnection" UseInMemoryTable="[true|false]" MaxRetryNumber="[int]" RetryInterval="[int]"
+        <add name="SqlSessionStateProviderAsync" connectionStringName="DefaultConnection" 
+             UseInMemoryTable="[true|false]" MaxRetryNumber="[int]" RetryInterval="[int]" ApplicationName="[string]"
           type="Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"/>
       </providers>
 ```
@@ -55,6 +56,8 @@ Before you can specify one of these custom providers. You need to remove the exi
 2. *MaxRetryNumber* - The maximum number of retrying executing sql query to read/write sessionstate data from/to Sql server. The default value is 10.
 
 3. *RetryInterval* - The interval between the retry of executing sql query. The default value is 0.001 sec for in-memorytable mode. Otherwise the default value is 1 sec.
+
+4. *ApplicationName* - If an application runs on multiple nodes, the same session is used if and only if the application name is identically specified on all nodes.
 
 + #### Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync
 
