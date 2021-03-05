@@ -1037,7 +1037,7 @@ namespace Microsoft.AspNet.SessionState
                     if (!containsWildcard)
                     {
                         dc.IndexingPolicy = s_indexNone;
-                        await s_client.ReplaceDocumentCollectionAsync(DocumentCollectionUri, dc, new RequestOptions { OfferThroughput = s_offerThroughput });
+                        await s_client.ReplaceDocumentCollectionAsync(DocumentCollectionUri, dc, GetRequestOptions());
                     }
                 }
             }
@@ -1064,7 +1064,7 @@ namespace Microsoft.AspNet.SessionState
                     await s_client.CreateDocumentCollectionAsync(
                         UriFactory.CreateDatabaseUri(s_dbId),
                         docCollection,
-                        new RequestOptions { OfferThroughput = s_offerThroughput });
+                        GetRequestOptions());
                 }
                 else
                 {
@@ -1072,6 +1072,11 @@ namespace Microsoft.AspNet.SessionState
                 }
             }
         }
+
+	    private static RequestOptions GetRequestOptions()
+	    {
+		    return s_offerThroughput == 0 ? null : new RequestOptions {OfferThroughput = s_offerThroughput};
+	    }
 
         private static bool PartitionEnabled {
             get {
