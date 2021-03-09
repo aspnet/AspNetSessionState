@@ -7,6 +7,7 @@ namespace Microsoft.AspNet.SessionState
     using System;
     using System.Data.SqlClient;
     using System.Diagnostics;
+    using System.Runtime.CompilerServices;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Web;
@@ -316,7 +317,7 @@ namespace Microsoft.AspNet.SessionState
                 try
                 {
                     var cmd = _commandHelper.CreateNewSessionTableCmd(CreateSessionTableSql);
-                    var task = SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry).ConfigureAwait(false);
+                    var task = SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetryAsync).ConfigureAwait(false);
                     task.GetAwaiter().GetResult();
                 }
                 catch (Exception ex)
@@ -343,7 +344,7 @@ namespace Microsoft.AspNet.SessionState
             using (var connection = new SqlConnection(_connectString))
             {
                 var cmd = _commandHelper.CreateDeleteExpiredSessionsCmd(DeleteExpiredSessionsSql);
-                var task = SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry).ConfigureAwait(false);
+                var task = SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetryAsync).ConfigureAwait(false);
                 task.GetAwaiter().GetResult();
             }
         }
@@ -369,7 +370,7 @@ namespace Microsoft.AspNet.SessionState
 
             using (var connection = new SqlConnection(_connectString))
             {
-                using (var reader = await SqlSessionStateRepositoryUtil.SqlExecuteReaderWithRetryAsync(connection, cmd, CanRetry))
+                using (var reader = await SqlSessionStateRepositoryUtil.SqlExecuteReaderWithRetryAsync(connection, cmd, CanRetryAsync))
                 {
                     if (await reader.ReadAsync())
                     {
@@ -419,7 +420,7 @@ namespace Microsoft.AspNet.SessionState
 
             using (var connection = new SqlConnection(_connectString))
             {
-                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry, newItem);
+                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetryAsync, newItem);
             }
         }
 
@@ -428,7 +429,7 @@ namespace Microsoft.AspNet.SessionState
             var cmd = _commandHelper.CreateResetItemTimeoutCmd(ResetItemTimeoutSql, id);
             using (var connection = new SqlConnection(_connectString))
             {
-                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry);
+                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetryAsync);
             }
         }
 
@@ -437,7 +438,7 @@ namespace Microsoft.AspNet.SessionState
             var cmd = _commandHelper.CreateRemoveStateItemCmd(RemoveStateItemSql, id, lockId);
             using (var connection = new SqlConnection(_connectString))
             {
-                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry);
+                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetryAsync);
             }
         }
 
@@ -446,7 +447,7 @@ namespace Microsoft.AspNet.SessionState
             var cmd = _commandHelper.CreateReleaseItemExclusiveCmd(ReleaseItemExclusiveSql, id, lockId);
             using (var connection = new SqlConnection(_connectString))
             {
-                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry);
+                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetryAsync);
             }
         }
 
@@ -455,26 +456,33 @@ namespace Microsoft.AspNet.SessionState
             var cmd = _commandHelper.CreateTempInsertUninitializedItemCmd(TempInsertUninitializedItemSql, id, length, buf, timeout);
             using (var connection = new SqlConnection(_connectString))
             {
-                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetry, true);
+                await SqlSessionStateRepositoryUtil.SqlExecuteNonQueryWithRetryAsync(connection, cmd, CanRetryAsync, true);
             }
         }
 
-        private bool CanRetry(RetryCheckParameter parameter)
+        private Task<bool> CanRetryAsync(RetryCheckParameter parameter)
         {
             if (parameter.RetryCount >= _maxRetryNum ||
                 !ShouldUseInMemoryTableRetry(parameter.Exception))
             {
-                return false;
+                return Task.FromResult(false);
             }
 
+            return WaitToRetryAsync(parameter, _retryIntervalMilSec);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static async Task<bool> WaitToRetryAsync(RetryCheckParameter parameter, int retryIntervalMilSec)
+        {
             // this actually may sleep up to 15ms
             // but it's better than spinning CPU
-            Thread.Sleep(_retryIntervalMilSec);
+            await Task.Delay(retryIntervalMilSec);
             parameter.RetryCount++;
 
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool ShouldUseInMemoryTableRetry(SqlException ex)
         {
             // Error code is defined on

@@ -7,6 +7,7 @@ namespace Microsoft.AspNet.SessionState
     using System;
     using System.Data;
     using System.Data.SqlClient;
+using System.Runtime.CompilerServices;
     using System.Security.Principal;
     using System.Threading.Tasks;
     using System.Web;
@@ -61,7 +62,7 @@ namespace Microsoft.AspNet.SessionState
         public static readonly int DefaultItemLength = 7000;
 
         public static async Task<int> SqlExecuteNonQueryWithRetryAsync(SqlConnection connection, SqlCommand sqlCmd, 
-            Func<RetryCheckParameter, bool> canRetry, bool ignoreInsertPKException = false)
+            Func<RetryCheckParameter, Task<bool>> canRetry, bool ignoreInsertPKException = false)
         {
             var retryParamenter = new RetryCheckParameter() { EndRetryTime = DateTime.UtcNow, RetryCount = 0 };
             sqlCmd.Connection = connection;
@@ -84,7 +85,7 @@ namespace Microsoft.AspNet.SessionState
                     }
 
                     retryParamenter.Exception = e;
-                    if (!canRetry(retryParamenter))
+                    if (!(await canRetry(retryParamenter)))
                     {
                         throw;
                     }
@@ -92,7 +93,7 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
-        public static async Task<SqlDataReader> SqlExecuteReaderWithRetryAsync(SqlConnection connection, SqlCommand sqlCmd, Func<RetryCheckParameter, bool> canRetry, 
+        public static async Task<SqlDataReader> SqlExecuteReaderWithRetryAsync(SqlConnection connection, SqlCommand sqlCmd, Func<RetryCheckParameter, Task<bool>> canRetry, 
             CommandBehavior cmdBehavior = CommandBehavior.Default)
         {
             var retryParamenter = new RetryCheckParameter() { EndRetryTime = DateTime.UtcNow, RetryCount = 0 };
@@ -109,7 +110,7 @@ namespace Microsoft.AspNet.SessionState
                 catch (SqlException e)
                 {
                     retryParamenter.Exception = e;
-                    if (!canRetry(retryParamenter))
+                    if (!(await canRetry(retryParamenter)))
                     {
                         throw;
                     }
@@ -117,6 +118,7 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsFatalSqlException(SqlException ex)
         {
             // We will retry sql operations for serious errors.
