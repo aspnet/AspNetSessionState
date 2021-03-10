@@ -50,16 +50,16 @@ namespace Microsoft.AspNet.SessionState
         };
 
         #region CosmosDB Stored Procedures            
-        private static readonly string CreateSessionStateItemSPID = "CreateSessionStateItem";
-        private static readonly string CreateSessionStateItemInPartitionSPID = "CreateSessionStateItemInPartition";
-        private static readonly string GetStateItemSPID = "GetStateItem";
-        private static readonly string GetStateItemExclusiveSPID = "GetStateItemExclusive";
-        private static readonly string ReleaseItemExclusiveSPID = "ReleaseItemExclusive";
-        private static readonly string RemoveStateItemSPID = "RemoveStateItem";
-        private static readonly string ResetItemTimeoutSPID = "ResetItemTimeout";
-        private static readonly string UpdateSessionStateItemSPID = "UpdateSessionStateItem";
+        private const string CreateSessionStateItemSPID = "CreateSessionStateItem";
+        private const string CreateSessionStateItemInPartitionSPID = "CreateSessionStateItemInPartition";
+        private const string GetStateItemSPID = "GetStateItem";
+        private const string GetStateItemExclusiveSPID = "GetStateItemExclusive";
+        private const string ReleaseItemExclusiveSPID = "ReleaseItemExclusive";
+        private const string RemoveStateItemSPID = "RemoveStateItem";
+        private const string ResetItemTimeoutSPID = "ResetItemTimeout";
+        private const string UpdateSessionStateItemSPID = "UpdateSessionStateItem";
 
-        private static readonly string CreateSessionStateItemSP = @"
+        private const string CreateSessionStateItemSP = @"
             function CreateSessionStateItem(sessionId, timeout, lockCookie, sessionItem, uninitialized) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
@@ -118,7 +118,7 @@ namespace Microsoft.AspNet.SessionState
             }}";
 
 
-        private static readonly string GetStateItemSP = @"
+        private const string GetStateItemSP = @"
             function GetStateItem(sessionId) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
@@ -195,7 +195,7 @@ namespace Microsoft.AspNet.SessionState
                 }
             }";
 
-        private static readonly string GetStateItemExclusiveSP = @"
+        private const string GetStateItemExclusiveSP = @"
             function GetStateItemExclusive(sessionId) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
@@ -276,7 +276,7 @@ namespace Microsoft.AspNet.SessionState
                 }
             }";
 
-        private static readonly string ReleaseItemExclusiveSP = @"
+        private const string ReleaseItemExclusiveSP = @"
             function ReleaseItemExclusive(sessionId, lockCookie) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
@@ -333,7 +333,7 @@ namespace Microsoft.AspNet.SessionState
                 }
             }";
 
-        private static readonly string RemoveStateItemSP = @"
+        private const string RemoveStateItemSP = @"
             function RemoveStateItem(sessionId, lockCookie) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
@@ -389,7 +389,7 @@ namespace Microsoft.AspNet.SessionState
                 }
             }";
 
-        private static readonly string ResetItemTimeoutSP = @"
+        private const string ResetItemTimeoutSP = @"
             function ResetItemTimeout(sessionId) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
@@ -443,7 +443,7 @@ namespace Microsoft.AspNet.SessionState
                 }
             }";
 
-        private static readonly string UpdateSessionStateItemSP = @"
+        private const string UpdateSessionStateItemSP = @"
             function UpdateSessionStateItem(sessionId, lockCookie, timeout, sessionItem) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
