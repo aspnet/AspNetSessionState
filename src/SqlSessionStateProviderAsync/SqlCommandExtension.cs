@@ -7,7 +7,7 @@ namespace Microsoft.AspNet.SessionState
 
     static class SqlCommandExtension
     {
-        public static SqlParameter GetOutPutParameterValue(this SqlCommand cmd, SqlParameterName parameterName)
+        public static SqlParameter GetOutPutParameterValue(this SqlCommand cmd, string parameterName)
         {
             return cmd.Parameters[$"@{parameterName}"];
         }
