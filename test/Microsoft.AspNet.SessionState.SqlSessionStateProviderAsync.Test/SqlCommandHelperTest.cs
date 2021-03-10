@@ -174,7 +174,7 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
 
         private void VerifySessionIdParameter(SqlCommand cmd)
         {
-            var param = cmd.Parameters[$"@{SqlParameterName.SessionId}"];
+            var param = cmd.Parameters[SqlParameterName.SessionId];
             Assert.NotNull(param);
             Assert.Equal(SqlDbType.NVarChar, param.SqlDbType);
             Assert.Equal(SessionId, param.Value);
@@ -183,7 +183,7 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
 
         private void VerifyLockAgeParameter(SqlCommand cmd)
         {
-            var param = cmd.Parameters[$"@{SqlParameterName.LockAge}"];
+            var param = cmd.Parameters[SqlParameterName.LockAge];
             Assert.NotNull(param);
             Assert.Equal(SqlDbType.Int, param.SqlDbType);
             Assert.Equal(Convert.DBNull, param.Value);
@@ -192,7 +192,7 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
 
         private void VerifyLockedParameter(SqlCommand cmd)
         {
-            var param = cmd.Parameters[$"@{SqlParameterName.Locked}"];
+            var param = cmd.Parameters[SqlParameterName.Locked];
             Assert.NotNull(param);
             Assert.Equal(SqlDbType.Bit, param.SqlDbType);
             Assert.Equal(Convert.DBNull, param.Value);
@@ -201,7 +201,7 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
 
         private void VerifyLockCookieParameter(SqlCommand cmd, object lockId = null)
         {
-            var param = cmd.Parameters[$"@{SqlParameterName.LockCookie}"];
+            var param = cmd.Parameters[SqlParameterName.LockCookie];
             Assert.NotNull(param);
             Assert.Equal(SqlDbType.Int, param.SqlDbType);
             if(lockId == null)
@@ -217,7 +217,7 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
 
         private void VerifyActionFlagsParameter(SqlCommand cmd)
         {
-            var param = cmd.Parameters[$"@{SqlParameterName.ActionFlags}"];
+            var param = cmd.Parameters[SqlParameterName.ActionFlags];
             Assert.NotNull(param);
             Assert.Equal(SqlDbType.Int, param.SqlDbType);
             Assert.Equal(Convert.DBNull, param.Value);
@@ -226,7 +226,7 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
 
         private void VerifySessionItemLongParameter(SqlCommand cmd)
         {
-            var param = cmd.Parameters[$"@{SqlParameterName.SessionItemLong}"];
+            var param = cmd.Parameters[SqlParameterName.SessionItemLong];
             Assert.NotNull(param);
             Assert.Equal(SqlDbType.Image, param.SqlDbType);
             Assert.Equal(BufferLength, param.Size);
@@ -235,7 +235,7 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
 
         private void VerifyTimeoutParameter(SqlCommand cmd)
         {
-            var param = cmd.Parameters[$"@{SqlParameterName.Timeout}"];
+            var param = cmd.Parameters[SqlParameterName.Timeout];
             Assert.NotNull(param);
             Assert.Equal(SqlDbType.Int, param.SqlDbType);
         }
