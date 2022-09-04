@@ -32,7 +32,7 @@ namespace Microsoft.AspNet.SessionState
         private static bool s_oneTimeInited;
         private static object s_lock = new object();
         private static string s_dbId;
-        private static string s_collectionId;
+        private static string s_containerId;
         private static int s_offerThroughput;
         private static bool s_compressionEnabled;
         private static int s_timeout;
@@ -511,7 +511,7 @@ namespace Microsoft.AspNet.SessionState
 
                         // setup CosmosDB
                         CreateDatabaseIfNotExistsAsync().Wait();
-                        CreateCollectionIfNotExistsAsync().Wait();
+                        CreateContainerIfNotExistsAsync().Wait();
                         CreateStoredProceduresIfNotExistsAsync().Wait();
 
                         s_oneTimeInited = true;
@@ -537,7 +537,7 @@ namespace Microsoft.AspNet.SessionState
             s_authKey = "";
             s_partitionKey = "";
             s_dbId = "";
-            s_collectionId = "";
+            s_containerId = "";
             s_offerThroughput = 0;
             s_compressionEnabled = false;
             s_oneTimeInited = false;
@@ -570,9 +570,9 @@ namespace Microsoft.AspNet.SessionState
             get { return s_dbId; }
         }
 
-        internal static string CollectionId
+        internal static string ContainerId
         {
-            get { return s_collectionId; }
+            get { return s_containerId; }
         }
 
         internal static int ThroughPut
@@ -808,10 +808,10 @@ namespace Microsoft.AspNet.SessionState
                 throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, "databaseId"));
             }
 
-            s_collectionId = providerConfig["collectionId"];
-            if (string.IsNullOrEmpty(s_collectionId))
+            s_containerId = providerConfig["containerId"];
+            if (string.IsNullOrEmpty(s_containerId))
             {
-                throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, "collectionId"));
+                throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, "containerId"));
             }
 
             if (!int.TryParse(providerConfig["offerThroughput"], out s_offerThroughput))
@@ -887,13 +887,13 @@ namespace Microsoft.AspNet.SessionState
             await s_client.CreateDatabaseIfNotExistsAsync(s_dbId).ConfigureAwait(false);
         }
 
-        private static async Task CreateCollectionIfNotExistsAsync()
+        private static async Task CreateContainerIfNotExistsAsync()
         {
             var database = s_client.GetDatabase(s_dbId);
 
             var containerProperties = new ContainerProperties
             {
-                Id = s_collectionId,
+                Id = s_containerId,
                 PartitionKeyPath = $"/{s_partitionKey}",
                 DefaultTimeToLive = s_timeout,
                 IndexingPolicy = s_indexNone
@@ -915,7 +915,7 @@ namespace Microsoft.AspNet.SessionState
 
         private static async Task CreateSPIfNotExistsAsync(string spId, string spBody)
         {
-            var container = s_client.GetContainer(s_dbId, s_collectionId);
+            var container = s_client.GetContainer(s_dbId, s_containerId);
 
             try
             {
@@ -943,7 +943,7 @@ namespace Microsoft.AspNet.SessionState
         {
             try
             {
-                var container = s_client.GetContainer(s_dbId, s_collectionId);
+                var container = s_client.GetContainer(s_dbId, s_containerId);
 
                 return await container.Scripts.ExecuteStoredProcedureAsync<TValue>(spId, new PartitionKey(sessionId), spParams).ConfigureAwait(false);
             }
