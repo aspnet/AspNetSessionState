@@ -3,9 +3,9 @@
 
 namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
 {
+    using Microsoft.Data.SqlClient;
     using System;
     using System.Data;
-    using System.Data.SqlClient;
     using Xunit;
 
     public class SqlCommandHelperTest

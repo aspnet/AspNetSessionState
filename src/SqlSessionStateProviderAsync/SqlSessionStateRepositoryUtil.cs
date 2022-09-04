@@ -4,9 +4,9 @@
 namespace Microsoft.AspNet.SessionState
 {
     using Resources;
+    using Microsoft.Data.SqlClient;
     using System;
     using System.Data;
-    using System.Data.SqlClient;
     using System.Security.Principal;
     using System.Threading.Tasks;
     using System.Web;

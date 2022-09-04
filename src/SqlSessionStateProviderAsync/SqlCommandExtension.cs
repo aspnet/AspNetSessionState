@@ -3,7 +3,7 @@
 
 namespace Microsoft.AspNet.SessionState
 {
-    using System.Data.SqlClient;
+    using Microsoft.Data.SqlClient;
 
     static class SqlCommandExtension
     {

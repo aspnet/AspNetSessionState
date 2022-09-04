@@ -3,9 +3,9 @@
 
 namespace Microsoft.AspNet.SessionState
 {
+    using Microsoft.Data.SqlClient;
     using System;
     using System.Data;
-    using System.Data.SqlClient;
 
     static class SqlParameterCollectionExtension
     {
