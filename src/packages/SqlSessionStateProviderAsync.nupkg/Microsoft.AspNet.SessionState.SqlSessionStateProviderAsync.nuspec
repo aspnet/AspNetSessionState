@@ -14,8 +14,11 @@
     <summary>Async version SqlSessionState provider</summary>
     <language>en-US</language>
     <projectUrl>http://www.asp.net/</projectUrl>
-    <licenseUrl>http://www.microsoft.com/web/webpi/eula/net_library_eula_ENU.htm</licenseUrl>
+    <icon>images\dotnet-icon.png</icon>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <license type="expression">MIT</license>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <readme>docs\Readme.md</readme>
     <tags>ASP.NET Async SessionState Provider</tags>
   </metadata>
 </package>
