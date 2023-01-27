@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.AspNet.SessionState.Resources {
+namespace Microsoft.AspNet.SessionStateCosmosDBSessionStateProviderAsync.Resources {
     using System;
     
     
@@ -19,7 +19,7 @@ namespace Microsoft.AspNet.SessionState.Resources {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class SR {
@@ -70,11 +70,11 @@ namespace Microsoft.AspNet.SessionState.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The value &apos;{0}&apos; is invalid for &apos;partitionKeyPath&apos; when not using wildcard partitioning..
+        ///   Looks up a localized string similar to The specified container &apos;{0}&apos; already exists with a partition key path other than &apos;{1}&apos;..
         /// </summary>
-        internal static string Cant_use_id_for_partition_key {
+        internal static string Container_PKey_Does_Not_Match {
             get {
-                return ResourceManager.GetString("Cant_use_id_for_partition_key", resourceCulture);
+                return ResourceManager.GetString("Container_PKey_Does_Not_Match", resourceCulture);
             }
         }
         

@@ -26,7 +26,7 @@
          Some of these are already set in each project's individual settings file.
     -->
     <BuildQuality Condition="'$(BuildQuality)' == ''">beta</BuildQuality>
-    <VersionStartYear Condition="'$(VersionStartYear)' == ''">2019</VersionStartYear>
+    <VersionStartYear Condition="'$(VersionStartYear)' == ''">2023</VersionStartYear>
     <VersionMajor Condition="'$(VersionMajor)' == ''">1</VersionMajor>
     <VersionMinor Condition="'$(VersionMinor)' == ''">0</VersionMinor>
     <VersionRevision Condition="'$(VersionRevision)' == ''">0</VersionRevision>
@@ -92,8 +92,8 @@
   </Target>
 
   <Target Name="SuperClean" AfterTargets="Clean"  Condition="'$(MSBuildProjectExtension)' != '.nuproj'">
-    <RemoveDir Directories="$(OutputPath)" />
-    <RemoveDir Directories="$(IntermediateOutputRoot)" />
+    <RemoveDir Directories="$(TargetDir)" /> <!-- bin -->
+    <RemoveDir Directories="$(ProjectDir)$(BaseIntermediateOutputPath)" /> <!-- obj -->
   </Target>
 
   <Target Name="SuperCleanPackage" AfterTargets="Clean" Condition="'$(MSBuildProjectExtension)' == '.nuproj'">

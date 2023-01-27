@@ -120,8 +120,8 @@
   <data name="ArgumentNull_WithParamName" xml:space="preserve">
     <value>Parameter '{0}' cannot be null.</value>
   </data>
-  <data name="Cant_use_id_for_partition_key" xml:space="preserve">
-    <value>The value '{0}' is invalid for 'partitionKeyPath' when not using wildcard partitioning.</value>
+  <data name="Container_PKey_Does_Not_Match" xml:space="preserve">
+    <value>The specified container '{0}' already exists with a partition key path other than '{1}'.</value>
   </data>
   <data name="EmptyConfig_WithName" xml:space="preserve">
     <value>Configuration '{0}' cannot be null.</value>
