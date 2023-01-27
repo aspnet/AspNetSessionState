@@ -28,7 +28,6 @@ namespace Microsoft.AspNet.SessionState
 
         private static string s_endPoint;
         private static string s_authKey;
-        private static string s_partitionKey = "";
         private static bool s_oneTimeInited;
         private static object s_lock = new object();
         private static string s_dbId;
@@ -47,7 +46,7 @@ namespace Microsoft.AspNet.SessionState
         };
 
         #region CosmosDB Stored Procedures            
-        private static readonly string CreateSessionStateItemInPartitionSPID = "CreateSessionStateItemInPartition";
+        private static readonly string CreateSessionStateItemSPID = "CreateSessionStateItemInPartition";
         private static readonly string GetStateItemSPID = "GetStateItem";
         private static readonly string GetStateItemExclusiveSPID = "GetStateItemExclusive";
         private static readonly string ReleaseItemExclusiveSPID = "ReleaseItemExclusive";
@@ -56,32 +55,32 @@ namespace Microsoft.AspNet.SessionState
         private static readonly string UpdateSessionStateItemSPID = "UpdateSessionStateItem";
 
         // Will be used in String.Format, hence needs to escape certain char
-        private const string CreateSessionStateItemInPartitionSPTemplate = @"
-            function CreateSessionStateItemInPartition(sessionId, timeout, lockCookie, sessionItem, uninitialized) {{
+        private const string CreateSessionStateItemSP = @"
+            function CreateSessionStateItem(sessionId, timeout, lockCookie, sessionItem, uninitialized) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
                 var response = getContext().getResponse();
 
-                if (!sessionId) {{
+                if (!sessionId) {
                     throw new Error('sessionId cannot be null');
-                }}
-                if (!timeout) {{
+                }
+                if (!timeout) {
                     throw new Error('timeout cannot be null');
-                }}
-                if (!lockCookie) {{
+                }
+                if (!lockCookie) {
                     throw new Error('lockCookie cannot be null');
-                }}
+                }
 
-                var sessionStateItem = {{ id: sessionId, {0}: sessionId, lockDate: (new Date()).getTime(), lockAge: 0, lockCookie:lockCookie, 
-                    ttl: timeout, locked: false, sessionItem: sessionItem, uninitialized: uninitialized }};
+                var sessionStateItem = { id: sessionId, lockDate: (new Date()).getTime(), lockAge: 0, lockCookie:lockCookie, 
+                    ttl: timeout, locked: false, sessionItem: sessionItem, uninitialized: uninitialized };
                 collection.createDocument(collectionLink, sessionStateItem,
-                    function (err, documentCreated) {{
-                            if (err) {{
+                    function (err, documentCreated) {
+                            if (err) {
                                 throw err;
-                            }}
-                            response.setBody({{documentCreated: documentCreated}});
-                }});
-            }}";
+                            }
+                            response.setBody({documentCreated: documentCreated});
+                });
+            }";
 
 
         private static readonly string GetStateItemSP = @"
@@ -505,8 +504,6 @@ namespace Microsoft.AspNet.SessionState
 
                         ParseCosmosDbEndPointSettings(providerConfig, appSettings);
 
-                        CreateSessionStateItemInPartitionSP = string.Format(CreateSessionStateItemInPartitionSPTemplate, s_partitionKey);
-
                         s_client = CosmosClientFactory(s_endPoint, s_authKey, ParseCosmosDBClientSettings(providerConfig));
 
                         // setup CosmosDB
@@ -535,7 +532,6 @@ namespace Microsoft.AspNet.SessionState
         {
             s_endPoint = "";
             s_authKey = "";
-            s_partitionKey = "";
             s_dbId = "";
             s_containerId = "";
             s_offerThroughput = 0;
@@ -558,11 +554,6 @@ namespace Microsoft.AspNet.SessionState
         internal static string AuthKey
         {
             get { return s_authKey; }
-        }
-
-        internal static string PartitionKey
-        {
-            get { return s_partitionKey; }
         }
 
         internal static string DbId
@@ -776,8 +767,6 @@ namespace Microsoft.AspNet.SessionState
             return false;
         }
 
-        internal string CreateSessionStateItemInPartitionSP { get; set; }
-
         internal static void ParseCosmosDbEndPointSettings(NameValueCollection providerConfig, NameValueCollection appSettings)
         {
             var endPointSettingKey = providerConfig["cosmosDBEndPointSettingKey"];
@@ -811,18 +800,16 @@ namespace Microsoft.AspNet.SessionState
             s_containerId = providerConfig["containerId"];
             if (string.IsNullOrEmpty(s_containerId))
             {
-                throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, "containerId"));
+                s_containerId = providerConfig["collectionId"];
+                if (string.IsNullOrEmpty(s_collectionId))
+                {
+                    throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, "containerId"));
+                }
             }
 
             if (!int.TryParse(providerConfig["offerThroughput"], out s_offerThroughput))
             {
                 s_offerThroughput = 5000;
-            }
-
-            s_partitionKey = providerConfig["partitionKeyPath"];
-            if (string.IsNullOrEmpty(s_partitionKey))
-            {
-                s_partitionKey = "id";
             }
         }
 
@@ -890,21 +877,27 @@ namespace Microsoft.AspNet.SessionState
         private static async Task CreateContainerIfNotExistsAsync()
         {
             var database = s_client.GetDatabase(s_dbId);
+            string partitionKeyPath = $"/id";
 
             var containerProperties = new ContainerProperties
             {
                 Id = s_containerId,
-                PartitionKeyPath = $"/{s_partitionKey}",
+                PartitionKeyPath = partitionKeyPath,
                 DefaultTimeToLive = s_timeout,
                 IndexingPolicy = s_indexNone
             };
 
-            await database.CreateContainerIfNotExistsAsync(containerProperties, s_offerThroughput).ConfigureAwait(false);
+            ContainerResponse response = await database.CreateContainerIfNotExistsAsync(containerProperties, s_offerThroughput).ConfigureAwait(false);
+
+            if (response.Resource?.PartitionKeyPath != partitionKeyPath)
+            {
+                throw new Exception(String.Format(CultureInfo.CurrentCulture, SR.Container_PKey_Does_Not_Match, s_containerId, partitionKeyPath));
+            }
         }
 
         private async Task CreateStoredProceduresIfNotExistsAsync()
         {
-            await CreateSPIfNotExistsAsync(CreateSessionStateItemInPartitionSPID, CreateSessionStateItemInPartitionSP);
+            await CreateSPIfNotExistsAsync(CreateSessionStateItemSPID, CreateSessionStateItemSP);
             await CreateSPIfNotExistsAsync(GetStateItemSPID, GetStateItemSP);
             await CreateSPIfNotExistsAsync(GetStateItemExclusiveSPID, GetStateItemExclusiveSP);
             await CreateSPIfNotExistsAsync(ReleaseItemExclusiveSPID, ReleaseItemExclusiveSP);
@@ -975,7 +968,7 @@ namespace Microsoft.AspNet.SessionState
 
         internal async Task CreateSessionStateItemAsync(string sessionid, int timeoutInSec, string encodedSsItems, bool uninitialized)
         {
-            var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(CreateSessionStateItemInPartitionSPID, sessionid,
+            var spResponse = await ExecuteStoredProcedureWithWrapperAsync<object>(CreateSessionStateItemSPID, sessionid,
                 // sessionId, timeout, lockCookie, sessionItem, uninitialized
                 sessionid, timeoutInSec, DefaultLockCookie, encodedSsItems, uninitialized);
 
