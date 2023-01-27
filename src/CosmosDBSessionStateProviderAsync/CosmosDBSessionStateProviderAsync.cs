@@ -46,7 +46,7 @@ namespace Microsoft.AspNet.SessionState
         };
 
         #region CosmosDB Stored Procedures            
-        private static readonly string CreateSessionStateItemSPID = "CreateSessionStateItemInPartition";
+        private static readonly string CreateSessionStateItemSPID = "CreateSessionStateItem";
         private static readonly string GetStateItemSPID = "GetStateItem";
         private static readonly string GetStateItemExclusiveSPID = "GetStateItemExclusive";
         private static readonly string ReleaseItemExclusiveSPID = "ReleaseItemExclusive";
@@ -801,7 +801,7 @@ namespace Microsoft.AspNet.SessionState
             if (string.IsNullOrEmpty(s_containerId))
             {
                 s_containerId = providerConfig["collectionId"];
-                if (string.IsNullOrEmpty(s_collectionId))
+                if (string.IsNullOrEmpty(s_containerId))
                 {
                     throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, "containerId"));
                 }
@@ -889,7 +889,7 @@ namespace Microsoft.AspNet.SessionState
 
             ContainerResponse response = await database.CreateContainerIfNotExistsAsync(containerProperties, s_offerThroughput).ConfigureAwait(false);
 
-            if (response.Resource?.PartitionKeyPath != partitionKeyPath)
+            if (response?.Resource?.PartitionKeyPath != partitionKeyPath)
             {
                 throw new Exception(String.Format(CultureInfo.CurrentCulture, SR.Container_PKey_Does_Not_Match, s_containerId, partitionKeyPath));
             }
