@@ -129,12 +129,6 @@
   <data name="Invalid_session_state" xml:space="preserve">
     <value>The session state information is invalid and might be corrupted.</value>
   </data>
-  <data name="Object_Cannot_Be_Converted_To_SessionStateActions" xml:space="preserve">
-    <value>Object '{0}' cannot be converted to SessionStateActions</value>
-  </data>
-  <data name="Object_Cannot_Be_Converted_To_TimeSpan" xml:space="preserve">
-    <value>Object '{0}' cannot be converted to TimeSpan</value>
-  </data>
   <data name="Request_To_CosmosDB_Is_Too_Large" xml:space="preserve">
     <value>The request rate to CosmosDB is too large. You may consider to increase the offer throughput of the CosmosDB collection or increase maxRetryAttemptsOnThrottledRequests and maxRetryWaitTimeInSeconds settings in web.config</value>
   </data>

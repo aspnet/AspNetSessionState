@@ -97,24 +97,6 @@ namespace Microsoft.AspNet.SessionState.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Object &apos;{0}&apos; cannot be converted to SessionStateActions.
-        /// </summary>
-        internal static string Object_Cannot_Be_Converted_To_SessionStateActions {
-            get {
-                return ResourceManager.GetString("Object_Cannot_Be_Converted_To_SessionStateActions", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Object &apos;{0}&apos; cannot be converted to TimeSpan.
-        /// </summary>
-        internal static string Object_Cannot_Be_Converted_To_TimeSpan {
-            get {
-                return ResourceManager.GetString("Object_Cannot_Be_Converted_To_TimeSpan", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to The request rate to CosmosDB is too large. You may consider to increase the offer throughput of the CosmosDB collection or increase maxRetryAttemptsOnThrottledRequests and maxRetryWaitTimeInSeconds settings in web.config.
         /// </summary>
         internal static string Request_To_CosmosDB_Is_Too_Large {
