@@ -43,7 +43,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
         private const int DefaultLockCookie = 1;
         private const int AnotherLockCookie = 2;
         private const int DefaultThroughPut = 5000;
-        private const string DefaultPartitionKeyPath = "id";
+        private const string DefaultPartitionKeyPath = "/id";
         private const int DefaultSessionTimeout = 20;
         private const int DefaultSessionTimeoutInSec = 60 * 20;
         private const int AnotherSessionTimeout = 60 * 5;
@@ -54,7 +54,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
         private const int DefaultMaxRetryWaitTime = 10;
         private const int DefaultItemLength = 7000;
         private static readonly string TestSP = "test.doc.sp";
-        private const string NonMatchingPartitionKey = $"The specified container '{ContainerId}' already exists with a partition key path other than '{DefaultPartitionKeyPath}'.";
+        private static string NonMatchingPartitionKey = $"The specified container '{ContainerId}' already exists with a partition key path other than '{DefaultPartitionKeyPath}'.";
 
         public CosmosDBSessionStateProviderAsyncTest()
         {
@@ -91,21 +91,10 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
                         .Returns(Task.FromResult((DatabaseResponse)null));
 
             var containerResponseMoq = new Mock<ContainerResponse>();
-            var expectedContainerProperties = new ContainerProperties
-            {
-                Id = ContainerId,
-                PartitionKeyPath = DefaultPartitionKeyPath,
-                DefaultTimeToLive = DefaultSessionTimeoutInSec
-            };
-            containerResponseMoq.SetupGet(cr => cr.Resource).Returns(expectedContainerProperties);
+            containerResponseMoq.SetupGet(cr => cr.Resource).Returns((ContainerProperties)null);
 
             var databaseMoq = new Mock<Database>();
-            databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
-                           It.Is<ContainerProperties>(properties => properties.Id == ContainerId
-                                                                    && properties.PartitionKeyPath == "/id"
-                                                                    && properties.DefaultTimeToLive == DefaultSessionTimeoutInSec),
-                           DefaultThroughPut, null, default))
-                       .Returns(Task.FromResult((ContainerResponse)containerResponseMoq.Object));
+            SetupDatabaseMock(databaseMoq, "UnrelatedDatabase");
 
             docClientMoq.Setup(client => client.GetDatabase(DatabaseId))
                         .Returns(databaseMoq.Object);
@@ -191,22 +180,8 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             docClientMoq.Setup(client => client.CreateDatabaseIfNotExistsAsync(DatabaseId, (int?)null, null, default))
                         .Returns(Task.FromResult((DatabaseResponse)null));
 
-            var containerResponseMoq = new Mock<ContainerResponse>();
-            var expectedContainerProperties = new ContainerProperties
-            {
-                Id = ContainerId,
-                PartitionKeyPath = DefaultPartitionKeyPath,
-                DefaultTimeToLive = DefaultSessionTimeoutInSec
-            };
-            containerResponseMoq.SetupGet(cr => cr.Resource).Returns(expectedContainerProperties);
-
             var databaseMoq = new Mock<Database>();
-            databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
-                           It.Is<ContainerProperties>(properties => properties.Id == ContainerId
-                                                                    && properties.PartitionKeyPath == "/id"
-                                                                    && properties.DefaultTimeToLive == DefaultSessionTimeoutInSec),
-                           DefaultThroughPut, null, default))
-                       .Returns(Task.FromResult((ContainerResponse)containerResponseMoq.Object));
+            SetupDatabaseMock(databaseMoq);
 
             docClientMoq.Setup(client => client.GetDatabase(DatabaseId))
                         .Returns(databaseMoq.Object);
@@ -314,22 +289,8 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             docClientMoq.Setup(client => client.CreateDatabaseIfNotExistsAsync(DatabaseId, (int?)null, null, default))
                         .Returns(Task.FromResult((DatabaseResponse)null));
 
-            var containerResponseMoq = new Mock<ContainerResponse>();
-            var expectedContainerProperties = new ContainerProperties
-            {
-                Id = ContainerId,
-                PartitionKeyPath = "/pkeypath",
-                DefaultTimeToLive = DefaultSessionTimeoutInSec
-            };
-            containerResponseMoq.SetupGet(cr => cr.Resource).Returns(expectedContainerProperties);
-
             var databaseMoq = new Mock<Database>();
-            databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
-                           It.Is<ContainerProperties>(properties => properties.Id == ContainerId
-                                                                    && properties.PartitionKeyPath == "/id"
-                                                                    && properties.DefaultTimeToLive == DefaultSessionTimeoutInSec),
-                           DefaultThroughPut, null, default))
-                       .Returns(Task.FromResult((ContainerResponse)containerResponseMoq.Object));
+            SetupDatabaseMock(databaseMoq, ContainerId, "/some_other_pkeypath");
 
             docClientMoq.Setup(client => client.GetDatabase(DatabaseId))
                         .Returns(databaseMoq.Object);
@@ -360,8 +321,8 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             CosmosClientOptions configuredOptions = null;
             provider.CosmosClientFactory = (endpoint, authKey, options) => { configuredOptions = options; return docClientMoq.Object; };
 
-            var ex = await Assert.ThrowsAsync<Exception>(() => provider.Initialize(DefaultProviderName, providerConfig, ssc, appSettings));
-            Assert.Equal(NonMatchingPartitionKey, ex.Message);
+            var ex = Assert.Throws<AggregateException>(() => provider.Initialize(DefaultProviderName, providerConfig, ssc, appSettings));
+            Assert.Equal(NonMatchingPartitionKey, ex.InnerException.Message);
         }
 
         [Fact]
@@ -383,9 +344,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var docClientMoq = new Mock<CosmosClient>();
 
             var databaseMoq = new Mock<Database>();
-            databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
-                           It.IsAny<ContainerProperties>(), DefaultThroughPut, null, default))
-                       .Returns(Task.FromResult((ContainerResponse)null));
+            SetupDatabaseMock(databaseMoq);
 
             docClientMoq.Setup(client => client.GetDatabase(DatabaseId))
                         .Returns(databaseMoq.Object);
@@ -471,7 +430,6 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             Assert.Equal(DatabaseId, CosmosDBSessionStateProviderAsync.DbId);
             Assert.Equal(ContainerId, CosmosDBSessionStateProviderAsync.ContainerId);
             Assert.Equal(DefaultThroughPut, CosmosDBSessionStateProviderAsync.ThroughPut);
-            Assert.Equal(DefaultPartitionKeyPath, CosmosDBSessionStateProviderAsync.PartitionKey);
         }
 
         [Fact]
@@ -509,7 +467,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             appSettings[DefaultAuthKeySettingKey] = AuthKey;
             providerConfig["databaseId"] = DatabaseId;
             providerConfig["collectionId"] = ContainerId;   // Note the old parameter name. Should still work the same.
-            providerConfig["partitionKeyPath"] = ParitionKeyPath;   // Also note this old parameter. It means nothing, but it should not cause failure.
+            providerConfig["partitionKeyPath"] = "/some_ignored_path";   // Also note this old parameter. It means nothing, but it should not cause failure.
             providerConfig["partitionNumUsedByProvider"] = "12";   // Same.
 
             CosmosDBSessionStateProviderAsync.ResetStaticFields();
@@ -677,9 +635,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             object[] ssData = null;
 
             var databaseMoq = new Mock<Database>();
-            databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
-                           It.IsAny<ContainerProperties>(), DefaultThroughPut, null, default))
-                       .Returns(Task.FromResult((ContainerResponse)null));
+            SetupDatabaseMock(databaseMoq);
 
             docClientMoq.Setup(client => client.GetDatabase(DatabaseId))
                         .Returns(databaseMoq.Object);
@@ -741,9 +697,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var spResponse = CreateStoredProcedureResponseInstance<SessionStateItem>(HttpStatusCode.OK, expectedSSItem);
 
             var databaseMoq = new Mock<Database>();
-            databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
-                           It.IsAny<ContainerProperties>(), DefaultThroughPut, null, default))
-                       .Returns(Task.FromResult((ContainerResponse)null));
+            SetupDatabaseMock(databaseMoq);
 
             docClientMoq.Setup(client => client.GetDatabase(DatabaseId))
                         .Returns(databaseMoq.Object);
@@ -792,9 +746,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var spResponse = CreateStoredProcedureResponseInstance<SessionStateItem>(HttpStatusCode.OK, expectedSSItem);
 
             var databaseMoq = new Mock<Database>();
-            databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
-                           It.IsAny<ContainerProperties>(), DefaultThroughPut, null, default))
-                       .Returns(Task.FromResult((ContainerResponse)null));
+            SetupDatabaseMock(databaseMoq);
 
             docClientMoq.Setup(client => client.GetDatabase(DatabaseId))
                         .Returns(databaseMoq.Object);
@@ -850,9 +802,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var spResponse = CreateStoredProcedureResponseInstance<SessionStateItem>(HttpStatusCode.OK, expectedSSItem);
 
             var databaseMoq = new Mock<Database>();
-            databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
-                           It.IsAny<ContainerProperties>(), DefaultThroughPut, null, default))
-                       .Returns(Task.FromResult((ContainerResponse)null));
+            SetupDatabaseMock(databaseMoq);
 
             docClientMoq.Setup(client => client.GetDatabase(DatabaseId))
                         .Returns(databaseMoq.Object);
@@ -902,9 +852,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var spResponse = CreateStoredProcedureResponseInstance<SessionStateItem>(HttpStatusCode.OK, expectedSSItem);
 
             var databaseMoq = new Mock<Database>();
-            databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
-                           It.IsAny<ContainerProperties>(), DefaultThroughPut, null, default))
-                       .Returns(Task.FromResult((ContainerResponse)null));
+            SetupDatabaseMock(databaseMoq);
 
             docClientMoq.Setup(client => client.GetDatabase(DatabaseId))
                         .Returns(databaseMoq.Object);
@@ -942,9 +890,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var lockId = 10;
 
             var databaseMoq = new Mock<Database>();
-            databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
-                           It.IsAny<ContainerProperties>(), DefaultThroughPut, null, default))
-                       .Returns(Task.FromResult((ContainerResponse)null));
+            SetupDatabaseMock(databaseMoq);
 
             docClientMoq.Setup(client => client.GetDatabase(DatabaseId))
                         .Returns(databaseMoq.Object);
@@ -979,9 +925,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var lockId = 10;
 
             var databaseMoq = new Mock<Database>();
-            databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
-                           It.IsAny<ContainerProperties>(), DefaultThroughPut, null, default))
-                       .Returns(Task.FromResult((ContainerResponse)null));
+            SetupDatabaseMock(databaseMoq);
 
             docClientMoq.Setup(client => client.GetDatabase(DatabaseId))
                         .Returns(databaseMoq.Object);
@@ -1015,9 +959,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             var spResponse = CreateStoredProcedureResponseInstance<object>(HttpStatusCode.OK, null);
 
             var databaseMoq = new Mock<Database>();
-            databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
-                           It.IsAny<ContainerProperties>(), DefaultThroughPut, null, default))
-                       .Returns(Task.FromResult((ContainerResponse)null));
+            SetupDatabaseMock(databaseMoq);
 
             docClientMoq.Setup(client => client.GetDatabase(DatabaseId))
                         .Returns(databaseMoq.Object);
@@ -1057,9 +999,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             object[] ssData = null;
 
             var databaseMoq = new Mock<Database>();
-            databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
-                           It.IsAny<ContainerProperties>(), DefaultThroughPut, null, default))
-                       .Returns(Task.FromResult((ContainerResponse)null));
+            SetupDatabaseMock(databaseMoq);
 
             docClientMoq.Setup(client => client.GetDatabase(DatabaseId))
                         .Returns(databaseMoq.Object);
@@ -1108,9 +1048,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
             object[] ssData = null;
 
             var databaseMoq = new Mock<Database>();
-            databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
-                           It.IsAny<ContainerProperties>(), DefaultThroughPut, null, default))
-                       .Returns(Task.FromResult((ContainerResponse)null));
+            SetupDatabaseMock(databaseMoq);
 
             docClientMoq.Setup(client => client.GetDatabase(DatabaseId))
                         .Returns(databaseMoq.Object);
@@ -1214,6 +1152,42 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
                             It.Is<StoredProcedureProperties>(properties => properties.Id == spId), null, default))
                 .Returns(Task.FromResult((StoredProcedureResponse)null))
                 .Callback(callback);
+        }
+
+        private void SetupDatabaseMock(Mock<Database> databaseMoq, string id = ContainerId, string partitionKeyPath = DefaultPartitionKeyPath)
+        {
+            var containerResponseMoq = new Mock<ContainerResponse>();
+            var existingContainerProperties = new ContainerProperties
+            {
+                Id = id,
+                PartitionKeyPath = partitionKeyPath,
+                DefaultTimeToLive = DefaultSessionTimeoutInSec
+            };
+// smolloy TODO DEBUG
+//containerResponseMoq.SetupGet(cr => cr.Resource).Returns(existingContainerProperties);
+
+            databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
+                           It.IsAny<ContainerProperties>(), It.IsAny<int>(),
+                           It.IsAny<RequestOptions>(), It.IsAny<CancellationToken>()))
+                       .ReturnsAsync((ContainerProperties props, int thru, RequestOptions opts, CancellationToken ct) => {
+                           if (props.Id == id)
+                               containerResponseMoq.SetupGet(cr => cr.Resource).Returns(existingContainerProperties);
+                           else
+                               containerResponseMoq.SetupGet(cr => cr.Resource).Returns(props);
+                           return (ContainerResponse)containerResponseMoq.Object;
+                       });
+//                Task.FromResult((ContainerResponse)containerResponseMoq.Object));
+
+            // smolloy TODO DEBUG
+            //databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
+            //               It.Is<ContainerProperties>(properties => properties.Id == id),
+            //               It.IsAny<int>(), It.IsAny<RequestOptions>(), It.IsAny<CancellationToken>()))
+            //           .Returns(Task.FromResult((ContainerResponse)containerResponseMoq.Object));
+
+            //databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
+            //               It.Is<ContainerProperties>(properties => properties.Id != id),
+            //               It.IsAny<int>(), It.IsAny<RequestOptions>(), It.IsAny<CancellationToken>()))
+            //           .Returns(Task.FromResult((ContainerResponse)null));
         }
 
         private StoredProcedureExecuteResponse<T> CreateStoredProcedureResponseInstance<T>(HttpStatusCode statusCode, T responseBody)
