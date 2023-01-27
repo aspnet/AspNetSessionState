@@ -4,48 +4,42 @@
 namespace Microsoft.AspNet.SessionState
 {
     using System;
-    using Newtonsoft.Json;
+    using System.Text.Json;
+    using System.Text.Json.Serialization;
     using Microsoft.AspNet.SessionState.Resources;
 
-    class TimeSpanConverter : JsonConverter
+    class TimeSpanConverter : JsonConverter<TimeSpan?>
     {
-        public override bool CanConvert(Type objectType)
+        public override bool CanConvert(Type typeToConvert)
         {
-            return typeof(TimeSpan) == objectType;
+            return typeof(TimeSpan?) == typeToConvert;
         }
 
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override TimeSpan? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            if(reader.TokenType == JsonToken.Null)
+            if (reader.TokenType == JsonTokenType.Null)
             {
                 return new Nullable<TimeSpan>();
             }
 
-            if (reader.TokenType != JsonToken.Integer)
+            if (reader.TokenType != JsonTokenType.Number)
             {
                 throw new ArgumentException("reader");
             }
 
-            return new TimeSpan(0, 0, Convert.ToInt32(reader.Value));
+            return new TimeSpan(0, 0, reader.GetInt32());
         }
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, TimeSpan? value, JsonSerializerOptions options)
         {
-            if(value == null)
+            if (value == null)
             {
-                writer.WriteNull();
+                writer.WriteNullValue();
                 return;
             }
 
             var ts = (TimeSpan)value;
-            if(ts != null)
-            {
-                writer.WriteValue((int)ts.TotalSeconds);
-            }
-            else
-            {
-                throw new JsonSerializationException(string.Format(SR.Object_Cannot_Be_Converted_To_TimeSpan, "value"));
-            }
+            writer.WriteNumberValue((int)ts.TotalSeconds);
         }
     }
 }

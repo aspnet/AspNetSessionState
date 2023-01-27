@@ -3,36 +3,37 @@
 
 namespace Microsoft.AspNet.SessionState
 {
-    using Newtonsoft.Json;
     using System;
     using System.Web.SessionState;
+    using System.Text.Json.Serialization;
 
     class SessionStateItem
     {
-        [JsonProperty(PropertyName = "id", Required = Required.Always)]
+        [JsonPropertyName("id")]
+        [JsonRequired]
         public string SessionId { get; set; }
 
         // in second
-        [JsonProperty(PropertyName = "lockAge", Required = Required.AllowNull)]
+        [JsonPropertyName("lockAge")]
         [JsonConverter(typeof(TimeSpanConverter))]
         public TimeSpan? LockAge { get; set; }
 
-        [JsonProperty(PropertyName = "lockCookie", Required = Required.AllowNull)]
+        [JsonPropertyName("lockCookie")]
         public int? LockCookie { get; set; }
 
         //in sec
         // Leverage CosmosDB's TTL function to remove expired sessionstate item
         //ref https://docs.microsoft.com/en-us/azure/cosmos-db/time-to-live
-        [JsonProperty(PropertyName = "ttl", Required = Required.AllowNull)]
+        [JsonPropertyName("ttl")]
         public int? Timeout { get; set; }
 
-        [JsonProperty(PropertyName = "locked", Required = Required.AllowNull)]
+        [JsonPropertyName("locked")]
         public bool? Locked { get; set; }
 
-        [JsonProperty(PropertyName = "sessionItem", Required = Required.AllowNull)]
+        [JsonPropertyName("sessionItem")]
         public byte[] SessionItem { get; set; }
 
-        [JsonProperty(PropertyName ="uninitialized", Required = Required.AllowNull)]
+        [JsonPropertyName("uninitialized")]
         [JsonConverter(typeof(SessionStateActionsConverter))]
         public SessionStateActions? Actions {get;set;}
     }
