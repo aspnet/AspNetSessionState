@@ -98,7 +98,7 @@ namespace Microsoft.AspNet.SessionState
                 function tryGetStateItem(continuation) {
                     var requestOptions = { continuation: continuation};
                     var query = 'select * from root r where r.id = ""' + sessionId + '""';
-                    var isAccepted = collection.queryDocuments(collectionLink, query, continuation,
+                    var isAccepted = collection.queryDocuments(collectionLink, query, requestOptions,
                         function(err, documents, responseOptions) {
                             if (err)
                             {
@@ -316,7 +316,7 @@ namespace Microsoft.AspNet.SessionState
                 function TryRemoveStateItem(continuation) {
                     var requestOptions = { continuation: continuation};
                     var query = 'select * from root r where r.id = ""' + sessionId + '"" and r.lockCookie = ' + lockCookie;
-                    var isAccepted = collection.queryDocuments(collectionLink, query, continuation,
+                    var isAccepted = collection.queryDocuments(collectionLink, query, requestOptions,
                         function(err, documents, responseOptions) {
                     if (err)
                     {
