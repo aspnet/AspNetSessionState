@@ -22,7 +22,7 @@ Then, register your new provider like so:
 
 2. *cosmosDBAuthKeySettingKey* - The appsetting key name which points to a CosmosDB auth key
 
-3. *offerThroughput* - The offer throughput provisioned for a collection in measurement of Requests-per-Unit in the Azure DocumentDB database service. If the collection provided doesn't exist, the provider will create a collection with this offerThroughput.
+3. *offerThroughput* - The offer throughput provisioned for a collection in measurement of Requests-per-Unit in the Azure DocumentDB database service. If the collection provided doesn't exist, the provider will create a collection with this offerThroughput. If set to "0", collection will be set to use the default throughput of the database.
 
 4. *connectionMode* - Direct | Gateway
 

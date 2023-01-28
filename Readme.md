@@ -35,26 +35,11 @@ The specific settings available for the new session state module and providers a
 - [Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync](docs/SqlSessionStateProviderAsync.md)
 - [Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync](docs/CosmosDBSessionStateProviderAsync.md)
 
-1. *cosmosDBEndPointSettingKey* - The appsetting key name which points to a CosmosDB end point
-
-2. *cosmosDBAuthKeySettingKey* - The appsetting key name which points to a CosmosDB auth key
-
-3. *offerThroughput* - The offer throughput provisioned for a collection in measurement of Requests-per-Unit in the Azure DocumentDB database service. If the collection provided doesn't exist, the provider will create a collection with this offerThroughput.
-
-4. *connectionMode* - Direct | Gateway
-
-5. *connectionProtocol* - Https | Tcp
-
-6. *requestTimeout* - The request timeout in seconds when connecting to the Azure DocumentDB database service.
-
-7. *maxConnectionLimit* - maximum number of concurrent connections allowed for the target service endpoint in the Azure DocumentDB database service.
-
-8. *maxRetryAttemptsOnThrottledRequests* - the maximum number of retries in the case where the request fails because the Azure DocumentDB database service has applied rate limiting on the client.
-
-9. *maxRetryWaitTimeInSeconds* - The maximum retry time in seconds for the Azure DocumentDB database service.
-
-10. *preferredLocations* - Sets the preferred locations(regions) for geo-replicated database accounts in the Azure DocumentDB database service. Use ';' to split multiple locations. e.g. "East US;South Central US;North Europe"
-
-11. *partitionKeyPath* - The name of the key to use for logically partitioning the collection. This key name should be different from 'id' unless "wildcard" partitioning is being used.
-
-12. *partitionNumUsedByProvider* - The number of partition can be used for sessionstate. This was designed with the thought that multiple Cosmos partitions would be an extra cost. CosmosDB as it stands today encourages as many diverse logical partitions as you can imagine, as more partitions allow for better horizontal scaling. Setting this to an integer value will effectively reduce the partition count to 32 or less, even if the specified value is much greater. This is a result of how session ID's were translated to partition ID's by this provider. ***It is now recommended to specify "\*" for this option if possible.*** This will reuse the full session ID for partitioning, allowing Cosmos maximum ability for horizontal scaling.
+<a name="updates"></a>
+## V1.2 Updates:
+  * :warning: ***Breaking Change*** - CosmosDB partition-related parameters are ignored. All containers use `/id` as the partition path now. Using an existing container with a different partition key path will result in exceptions.
+    > The original design around partition use in the CosmosDB provider was influenced by experience with the older SQL partition paradigms. There was an effort to enable them for scalability, but keep them reasonable for managability. In reality, CosmosDB encourages the use of as many "logical" partitions as can be used so long as they make sense. The complexity of managing and scaling is all handled magically by CosmosDB.
+    >
+    > The most logical partition field for session state is the session ID. The CosmosDB provider has been updated to alway use `"/id"` as the partition key path with the full session ID as the partition value. Pre-existing containers that use a different partition key path (which is any that opted into using partitions previously) will need to migrate to a container that uses `"/id"` as the partition key path. The data is all still good - although, the old partition key path can be dropped when migrating. There is unfortunately no way to simply update the partition key path on an existing container right now. [This blog post](https://devblogs.microsoft.com/cosmosdb/how-to-change-your-partition-key/) is a guide for migrating to a new container with the correct partition key path.
+  * CosmosDB `collectionId` is now `containerId` in keeping with the updated terminology from the CosmosDB offering. Please use the updated parameter name when configuring your provider. (The old name will continue to work just the same.)
+  * CosmosDB `connectionProtocol` is obsolete. It will not cause errors to have it in configuration, but it is ignored. The current [CosmosDB SDK chooses the protocol based on connection mode](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/sdk-connection-modes).

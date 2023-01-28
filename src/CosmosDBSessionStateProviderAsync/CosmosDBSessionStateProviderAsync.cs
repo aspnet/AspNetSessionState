@@ -887,32 +887,17 @@ namespace Microsoft.AspNet.SessionState
                 IndexingPolicy = s_indexNone
             };
 
-                    if(PartitionEnabled)
-                    {
-                        docCollection.PartitionKey.Paths.Add($"/{s_partitionKey}");
-
-                        // If we're using the updated partition strategy - 1 logical partition per sessionId - then there is no
-                        // need for indexing. It will not speed up lookup, and it only contributes to overhead on writes.
-                        if (s_partitionNumUsedBySessionProvider < 0)
-                            docCollection.IndexingPolicy = s_indexNone;
-                    }
+            ContainerResponse response = await database.CreateContainerIfNotExistsAsync(containerProperties, s_offerThroughput > 0 ? s_offerThroughput : (int?)null).ConfigureAwait(false);
 
             if (response?.Resource?.PartitionKeyPath != partitionKeyPath)
             {
                 throw new Exception(String.Format(CultureInfo.CurrentCulture, SR.Container_PKey_Does_Not_Match, s_containerId, partitionKeyPath));
             }
         }
-        
+
         private async Task CreateStoredProceduresIfNotExistsAsync()
         {
-            if (!PartitionEnabled)
-            {
-                await CreateSPIfNotExistsAsync(CreateSessionStateItemSPID, CreateSessionStateItemSP);
-            }
-            else
-            {
-                await CreateSPIfNotExistsAsync(CreateSessionStateItemInPartitionSPID, CreateSessionStateItemInPartitionSP);
-            }
+            await CreateSPIfNotExistsAsync(CreateSessionStateItemSPID, CreateSessionStateItemSP);
             await CreateSPIfNotExistsAsync(GetStateItemSPID, GetStateItemSP);
             await CreateSPIfNotExistsAsync(GetStateItemExclusiveSPID, GetStateItemExclusiveSP);
             await CreateSPIfNotExistsAsync(ReleaseItemExclusiveSPID, ReleaseItemExclusiveSP);
@@ -923,18 +908,17 @@ namespace Microsoft.AspNet.SessionState
 
         private static async Task CreateSPIfNotExistsAsync(string spId, string spBody)
         {
+            var container = s_client.GetContainer(s_dbId, s_containerId);
+
             try
             {
-                var spLink = UriFactory.CreateStoredProcedureUri(s_dbId, s_collectionId, spId);
-                await s_client.ReadStoredProcedureAsync(spLink);
+                await container.Scripts.ReadStoredProcedureAsync(spId).ConfigureAwait(false);
             }
-            catch (DocumentClientException e)
+            catch (CosmosException e)
             {
                 if (e.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    var sp = new StoredProcedure();
-                    sp.Id = spId;
-                    sp.Body = spBody;
+                    var properties = new StoredProcedureProperties(spId, spBody);
 
                     await container.Scripts.CreateStoredProcedureAsync(properties).ConfigureAwait(false);
                 }
