@@ -50,7 +50,7 @@ namespace Microsoft.AspNet.SessionState
         #endregion
 
         #region TempInsertUninitializedItem
-        private const string TempInsertUninitializedItemSql = @"
+            private static readonly string TempInsertUninitializedItemSql = $@"
             DECLARE @now AS datetime
             DECLARE @nowLocal AS datetime
             SET @now = GETUTCDATE()
