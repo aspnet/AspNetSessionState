@@ -3,8 +3,8 @@
 
 namespace Microsoft.AspNet.SessionState
 {
-    using System.Data.SqlClient;
     using System.Diagnostics;
+    using Microsoft.Data.SqlClient;
 
     static class SqlCommandExtension
     {

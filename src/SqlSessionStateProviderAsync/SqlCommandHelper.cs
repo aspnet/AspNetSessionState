@@ -3,8 +3,8 @@
 
 namespace Microsoft.AspNet.SessionState
 {
+    using Microsoft.Data.SqlClient;
     using System.Data;
-    using System.Data.SqlClient;
 
     class SqlCommandHelper
     {
