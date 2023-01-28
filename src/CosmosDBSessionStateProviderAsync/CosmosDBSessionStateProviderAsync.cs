@@ -47,10 +47,10 @@ namespace Microsoft.AspNet.SessionState
 
         #region CosmosDB Stored Procedures            
         private static readonly string CreateSessionStateItemSPID = "CreateSessionStateItem";
-        private static readonly string GetStateItemSPID = "GetStateItem";
+        private static readonly string GetStateItemSPID = "GetStateItem2";
         private static readonly string GetStateItemExclusiveSPID = "GetStateItemExclusive";
         private static readonly string ReleaseItemExclusiveSPID = "ReleaseItemExclusive";
-        private static readonly string RemoveStateItemSPID = "RemoveStateItem";
+        private static readonly string RemoveStateItemSPID = "RemoveStateItem2";
         private static readonly string ResetItemTimeoutSPID = "ResetItemTimeout";
         private static readonly string UpdateSessionStateItemSPID = "UpdateSessionStateItem";
 
@@ -84,7 +84,7 @@ namespace Microsoft.AspNet.SessionState
 
 
         private static readonly string GetStateItemSP = @"
-            function GetStateItem(sessionId) {
+            function GetStateItem2(sessionId) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
                 var response = getContext().getResponse();
@@ -299,7 +299,7 @@ namespace Microsoft.AspNet.SessionState
             }";
 
         private static readonly string RemoveStateItemSP = @"
-            function RemoveStateItem(sessionId, lockCookie) {
+            function RemoveStateItem2(sessionId, lockCookie) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
                 var response = getContext().getResponse();
