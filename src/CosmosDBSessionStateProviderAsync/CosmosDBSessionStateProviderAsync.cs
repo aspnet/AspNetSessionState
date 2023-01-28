@@ -887,7 +887,7 @@ namespace Microsoft.AspNet.SessionState
                 IndexingPolicy = s_indexNone
             };
 
-            ContainerResponse response = await database.CreateContainerIfNotExistsAsync(containerProperties, s_offerThroughput).ConfigureAwait(false);
+            ContainerResponse response = await database.CreateContainerIfNotExistsAsync(containerProperties, s_offerThroughput > 0 ? s_offerThroughput : (int?)null).ConfigureAwait(false);
 
             if (response?.Resource?.PartitionKeyPath != partitionKeyPath)
             {
