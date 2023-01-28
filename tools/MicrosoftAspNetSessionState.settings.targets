@@ -94,6 +94,7 @@
   <Target Name="SuperClean" AfterTargets="Clean"  Condition="'$(MSBuildProjectExtension)' != '.nuproj'">
     <RemoveDir Directories="$(TargetDir)" /> <!-- bin -->
     <RemoveDir Directories="$(ProjectDir)$(BaseIntermediateOutputPath)" /> <!-- obj -->
+    <RemoveDir Directories="$(ProjectDir)\obj" /> <!-- obj for features that weren't paying attention to BIOP -->
   </Target>
 
   <Target Name="SuperCleanPackage" AfterTargets="Clean" Condition="'$(MSBuildProjectExtension)' == '.nuproj'">

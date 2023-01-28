@@ -127,7 +127,7 @@
     <value>The custom session state store provider '{0}' is not found.</value>
   </data>
   <data name="Not_Support_SessionState_Mode" xml:space="preserve">
-    <value>SessionStateAsync module only supports InProce and Custom mode.</value>
+    <value>SessionStateAsync module only supports InProc and Custom mode.</value>
   </data>
   <data name="Null_value_for_SessionStateItemCollection" xml:space="preserve">
     <value>The SessionStateStoreData returned by ISessionStateStore has a null value for Items.</value>

@@ -7,24 +7,25 @@ namespace Microsoft.AspNet.SessionState
     using Microsoft.Data.SqlClient;
     using System;
     using System.Data;
+    using System.Runtime.CompilerServices;
     using System.Security.Principal;
     using System.Threading.Tasks;
     using System.Web;
 
-    enum SqlParameterName
+    static class SqlParameterName
     {
-        SessionId,
-        Created,
-        Expires,
-        LockDate,
-        LockDateLocal,
-        LockCookie,
-        Timeout,
-        Locked,
-        SessionItemLong,
-        Flags,
-        LockAge,
-        ActionFlags
+        public const string SessionId = "@" + nameof(SessionId);
+        public const string Created = "@" + nameof(Created);
+        public const string Expires = "@" + nameof(Expires);
+        public const string LockDate = "@" + nameof(LockDate);
+        public const string LockDateLocal = "@" + nameof(LockDateLocal);
+        public const string LockCookie = "@" + nameof(LockCookie);
+        public const string Timeout = "@" + nameof(Timeout);
+        public const string Locked = "@" + nameof(Locked);
+        public const string SessionItemLong = "@" + nameof(SessionItemLong);
+        public const string Flags = "@" + nameof(Flags);
+        public const string LockAge = "@" + nameof(LockAge);
+        public const string ActionFlags = "@" + nameof(ActionFlags);
     }
 
     static class Sec
@@ -56,12 +57,12 @@ namespace Microsoft.AspNet.SessionState
         private const int SQL_TIMEOUT_EXPIRED = -2;
         private const int APP_SUFFIX_LENGTH = 8;
 
-        public static readonly string TableName = "ASPStateTempSessions";
-        public static readonly int IdLength = 88;
-        public static readonly int DefaultItemLength = 7000;
+        public const string TableName = "ASPStateTempSessions";
+        public const int IdLength = 88;
+        public const int DefaultItemLength = 7000;
 
         public static async Task<int> SqlExecuteNonQueryWithRetryAsync(SqlConnection connection, SqlCommand sqlCmd, 
-            Func<RetryCheckParameter, bool> canRetry, bool ignoreInsertPKException = false)
+            Func<RetryCheckParameter, Task<bool>> canRetry, bool ignoreInsertPKException = false)
         {
             var retryParamenter = new RetryCheckParameter() { EndRetryTime = DateTime.UtcNow, RetryCount = 0 };
             sqlCmd.Connection = connection;
@@ -84,7 +85,7 @@ namespace Microsoft.AspNet.SessionState
                     }
 
                     retryParamenter.Exception = e;
-                    if (!canRetry(retryParamenter))
+                    if (!(await canRetry(retryParamenter)))
                     {
                         throw;
                     }
@@ -92,7 +93,7 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
-        public static async Task<SqlDataReader> SqlExecuteReaderWithRetryAsync(SqlConnection connection, SqlCommand sqlCmd, Func<RetryCheckParameter, bool> canRetry, 
+        public static async Task<SqlDataReader> SqlExecuteReaderWithRetryAsync(SqlConnection connection, SqlCommand sqlCmd, Func<RetryCheckParameter, Task<bool>> canRetry, 
             CommandBehavior cmdBehavior = CommandBehavior.Default)
         {
             var retryParamenter = new RetryCheckParameter() { EndRetryTime = DateTime.UtcNow, RetryCount = 0 };
@@ -109,7 +110,7 @@ namespace Microsoft.AspNet.SessionState
                 catch (SqlException e)
                 {
                     retryParamenter.Exception = e;
-                    if (!canRetry(retryParamenter))
+                    if (!(await canRetry(retryParamenter)))
                     {
                         throw;
                     }
@@ -117,6 +118,7 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsFatalSqlException(SqlException ex)
         {
             // We will retry sql operations for serious errors.

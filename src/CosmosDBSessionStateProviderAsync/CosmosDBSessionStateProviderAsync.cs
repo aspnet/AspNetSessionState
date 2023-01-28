@@ -46,15 +46,14 @@ namespace Microsoft.AspNet.SessionState
         };
 
         #region CosmosDB Stored Procedures            
-        private static readonly string CreateSessionStateItemSPID = "CreateSessionStateItemInPartition";
-        private static readonly string GetStateItemSPID = "GetStateItem";
-        private static readonly string GetStateItemExclusiveSPID = "GetStateItemExclusive";
-        private static readonly string ReleaseItemExclusiveSPID = "ReleaseItemExclusive";
-        private static readonly string RemoveStateItemSPID = "RemoveStateItem";
-        private static readonly string ResetItemTimeoutSPID = "ResetItemTimeout";
-        private static readonly string UpdateSessionStateItemSPID = "UpdateSessionStateItem";
+        private const string CreateSessionStateItemSPID = "CreateSessionStateItem";
+        private const string GetStateItemSPID = "GetStateItem2";
+        private const string GetStateItemExclusiveSPID = "GetStateItemExclusive";
+        private const string ReleaseItemExclusiveSPID = "ReleaseItemExclusive";
+        private const string RemoveStateItemSPID = "RemoveStateItem2";
+        private const string ResetItemTimeoutSPID = "ResetItemTimeout";
+        private const string UpdateSessionStateItemSPID = "UpdateSessionStateItem";
 
-        // Will be used in String.Format, hence needs to escape certain char
         private const string CreateSessionStateItemSP = @"
             function CreateSessionStateItem(sessionId, timeout, lockCookie, sessionItem, uninitialized) {
                 var collection = getContext().getCollection();
@@ -83,8 +82,8 @@ namespace Microsoft.AspNet.SessionState
             }";
 
 
-        private static readonly string GetStateItemSP = @"
-            function GetStateItem(sessionId) {
+        private const string GetStateItemSP = @"
+            function GetStateItem2(sessionId) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
                 var response = getContext().getResponse();
@@ -98,7 +97,7 @@ namespace Microsoft.AspNet.SessionState
                 function tryGetStateItem(continuation) {
                     var requestOptions = { continuation: continuation};
                     var query = 'select * from root r where r.id = ""' + sessionId + '""';
-                    var isAccepted = collection.queryDocuments(collectionLink, query, continuation,
+                    var isAccepted = collection.queryDocuments(collectionLink, query, requestOptions,
                         function(err, documents, responseOptions) {
                             if (err)
                             {
@@ -160,7 +159,7 @@ namespace Microsoft.AspNet.SessionState
                 }
             }";
 
-        private static readonly string GetStateItemExclusiveSP = @"
+        private const string GetStateItemExclusiveSP = @"
             function GetStateItemExclusive(sessionId) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
@@ -241,7 +240,7 @@ namespace Microsoft.AspNet.SessionState
                 }
             }";
 
-        private static readonly string ReleaseItemExclusiveSP = @"
+        private const string ReleaseItemExclusiveSP = @"
             function ReleaseItemExclusive(sessionId, lockCookie) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
@@ -298,8 +297,8 @@ namespace Microsoft.AspNet.SessionState
                 }
             }";
 
-        private static readonly string RemoveStateItemSP = @"
-            function RemoveStateItem(sessionId, lockCookie) {
+        private const string RemoveStateItemSP = @"
+            function RemoveStateItem2(sessionId, lockCookie) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
                 var response = getContext().getResponse();
@@ -316,7 +315,7 @@ namespace Microsoft.AspNet.SessionState
                 function TryRemoveStateItem(continuation) {
                     var requestOptions = { continuation: continuation};
                     var query = 'select * from root r where r.id = ""' + sessionId + '"" and r.lockCookie = ' + lockCookie;
-                    var isAccepted = collection.queryDocuments(collectionLink, query, continuation,
+                    var isAccepted = collection.queryDocuments(collectionLink, query, requestOptions,
                         function(err, documents, responseOptions) {
                     if (err)
                     {
@@ -354,7 +353,7 @@ namespace Microsoft.AspNet.SessionState
                 }
             }";
 
-        private static readonly string ResetItemTimeoutSP = @"
+        private const string ResetItemTimeoutSP = @"
             function ResetItemTimeout(sessionId) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
@@ -408,7 +407,7 @@ namespace Microsoft.AspNet.SessionState
                 }
             }";
 
-        private static readonly string UpdateSessionStateItemSP = @"
+        private const string UpdateSessionStateItemSP = @"
             function UpdateSessionStateItem(sessionId, lockCookie, timeout, sessionItem) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
@@ -801,7 +800,7 @@ namespace Microsoft.AspNet.SessionState
             if (string.IsNullOrEmpty(s_containerId))
             {
                 s_containerId = providerConfig["collectionId"];
-                if (string.IsNullOrEmpty(s_collectionId))
+                if (string.IsNullOrEmpty(s_containerId))
                 {
                     throw new ConfigurationErrorsException(string.Format(SR.EmptyConfig_WithName, "containerId"));
                 }
@@ -887,9 +886,9 @@ namespace Microsoft.AspNet.SessionState
                 IndexingPolicy = s_indexNone
             };
 
-            ContainerResponse response = await database.CreateContainerIfNotExistsAsync(containerProperties, s_offerThroughput).ConfigureAwait(false);
+            ContainerResponse response = await database.CreateContainerIfNotExistsAsync(containerProperties, s_offerThroughput > 0 ? s_offerThroughput : (int?)null).ConfigureAwait(false);
 
-            if (response.Resource?.PartitionKeyPath != partitionKeyPath)
+            if (response?.Resource?.PartitionKeyPath != partitionKeyPath)
             {
                 throw new Exception(String.Format(CultureInfo.CurrentCulture, SR.Container_PKey_Does_Not_Match, s_containerId, partitionKeyPath));
             }

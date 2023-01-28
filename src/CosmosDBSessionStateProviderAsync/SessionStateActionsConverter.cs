@@ -2,52 +2,42 @@
 // Licensed under the MIT license. See the License.txt file in the project root for full license information.
 
 namespace Microsoft.AspNet.SessionState {
-    using Microsoft.AspNet.SessionState.Resources;
-    using Newtonsoft.Json;
     using System;
     using System.Web.SessionState;
+    using System.Text.Json;
+    using System.Text.Json.Serialization;
 
-    class SessionStateActionsConverter : JsonConverter
+    class SessionStateActionsConverter : JsonConverter<SessionStateActions?>
     {
-        public override bool CanConvert(Type objectType)
+        public override bool CanConvert(Type typeToConvert)
         {
-            return typeof(SessionStateActions) == objectType;
+            return typeof(SessionStateActions?) == typeToConvert;
         }
 
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override SessionStateActions? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            if(reader.TokenType == JsonToken.Null)
+            if (reader.TokenType == JsonTokenType.Null)
             {
                 return new Nullable<SessionStateActions>();
             }
 
-            if (reader.TokenType != JsonToken.Boolean)
+            if (reader.TokenType != JsonTokenType.True && reader.TokenType != JsonTokenType.False)
             {
                 throw new ArgumentException("reader");
             }
 
-            return  Convert.ToBoolean(reader.Value) ? SessionStateActions.InitializeItem : SessionStateActions.None;
+            return reader.GetBoolean() ? SessionStateActions.InitializeItem : SessionStateActions.None;
         }
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, SessionStateActions? action, JsonSerializerOptions options)
         {
-            if(value == null)
+            if (action == null)
             {
-                writer.WriteNull();
+                writer.WriteNullValue();
                 return;
             }
 
-            SessionStateActions action;
-            if(Enum.TryParse<SessionStateActions>(value.ToString(), out action))
-            {
-                var valToWrite = action == SessionStateActions.None ? true : false;
-                writer.WriteValue(valToWrite);
-            }
-            else
-            {
-                throw new JsonSerializationException(string.Format(SR.Object_Cannot_Be_Converted_To_SessionStateActions, "value"));
-            }
+            writer.WriteBooleanValue((action == SessionStateActions.None));
         }
-
     }
 }

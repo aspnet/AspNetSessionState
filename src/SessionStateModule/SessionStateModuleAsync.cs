@@ -282,8 +282,7 @@ namespace Microsoft.AspNet.SessionState
 
         private IAsyncResult BeginAcquireState(object source, EventArgs e, AsyncCallback cb, object extraData)
         {
-            HttpContext rqContext = ((HttpApplication)source).Context;
-            return TaskAsyncHelper.BeginTask(() => AcquireStateAsync(rqContext), cb, extraData);
+            return TaskAsyncHelper.BeginTask((HttpApplication)source, app => AcquireStateAsync(app), cb, extraData);
         }
 
         private void EndAcquireState(IAsyncResult result)
@@ -293,8 +292,7 @@ namespace Microsoft.AspNet.SessionState
 
         private IAsyncResult BeginOnEndRequest(object source, EventArgs e, AsyncCallback cb, object extraData)
         {
-            var app = (HttpApplication)source;
-            return TaskAsyncHelper.BeginTask(() => OnEndRequestAsync(app), cb, extraData);
+            return TaskAsyncHelper.BeginTask((HttpApplication)source, app => OnEndRequestAsync(app), cb, extraData);
         }
 
         private void EndOnEndRequest(IAsyncResult result)
@@ -304,8 +302,7 @@ namespace Microsoft.AspNet.SessionState
 
         private IAsyncResult BeginOnReleaseState(object source, EventArgs e, AsyncCallback cb, object extraData)
         {
-            var app = (HttpApplication)source;
-            return TaskAsyncHelper.BeginTask(() => ReleaseStateAsync(app), cb, extraData);
+            return TaskAsyncHelper.BeginTask((HttpApplication)source, app => ReleaseStateAsync(app), cb, extraData);
         }
 
         private void EndOnReleaseState(IAsyncResult result)
@@ -380,8 +377,9 @@ namespace Microsoft.AspNet.SessionState
             RaiseOnStart(e);
         }
 
-        private async Task AcquireStateAsync(HttpContext context)
+        private async Task AcquireStateAsync(HttpApplication app)
         {
+            HttpContext context = app.Context;
             _acquireCalled = true;
             _releaseCalled = false;
             ResetPerRequestFields();

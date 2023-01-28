@@ -3,7 +3,8 @@
 
 namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
 {
-    using Newtonsoft.Json;
+    using System.Text.Json;
+    using System.Text.Json.Serialization;
     using System;
     using System.Web.SessionState;
     using Xunit;
@@ -26,7 +27,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
                 SessionItem = new byte[2] { 1, 1 },
                 Timeout = 10
             };
-            var json = JsonConvert.SerializeObject(item);
+            var json = JsonSerializer.Serialize<SessionStateItem>(item);
             var expected = string.Format(JsonTemplate, item.SessionId, "null", item.LockCookie, item.Timeout, item.Locked, "AQE=", true); 
 
             Assert.Equal(expected, json, true);
@@ -45,7 +46,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
                 SessionItem = new byte[2] { 1, 1 },
                 Timeout = 10
             };
-            var json = JsonConvert.SerializeObject(item);
+            var json = JsonSerializer.Serialize(item);
             var expected = string.Format(JsonTemplate, item.SessionId, 60 * 1, item.LockCookie, item.Timeout, item.Locked, "AQE=", false);
 
             Assert.Equal(expected, json, true);
@@ -56,7 +57,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
         {
             var json = string.Format(JsonTemplate, TestSessionId, 60, 1, 20, "false", "AQE=", "null");
 
-            var item = JsonConvert.DeserializeObject<SessionStateItem>(json);
+            var item = JsonSerializer.Deserialize<SessionStateItem>(json);
 
             Assert.Equal(TestSessionId, item.SessionId);
             Assert.False(item.Actions.HasValue);
@@ -72,7 +73,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
         {
             var json = string.Format(JsonTemplate, TestSessionId, 60, 1, 20, "false", "AQE=", "true");
 
-            var item = JsonConvert.DeserializeObject<SessionStateItem>(json);
+            var item = JsonSerializer.Deserialize<SessionStateItem>(json);
 
             Assert.Equal(TestSessionId, item.SessionId);
             Assert.Equal(SessionStateActions.InitializeItem, item.Actions);
@@ -88,7 +89,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
         {
             var json = string.Format(JsonTemplate, TestSessionId, "null", 1, 10, "true", "AQE=", "false");
 
-            var item = JsonConvert.DeserializeObject<SessionStateItem>(json);
+            var item = JsonSerializer.Deserialize<SessionStateItem>(json);
 
             Assert.Equal(TestSessionId, item.SessionId);
             Assert.Equal(SessionStateActions.None, item.Actions);

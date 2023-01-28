@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.AspNet.SessionStateCosmosDBSessionStateProviderAsync.Resources {
+namespace Microsoft.AspNet.SessionState.Resources {
     using System;
     
     
@@ -19,7 +19,7 @@ namespace Microsoft.AspNet.SessionStateCosmosDBSessionStateProviderAsync.Resourc
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class SR {
@@ -93,24 +93,6 @@ namespace Microsoft.AspNet.SessionStateCosmosDBSessionStateProviderAsync.Resourc
         internal static string Invalid_session_state {
             get {
                 return ResourceManager.GetString("Invalid_session_state", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Object &apos;{0}&apos; cannot be converted to SessionStateActions.
-        /// </summary>
-        internal static string Object_Cannot_Be_Converted_To_SessionStateActions {
-            get {
-                return ResourceManager.GetString("Object_Cannot_Be_Converted_To_SessionStateActions", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Object &apos;{0}&apos; cannot be converted to TimeSpan.
-        /// </summary>
-        internal static string Object_Cannot_Be_Converted_To_TimeSpan {
-            get {
-                return ResourceManager.GetString("Object_Cannot_Be_Converted_To_TimeSpan", resourceCulture);
             }
         }
         
