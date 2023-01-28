@@ -12,20 +12,20 @@ using System.Runtime.CompilerServices;
     using System.Threading.Tasks;
     using System.Web;
 
-    enum SqlParameterName
+    static class SqlParameterName
     {
-        SessionId,
-        Created,
-        Expires,
-        LockDate,
-        LockDateLocal,
-        LockCookie,
-        Timeout,
-        Locked,
-        SessionItemLong,
-        Flags,
-        LockAge,
-        ActionFlags
+        public const string SessionId = "@" + nameof(SessionId);
+        public const string Created = "@" + nameof(Created);
+        public const string Expires = "@" + nameof(Expires);
+        public const string LockDate = "@" + nameof(LockDate);
+        public const string LockDateLocal = "@" + nameof(LockDateLocal);
+        public const string LockCookie = "@" + nameof(LockCookie);
+        public const string Timeout = "@" + nameof(Timeout);
+        public const string Locked = "@" + nameof(Locked);
+        public const string SessionItemLong = "@" + nameof(SessionItemLong);
+        public const string Flags = "@" + nameof(Flags);
+        public const string LockAge = "@" + nameof(LockAge);
+        public const string ActionFlags = "@" + nameof(ActionFlags);
     }
 
     static class Sec
@@ -57,9 +57,9 @@ using System.Runtime.CompilerServices;
         private const int SQL_TIMEOUT_EXPIRED = -2;
         private const int APP_SUFFIX_LENGTH = 8;
 
-        public static readonly string TableName = "ASPStateTempSessions";
-        public static readonly int IdLength = 88;
-        public static readonly int DefaultItemLength = 7000;
+        public const string TableName = "ASPStateTempSessions";
+        public const int IdLength = 88;
+        public const int DefaultItemLength = 7000;
 
         public static async Task<int> SqlExecuteNonQueryWithRetryAsync(SqlConnection connection, SqlCommand sqlCmd, 
             Func<RetryCheckParameter, Task<bool>> canRetry, bool ignoreInsertPKException = false)
