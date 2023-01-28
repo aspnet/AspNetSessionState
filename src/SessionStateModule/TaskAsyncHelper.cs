@@ -6,14 +6,15 @@ namespace Microsoft.AspNet.SessionState
     using System;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Web;
 
     static class TaskAsyncHelper
     {
         private static readonly Task CompletedTask = Task.FromResult<object>(null);
 
-        public static IAsyncResult BeginTask(Func<Task> taskFunc, AsyncCallback callback, object state)
+        public static IAsyncResult BeginTask(HttpApplication app, Func<HttpApplication, Task> taskFunc, AsyncCallback callback, object state)
         {
-            Task task = taskFunc();
+            Task task = taskFunc(app);
             if (task == null)
             {
                 // Something went wrong - let our caller handle it.
