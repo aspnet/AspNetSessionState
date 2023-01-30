@@ -26,6 +26,7 @@ namespace Microsoft.AspNet.SessionState {
                 throw new ArgumentException("reader");
             }
 
+            // See the note below in the writer for how to map this flags enum from a boolean.
             return reader.GetBoolean() ? SessionStateActions.InitializeItem : SessionStateActions.None;
         }
 
@@ -37,7 +38,12 @@ namespace Microsoft.AspNet.SessionState {
                 return;
             }
 
-            writer.WriteBooleanValue((action == SessionStateActions.None));
+            // SessionStateActions is a [Flags] enum. The SQL providers serialize it as flags. I don't know why we didn't
+            //      just go with int or something flag-like here instead of true/false.
+            // 'None' means that the initialization of this state item has already been done and
+            //      thus the item is considered initialized. We serialize this item with the field name
+            //      "uninitialized", so 'None' should map to false.
+            writer.WriteBooleanValue((action != SessionStateActions.None));
         }
     }
 }
