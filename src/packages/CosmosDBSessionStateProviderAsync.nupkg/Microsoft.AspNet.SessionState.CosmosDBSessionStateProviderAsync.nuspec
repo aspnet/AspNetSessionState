@@ -10,7 +10,7 @@
     <description>In .Net 4.6.2, asp.net enables developer plug in async version of SessionState module which is a good fit for the non-in-memory SessionState data store. This SessionState provider uses CosmosDB as the data store and leverages async database operation to provide better scability.</description>
     <summary>Async version CosmosDBSessionState provider</summary>
     <language>en-US</language>
-    <projectUrl>http://www.asp.net/</projectUrl>
+    <projectUrl>https://github.com/aspnet/AspNetSessionState</projectUrl>
     <icon>images\dotnet-icon.png</icon>
     <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
     <license type="expression">MIT</license>
