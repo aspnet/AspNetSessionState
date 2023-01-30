@@ -28,7 +28,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
                 Timeout = 10
             };
             var json = JsonSerializer.Serialize<SessionStateItem>(item);
-            var expected = string.Format(JsonTemplate, item.SessionId, "null", item.LockCookie, item.Timeout, item.Locked, "AQE=", true); 
+            var expected = string.Format(JsonTemplate, item.SessionId, "null", item.LockCookie, item.Timeout, item.Locked, "AQE=", false); 
 
             Assert.Equal(expected, json, true);
         }
@@ -47,7 +47,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
                 Timeout = 10
             };
             var json = JsonSerializer.Serialize(item);
-            var expected = string.Format(JsonTemplate, item.SessionId, 60 * 1, item.LockCookie, item.Timeout, item.Locked, "AQE=", false);
+            var expected = string.Format(JsonTemplate, item.SessionId, 60 * 1, item.LockCookie, item.Timeout, item.Locked, "AQE=", true);
 
             Assert.Equal(expected, json, true);
         }
