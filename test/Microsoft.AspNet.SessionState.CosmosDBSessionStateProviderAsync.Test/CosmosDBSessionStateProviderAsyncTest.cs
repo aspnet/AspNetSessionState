@@ -273,19 +273,6 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
 
             var docClientMoq = new Mock<CosmosClient>();
 
-            var createSessionStateItemSPCreated = false;
-            var createSessionStateItemSPRead = false;
-            var getStateItemExclusiveSPCreated = false;
-            var getStateItemExclusiveSPRead = false;
-            var releaseItemExclusiveSPCreated = false;
-            var releaseItemExclusiveSPRead = false;
-            var removeStateItemSPCreated = false;
-            var removeStateItemSPRead = true;
-            var resetItemTimeoutSPCreated = false;
-            var resetItemTimeoutSPRead = false;
-            var updateSessionStateItemSPCreated = false;
-            var updateSessionStateItemSPRead = false;
-
             docClientMoq.Setup(client => client.CreateDatabaseIfNotExistsAsync(DatabaseId, (int?)null, null, default))
                         .Returns(Task.FromResult((DatabaseResponse)null));
 
@@ -296,24 +283,6 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
                         .Returns(databaseMoq.Object);
 
             var containerMoq = new Mock<Container>();
-
-            SetupReadSPSucessMock(containerMoq, CreateSessionStateItemSPID, () => createSessionStateItemSPRead = true);
-            SetupCreateSPMock(containerMoq, CreateSessionStateItemSPID, () => createSessionStateItemSPCreated = true);
-
-            SetupReadSPSucessMock(containerMoq, GetStateItemExclusiveSPID, () => getStateItemExclusiveSPRead = true);
-            SetupCreateSPMock(containerMoq, GetStateItemExclusiveSPID, () => getStateItemExclusiveSPCreated = true);
-
-            SetupReadSPSucessMock(containerMoq, ReleaseItemExclusiveSPID, () => releaseItemExclusiveSPRead = true);
-            SetupCreateSPMock(containerMoq, ReleaseItemExclusiveSPID, () => releaseItemExclusiveSPCreated = true);
-
-            SetupReadSPSucessMock(containerMoq, RemoveStateItemSPID, () => removeStateItemSPRead = true);
-            SetupCreateSPMock(containerMoq, RemoveStateItemSPID, () => removeStateItemSPCreated = true);
-
-            SetupReadSPSucessMock(containerMoq, ResetItemTimeoutSPID, () => resetItemTimeoutSPRead = true);
-            SetupCreateSPMock(containerMoq, ResetItemTimeoutSPID, () => resetItemTimeoutSPCreated = true);
-
-            SetupReadSPSucessMock(containerMoq, UpdateSessionStateItemSPID, () => updateSessionStateItemSPRead = true);
-            SetupCreateSPMock(containerMoq, UpdateSessionStateItemSPID, () => updateSessionStateItemSPCreated = true);
 
             docClientMoq.Setup(client => client.GetContainer(DatabaseId, ContainerId))
                         .Returns(containerMoq.Object);

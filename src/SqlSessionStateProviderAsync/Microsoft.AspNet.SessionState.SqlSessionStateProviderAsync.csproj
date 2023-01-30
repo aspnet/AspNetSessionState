@@ -78,9 +78,6 @@
     <Compile Include="SqlSessionStateRepositoryUtil.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="35MSSharedLib1024.snk" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Resources\SR.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>SR.Designer.cs</LastGenOutput>
