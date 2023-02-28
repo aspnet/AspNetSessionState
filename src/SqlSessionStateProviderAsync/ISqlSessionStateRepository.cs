@@ -7,6 +7,14 @@ namespace Microsoft.AspNet.SessionState
     using System.Threading.Tasks;
     using System.Web.SessionState;
 
+    enum RepositoryType
+    {
+        SqlServer,
+        InMemory,
+        InMemoryDurable,
+        FrameworkCompat
+    }
+
     interface ISqlSessionStateRepository
     {
         void CreateSessionStateTable();

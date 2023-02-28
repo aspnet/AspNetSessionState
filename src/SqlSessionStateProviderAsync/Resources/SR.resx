@@ -135,6 +135,15 @@
   <data name="Provider_unrecognized_attribute" xml:space="preserve">
     <value>Attribute not recognized '{0}'</value>
   </data>
+  <data name="SessionTable_current" xml:space="preserve">
+    <value>The table '{0}' is compatible with current repositories. Use the '{1}' repositoryType instead with the 'SessionTableName' attribute if applicable.</value>
+  </data>
+  <data name="SessionTable_not_found" xml:space="preserve">
+    <value>The table '{0}' was not found in the database. The repositoryType '{1}' cannot create session state tables.</value>
+  </data>
+  <data name="SessionTable_unknown" xml:space="preserve">
+    <value>Could not determine compatibility type for the table '{0}'.</value>
+  </data>
   <data name="Session_id_too_long" xml:space="preserve">
     <value>SessionId is too long.</value>
   </data>

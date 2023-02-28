@@ -23,10 +23,12 @@ namespace Microsoft.AspNet.SessionState
     /// </summary>
     public class SqlSessionStateProviderAsync : SessionStateStoreProviderAsyncBase
     {
+        private const string REPOSITORY_TYPE_CONFIGURATION_NAME = "RepositoryType";
         private const string INMEMORY_TABLE_CONFIGURATION_NAME = "UseInMemoryTable";
         private const string MAX_RETRY_NUMBER_CONFIGURATION_NAME = "MaxRetryNumber";
         private const string RETRY_INTERVAL_CONFIGURATION_NAME = "RetryInterval";
         private const string CONNECTIONSTRING_NAME_CONFIGURATION_NAME = "connectionStringName";
+        private const string SESSION_TABLE_CONFIGURATION_NAME = "SessionTableName";
         private const string SESSIONSTATE_SECTION_PATH = "system.web/sessionState";
         private const double SessionExpiresFrequencyCheckIntervalTicks = 30 * TimeSpan.TicksPerSecond;
         private static long s_lastSessionPurgeTicks;
@@ -36,7 +38,8 @@ namespace Microsoft.AspNet.SessionState
         private static bool s_oneTimeInited = false;
         private static object s_lock = new object();
         private static ISqlSessionStateRepository s_sqlSessionStateRepository;
-        
+        private static RepositoryType s_repositoryType;
+
         private int _rqOrigStreamLen;
                 
         /// <summary>
@@ -73,19 +76,49 @@ namespace Microsoft.AspNet.SessionState
                 {
                     if (!s_oneTimeInited)
                     {
+                        // CompressionEnabled
                         s_compressionEnabled = ssc.CompressionEnabled;
 
-                        if (ShouldUseInMemoryTable(config))
+                        // RepositoryType
+                        var rType = config[REPOSITORY_TYPE_CONFIGURATION_NAME];
+                        if (rType != null)
                         {
-                            s_sqlSessionStateRepository = new SqlInMemoryTableSessionStateRepository(connectionString.ConnectionString,
+                            // We want this to throw if the type is not recognized.
+                            s_repositoryType = (RepositoryType)Enum.Parse(typeof(RepositoryType), rType, true);
+                        }
+                        else
+                        {
+                            // 'RepositoryType' was not specified. Ideally we would default to 'SqlServer', but changing from
+                            // 'image' to 'varbinary' for the SessionItemLong column is a compat issue. So not specifying
+                            // a repository type gets you the compat repository, unless 'UseInMemoryTable' indicates to use
+                            // the in-memory optimized provider instead which is still compatible with the old one.
+                            var val = config[INMEMORY_TABLE_CONFIGURATION_NAME];
+                            if (val != null && bool.TryParse(val, out bool useInMemoryTable) && useInMemoryTable)
+                                s_repositoryType = RepositoryType.InMemory;
+                            else
+                                s_repositoryType = RepositoryType.FrameworkCompat;
+                        }
+
+                        // SessionTableName
+                        string tableName = config[SESSION_TABLE_CONFIGURATION_NAME];   // Null/Not-found is ok
+
+                        // Initialize the repository
+                        if (s_repositoryType == RepositoryType.InMemory || s_repositoryType == RepositoryType.InMemoryDurable)
+                        {
+                            s_sqlSessionStateRepository = new SqlInMemoryTableSessionStateRepository(connectionString.ConnectionString, tableName,
+                                (int)ssc.SqlCommandTimeout.TotalSeconds, GetRetryInterval(config), GetMaxRetryNum(config), (s_repositoryType == RepositoryType.InMemoryDurable));
+                        }
+                        else if (s_repositoryType == RepositoryType.FrameworkCompat)
+                        {
+                            s_sqlSessionStateRepository = new SqlFxCompatSessionStateRepository(connectionString.ConnectionString, tableName,
                                 (int)ssc.SqlCommandTimeout.TotalSeconds, GetRetryInterval(config), GetMaxRetryNum(config));
                         }
                         else
                         {
-                            s_sqlSessionStateRepository = new SqlSessionStateRepository(connectionString.ConnectionString,
+                            s_sqlSessionStateRepository = new SqlSessionStateRepository(connectionString.ConnectionString, tableName,
                                 (int)ssc.SqlCommandTimeout.TotalSeconds, GetRetryInterval(config), GetMaxRetryNum(config));
                         }
-                        if(shouldCreateTable)
+                        if (shouldCreateTable)
                         {
                             s_sqlSessionStateRepository.CreateSessionStateTable();
                         }
@@ -105,6 +138,12 @@ namespace Microsoft.AspNet.SessionState
         {
             get { return s_sqlSessionStateRepository; }
             set { s_sqlSessionStateRepository = value; }
+        }
+
+        internal RepositoryType RepositoryType
+        {
+            get { return s_repositoryType; }
+            set { s_repositoryType = value; }
         }
 
         internal bool CompressionEnabled
@@ -133,12 +172,6 @@ namespace Microsoft.AspNet.SessionState
         } = SessionStateUtility.GetSessionStaticObjects;
         #endregion
 
-        private bool ShouldUseInMemoryTable(NameValueCollection config)
-        {
-            var useInMemoryTable = false;
-            var val = config[INMEMORY_TABLE_CONFIGURATION_NAME];
-            return (val != null && bool.TryParse(val, out useInMemoryTable) && useInMemoryTable);
-        }
 
         private int? GetMaxRetryNum(NameValueCollection config)
         {

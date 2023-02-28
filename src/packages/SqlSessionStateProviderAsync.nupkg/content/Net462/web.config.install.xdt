@@ -16,7 +16,7 @@
 	MaxRetryNumber = [integer] the number of retry when DB operation fails
 	RetryInterval = [integer] intervel(milliseconds) between retries
       -->
-        <add name="SqlSessionStateProviderAsync" connectionStringName="DefaultConnection"
+        <add name="SqlSessionStateProviderAsync" connectionStringName="DefaultConnection" RepositoryType="SqlServer"
           type="Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
              xdt:Transform="InsertIfMissing" />
       </providers>

@@ -31,138 +31,133 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
         {
             var helper = new SqlCommandHelper(SqlCommandTimeout);
 
-            var cmd = helper.CreateNewSessionTableCmd(SqlStatement);
+            var cmd = helper.CreateSqlCommand(SqlStatement);
 
             VerifyBasicsOfSqlCommand(cmd);
             Assert.Empty(cmd.Parameters);
         }
 
         [Fact]
-        public void CreateGetStateItemExclusiveCmd_Should_Create_SqlCommand_With_Right_Parameters()
+        public void SqlCommand_AddSessionIdParameter()
         {
             var helper = new SqlCommandHelper(SqlCommandTimeout);
+            var cmd = helper.CreateSqlCommand(SqlStatement);
 
-            var cmd = helper.CreateGetStateItemExclusiveCmd(SqlStatement, SessionId);
-
+            cmd.Parameters.AddSessionIdParameter(SessionId);
             VerifyBasicsOfSqlCommand(cmd);
             VerifySessionIdParameter(cmd);
-            VerifyLockAgeParameter(cmd);
+        }
+
+        [Fact]
+        public void SqlCommand_AddLockedParameter()
+        {
+            var helper = new SqlCommandHelper(SqlCommandTimeout);
+            var cmd = helper.CreateSqlCommand(SqlStatement);
+
+            cmd.Parameters.AddLockedParameter();
+            VerifyBasicsOfSqlCommand(cmd);
             VerifyLockedParameter(cmd);
-            VerifyLockCookieParameter(cmd);
-            VerifyActionFlagsParameter(cmd);
-            Assert.Equal(5, cmd.Parameters.Count);
         }
 
         [Fact]
-        public void CreateGetStateItemCmd_Should_Create_SqlCommand_With_Right_Parameters()
+        public void SqlCommand_AddLockAgeParameter()
         {
             var helper = new SqlCommandHelper(SqlCommandTimeout);
+            var cmd = helper.CreateSqlCommand(SqlStatement);
 
-            var cmd = helper.CreateGetStateItemCmd(SqlStatement, SessionId);
-
+            cmd.Parameters.AddLockAgeParameter();
             VerifyBasicsOfSqlCommand(cmd);
-            VerifySessionIdParameter(cmd);
-            VerifyLockedParameter(cmd);
             VerifyLockAgeParameter(cmd);
-            VerifyLockCookieParameter(cmd);
-            VerifyActionFlagsParameter(cmd);
-            Assert.Equal(5, cmd.Parameters.Count);
-        }
-
-        [Fact]
-        public void CreateDeleteExpiredSessionsCmd_Should_Create_SqlCommand_Without_Parameters()
-        {
-            var helper = new SqlCommandHelper(SqlCommandTimeout);
-
-            var cmd = helper.CreateDeleteExpiredSessionsCmd(SqlStatement);
-
-            VerifyBasicsOfSqlCommand(cmd);
-            Assert.Empty(cmd.Parameters);
-        }
-
-        [Fact]
-        public void CreateTempInsertUninitializedItemCmd_Should_Create_SqlCommand_With_Right_Parameters()
-        {
-            var helper = new SqlCommandHelper(SqlCommandTimeout);
-
-            var cmd = helper.CreateTempInsertUninitializedItemCmd(SqlStatement, SessionId, BufferLength, Buffer, SessionTimeout);
-
-            VerifyBasicsOfSqlCommand(cmd);
-            VerifySessionIdParameter(cmd);
-            VerifySessionItemLongParameter(cmd);
-            VerifyTimeoutParameter(cmd);
-            Assert.Equal(3, cmd.Parameters.Count);
         }
 
         [Theory]
-        [InlineData(null)]
         [InlineData(LockId)]
-        public void CreateReleaseItemExclusiveCmd_Should_Create_SqlCommand_With_Right_Parameters(object lockId)
-        {
-            var helper = new SqlCommandHelper(SqlCommandTimeout);
-
-            var cmd = helper.CreateReleaseItemExclusiveCmd(SqlStatement, SessionId, lockId);
-
-            VerifyBasicsOfSqlCommand(cmd);
-            VerifySessionIdParameter(cmd);
-            VerifyLockCookieParameter(cmd, lockId);
-            Assert.Equal(2, cmd.Parameters.Count);
-        }
-
-        [Theory]
         [InlineData(null)]
-        [InlineData(LockId)]
-        public void CreateRemoveStateItemCmd_Should_Create_SqlCommand_With_Right_Parameters(object lockId)
+        public void SqlCommand_AddLockCookieParameter(object lockId)
         {
             var helper = new SqlCommandHelper(SqlCommandTimeout);
+            var cmd = helper.CreateSqlCommand(SqlStatement);
 
-            var cmd = helper.CreateRemoveStateItemCmd(SqlStatement, SessionId, lockId);
-
+            cmd.Parameters.AddLockCookieParameter(lockId);
             VerifyBasicsOfSqlCommand(cmd);
-            VerifySessionIdParameter(cmd);
             VerifyLockCookieParameter(cmd, lockId);
-            Assert.Equal(2, cmd.Parameters.Count);
         }
 
         [Fact]
-        public void CreateResetItemTimeoutCmd_Should_Create_SqlCommand_With_Right_Parameters()
+        public void SqlCommand_AddLockDateParameter()
         {
             var helper = new SqlCommandHelper(SqlCommandTimeout);
+            var cmd = helper.CreateSqlCommand(SqlStatement);
 
-            var cmd = helper.CreateResetItemTimeoutCmd(SqlStatement, SessionId);
-
+            cmd.Parameters.AddLockDateParameter();
             VerifyBasicsOfSqlCommand(cmd);
-            VerifySessionIdParameter(cmd);
-            Assert.Equal(1, cmd.Parameters.Count);
+            VerifyLockDateParameter(cmd);
         }
 
         [Fact]
-        public void CreateUpdateStateItemLongCmd_Should_Create_SqlCommand_With_Right_Parameters()
+        public void SqlCommand_AddActionFlagsParameter()
         {
             var helper = new SqlCommandHelper(SqlCommandTimeout);
+            var cmd = helper.CreateSqlCommand(SqlStatement);
 
-            var cmd = helper.CreateUpdateStateItemLongCmd(SqlStatement, SessionId, Buffer, BufferLength, SessionTimeout, LockId);
-
+            cmd.Parameters.AddActionFlagsParameter();
             VerifyBasicsOfSqlCommand(cmd);
-            VerifySessionIdParameter(cmd);
-            VerifySessionItemLongParameter(cmd);
-            VerifyTimeoutParameter(cmd);
-            VerifyLockCookieParameter(cmd, LockId);
-            Assert.Equal(4, cmd.Parameters.Count);
+            VerifyActionFlagsParameter(cmd);
         }
 
         [Fact]
-        public void CreateInsertStateItemLongCmd_Should_Create_SqlCommand_With_Right_Parameters()
+        public void SqlCommand_AddTimeoutParameter()
         {
             var helper = new SqlCommandHelper(SqlCommandTimeout);
+            var cmd = helper.CreateSqlCommand(SqlStatement);
 
-            var cmd = helper.CreateInsertStateItemLongCmd(SqlStatement, SessionId, Buffer, BufferLength, SessionTimeout);
-
+            cmd.Parameters.AddTimeoutParameter(SessionTimeout);
             VerifyBasicsOfSqlCommand(cmd);
-            VerifySessionIdParameter(cmd);
-            VerifySessionItemLongParameter(cmd);
-            VerifyTimeoutParameter(cmd);
-            Assert.Equal(3, cmd.Parameters.Count);
+            VerifyTimeoutParameter(cmd, SessionTimeout);
+        }
+
+        [Fact]
+        public void SqlCommand_AddSessionItemLongImageParameter()
+        {
+            var helper = new SqlCommandHelper(SqlCommandTimeout);
+            var cmd = helper.CreateSqlCommand(SqlStatement);
+
+            cmd.Parameters.AddSessionItemLongImageParameter(BufferLength, Buffer);
+            VerifyBasicsOfSqlCommand(cmd);
+            VerifySessionItemLongParameter(cmd, SqlDbType.Image, BufferLength, Buffer);
+        }
+
+        [Fact]
+        public void SqlCommand_AddSessionItemLongVarBinaryParameter()
+        {
+            var helper = new SqlCommandHelper(SqlCommandTimeout);
+            var cmd = helper.CreateSqlCommand(SqlStatement);
+
+            cmd.Parameters.AddSessionItemLongVarBinaryParameter(BufferLength, Buffer);
+            VerifyBasicsOfSqlCommand(cmd);
+            VerifySessionItemLongParameter(cmd, SqlDbType.VarBinary, BufferLength, Buffer);
+        }
+
+        [Fact]
+        public void SqlCommand_AddSessionItemShortParameter()
+        {
+            var helper = new SqlCommandHelper(SqlCommandTimeout);
+            var cmd = helper.CreateSqlCommand(SqlStatement);
+
+            cmd.Parameters.AddSessionItemShortParameter(BufferLength, Buffer);
+            VerifyBasicsOfSqlCommand(cmd);
+            VerifySessionItemShortParameter(cmd, BufferLength, Buffer);
+        }
+
+        [Fact]
+        public void SqlCommand_AddSessionItemShortOutputParameter()
+        {
+            var helper = new SqlCommandHelper(SqlCommandTimeout);
+            var cmd = helper.CreateSqlCommand(SqlStatement);
+
+            cmd.Parameters.AddSessionItemShortParameter();
+            VerifyBasicsOfSqlCommand(cmd);
+            VerifySessionItemShortParameter(cmd);
         }
 
         private void VerifyBasicsOfSqlCommand(SqlCommand cmd)
@@ -215,6 +210,15 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
             }
         }
 
+        private void VerifyLockDateParameter(SqlCommand cmd)
+        {
+            var param = cmd.Parameters[SqlParameterName.LockDate];
+            Assert.NotNull(param);
+            Assert.Equal(SqlDbType.DateTime, param.SqlDbType);
+            Assert.Equal(Convert.DBNull, param.Value);
+            Assert.Equal(ParameterDirection.Output, param.Direction);
+        }
+
         private void VerifyActionFlagsParameter(SqlCommand cmd)
         {
             var param = cmd.Parameters[SqlParameterName.ActionFlags];
@@ -224,20 +228,39 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
             Assert.Equal(ParameterDirection.Output, param.Direction);
         }
 
-        private void VerifySessionItemLongParameter(SqlCommand cmd)
+        private void VerifySessionItemLongParameter(SqlCommand cmd, SqlDbType sqlType, int length = 0, byte[] buf = null)
         {
             var param = cmd.Parameters[SqlParameterName.SessionItemLong];
             Assert.NotNull(param);
-            Assert.Equal(SqlDbType.Image, param.SqlDbType);
-            Assert.Equal(BufferLength, param.Size);
-            Assert.Equal(Buffer, param.Value);            
+            Assert.Equal(sqlType, param.SqlDbType);
+            Assert.Equal(length, param.Size);
+            Assert.Equal(buf, param.Value);            
         }
 
-        private void VerifyTimeoutParameter(SqlCommand cmd)
+        private void VerifySessionItemShortParameter(SqlCommand cmd, int length = 0, byte[] buf = null)
+        {
+            var param = cmd.Parameters[SqlParameterName.SessionItemShort];
+            Assert.NotNull(param);
+            Assert.Equal(SqlDbType.VarBinary, param.SqlDbType);
+
+            if (buf == null)
+            {
+                Assert.Equal(ParameterDirection.Output, param.Direction);
+                Assert.Equal(SqlSessionStateRepositoryUtil.ITEM_SHORT_LENGTH, param.Size);
+            }
+            else
+            {
+                Assert.Equal(length, param.Size);
+                Assert.Equal(buf, param.Value);
+            }
+        }
+
+        private void VerifyTimeoutParameter(SqlCommand cmd, int timeout)
         {
             var param = cmd.Parameters[SqlParameterName.Timeout];
             Assert.NotNull(param);
             Assert.Equal(SqlDbType.Int, param.SqlDbType);
+            Assert.Equal(timeout, param.Value);
         }
     }
 }
