@@ -1132,8 +1132,6 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
                 PartitionKeyPath = partitionKeyPath,
                 DefaultTimeToLive = DefaultSessionTimeoutInSec
             };
-// smolloy TODO DEBUG
-//containerResponseMoq.SetupGet(cr => cr.Resource).Returns(existingContainerProperties);
 
             databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
                            It.IsAny<ContainerProperties>(), It.IsAny<int>(),
@@ -1145,18 +1143,6 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
                                containerResponseMoq.SetupGet(cr => cr.Resource).Returns(props);
                            return (ContainerResponse)containerResponseMoq.Object;
                        });
-//                Task.FromResult((ContainerResponse)containerResponseMoq.Object));
-
-            // smolloy TODO DEBUG
-            //databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
-            //               It.Is<ContainerProperties>(properties => properties.Id == id),
-            //               It.IsAny<int>(), It.IsAny<RequestOptions>(), It.IsAny<CancellationToken>()))
-            //           .Returns(Task.FromResult((ContainerResponse)containerResponseMoq.Object));
-
-            //databaseMoq.Setup(database => database.CreateContainerIfNotExistsAsync(
-            //               It.Is<ContainerProperties>(properties => properties.Id != id),
-            //               It.IsAny<int>(), It.IsAny<RequestOptions>(), It.IsAny<CancellationToken>()))
-            //           .Returns(Task.FromResult((ContainerResponse)null));
         }
 
         private StoredProcedureExecuteResponse<T> CreateStoredProcedureResponseInstance<T>(HttpStatusCode statusCode, T responseBody)
