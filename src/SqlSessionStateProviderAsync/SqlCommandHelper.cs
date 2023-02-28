@@ -5,6 +5,8 @@ namespace Microsoft.AspNet.SessionState
 {
     using Microsoft.Data.SqlClient;
     using System.Data;
+    using System.Threading.Tasks;
+    using System.Windows.Forms;
 
     class SqlCommandHelper
     {
@@ -22,101 +24,32 @@ namespace Microsoft.AspNet.SessionState
         }
         #endregion
 
-        public SqlCommand CreateNewSessionTableCmd(string createSessionTableSql)
+        public SqlCommand CreateSqlCommand(string sql)
         {
-            return CreateSqlCommand(createSessionTableSql);
+            return CreateSqlCommandInternal(sql);
         }
 
-        public SqlCommand CreateGetStateItemExclusiveCmd(string getStateItemExclusiveSql, string id)
+        public SqlCommand CreateSqlCommandForSP(string spName)
         {
-            var cmd = CreateSqlCommand(getStateItemExclusiveSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddLockAgeParameter()
-                          .AddLockedParameter()
-                          .AddLockCookieParameter()
-                          .AddActionFlagsParameter();
-
-            return cmd;
+            return CreateSqlCommandForSPInternal(spName);
         }
 
-        public SqlCommand CreateGetStateItemCmd(string getStateItemSql, string id)
+        public async Task<int> CreateSProcIfDoesNotExist(string sprocName, string createSProcSql, SqlConnection connection, SqlTransaction transaction)
         {
-            var cmd = CreateSqlCommand(getStateItemSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddLockedParameter()
-                          .AddLockAgeParameter()
-                          .AddLockCookieParameter()
-                          .AddActionFlagsParameter();
+            string cmdText = $@"SELECT Count(*) FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_TYPE = 'PROCEDURE' AND ROUTINE_NAME = '{sprocName}'";
+            var cmd = new SqlCommand(cmdText, connection, transaction);
+            int count = (int)await cmd.ExecuteScalarAsync();
 
-            return cmd;
+            if (count == 0)
+            {
+                cmd = new SqlCommand(createSProcSql, connection, transaction);
+                return await cmd.ExecuteNonQueryAsync();
+            }
+
+            return 0;
         }
 
-        public SqlCommand CreateDeleteExpiredSessionsCmd(string deleteExpiredSessionsSql)
-        {
-            return CreateSqlCommand(deleteExpiredSessionsSql);
-        }
-
-        public SqlCommand CreateTempInsertUninitializedItemCmd(string tempInsertUninitializedItemSql, 
-            string id, int length, byte[] buf, int timeout)
-        {
-            var cmd = CreateSqlCommand(tempInsertUninitializedItemSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemLongParameter(length, buf)
-                          .AddTimeoutParameter(timeout);
-
-            return cmd;
-        }
-
-        public SqlCommand CreateReleaseItemExclusiveCmd(string releaseItemExclusiveSql, string id, object lockid)
-        {
-            var cmd = CreateSqlCommand(releaseItemExclusiveSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddLockCookieParameter(lockid);
-
-            return cmd;
-        }
-
-        public SqlCommand CreateRemoveStateItemCmd(string removeStateItemSql, string id, object lockid)
-        {
-            var cmd = CreateSqlCommand(removeStateItemSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddLockCookieParameter(lockid);
-
-            return cmd;
-        }
-
-        public SqlCommand CreateResetItemTimeoutCmd(string resetItemTimeoutSql, string id)
-        {
-            var cmd = CreateSqlCommand(resetItemTimeoutSql);
-            cmd.Parameters.AddSessionIdParameter(id);
-
-            return cmd;
-        }
-
-        public SqlCommand CreateUpdateStateItemLongCmd(string updateStateItemLongSql, 
-            string id, byte[] buf, int length, int timeout, int lockCookie)
-        {
-            var cmd = CreateSqlCommand(updateStateItemLongSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemLongParameter(length, buf)
-                          .AddTimeoutParameter(timeout)
-                          .AddLockCookieParameter(lockCookie);
-
-            return cmd;
-        }
-        
-        public SqlCommand CreateInsertStateItemLongCmd(string insertStateItemLongSql, 
-            string id, byte[] buf, int length, int timeout)
-        {
-            var cmd = CreateSqlCommand(insertStateItemLongSql);
-            cmd.Parameters.AddSessionIdParameter(id)
-                          .AddSessionItemLongParameter(length, buf)
-                          .AddTimeoutParameter(timeout);
-
-            return cmd;
-        }
-
-        private SqlCommand CreateSqlCommand(string sql)
+        private SqlCommand CreateSqlCommandInternal(string sql)
         {
             return new SqlCommand()
             {
@@ -126,5 +59,14 @@ namespace Microsoft.AspNet.SessionState
             };
         }
 
+        private SqlCommand CreateSqlCommandForSPInternal(string spName)
+        {
+            return new SqlCommand()
+            {
+                CommandType = CommandType.StoredProcedure,
+                CommandTimeout = _commandTimeout,
+                CommandText = spName
+            };
+        }
     }
 }

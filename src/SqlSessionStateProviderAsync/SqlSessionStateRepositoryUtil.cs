@@ -14,6 +14,7 @@ namespace Microsoft.AspNet.SessionState
 
     static class SqlParameterName
     {
+        public const string TableName = "@" + nameof(TableName);
         public const string SessionId = "@" + nameof(SessionId);
         public const string Created = "@" + nameof(Created);
         public const string Expires = "@" + nameof(Expires);
@@ -22,10 +23,12 @@ namespace Microsoft.AspNet.SessionState
         public const string LockCookie = "@" + nameof(LockCookie);
         public const string Timeout = "@" + nameof(Timeout);
         public const string Locked = "@" + nameof(Locked);
+        public const string SessionItemShort = "@" + nameof(SessionItemShort);
         public const string SessionItemLong = "@" + nameof(SessionItemLong);
         public const string Flags = "@" + nameof(Flags);
         public const string LockAge = "@" + nameof(LockAge);
         public const string ActionFlags = "@" + nameof(ActionFlags);
+        public const string Durablility = "@" + nameof(Durablility);
     }
 
     static class Sec
@@ -48,18 +51,17 @@ namespace Microsoft.AspNet.SessionState
 
     class SqlSessionStateRepositoryUtil
     {
-        private const int ITEM_SHORT_LENGTH = 7000;
-        private const int SQL_ERROR_PRIMARY_KEY_VIOLATION = 2627;
-        private const int SQL_LOGIN_FAILED = 18456;
-        private const int SQL_LOGIN_FAILED_2 = 18452;
-        private const int SQL_LOGIN_FAILED_3 = 18450;
-        private const int SQL_CANNOT_OPEN_DATABASE_FOR_LOGIN = 4060;
-        private const int SQL_TIMEOUT_EXPIRED = -2;
-        private const int APP_SUFFIX_LENGTH = 8;
+        internal const int ITEM_SHORT_LENGTH = 7000;
+        internal const int SQL_ERROR_PRIMARY_KEY_VIOLATION = 2627;
+        internal const int SQL_LOGIN_FAILED = 18456;
+        internal const int SQL_LOGIN_FAILED_2 = 18452;
+        internal const int SQL_LOGIN_FAILED_3 = 18450;
+        internal const int SQL_CANNOT_OPEN_DATABASE_FOR_LOGIN = 4060;
+        internal const int SQL_TIMEOUT_EXPIRED = -2;
+        internal const int APP_SUFFIX_LENGTH = 8;
 
-        public const string TableName = "ASPStateTempSessions";
         public const int IdLength = 88;
-        public const int DefaultItemLength = 7000;
+        public const int DefaultItemLength = ITEM_SHORT_LENGTH;
 
         public static async Task<int> SqlExecuteNonQueryWithRetryAsync(SqlConnection connection, SqlCommand sqlCmd, 
             Func<RetryCheckParameter, Task<bool>> canRetry, bool ignoreInsertPKException = false)

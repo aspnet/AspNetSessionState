@@ -19,7 +19,7 @@ namespace Microsoft.AspNet.SessionState.Resources {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class SR {
@@ -129,6 +129,33 @@ namespace Microsoft.AspNet.SessionState.Resources {
         internal static string Session_not_found {
             get {
                 return ResourceManager.GetString("Session_not_found", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The table &apos;{0}&apos; is compatible with current repositories. Use the &apos;{1}&apos; repositoryType instead with the &apos;SessionTableName&apos; attribute if applicable..
+        /// </summary>
+        internal static string SessionTable_current {
+            get {
+                return ResourceManager.GetString("SessionTable_current", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The table &apos;{0}&apos; was not found in the database. The repositoryType &apos;{1}&apos; cannot create session state tables..
+        /// </summary>
+        internal static string SessionTable_not_found {
+            get {
+                return ResourceManager.GetString("SessionTable_not_found", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not determine compatibility type for the table &apos;{0}&apos;..
+        /// </summary>
+        internal static string SessionTable_unknown {
+            get {
+                return ResourceManager.GetString("SessionTable_unknown", resourceCulture);
             }
         }
     }

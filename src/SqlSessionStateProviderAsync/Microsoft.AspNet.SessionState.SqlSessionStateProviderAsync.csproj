@@ -74,6 +74,7 @@
     <Compile Include="SqlInMemoryTableSessionStateRepository.cs" />
     <Compile Include="SqlParameterCollectionExtension.cs" />
     <Compile Include="SqlSessionStateProviderAsync.cs" />
+    <Compile Include="SqlFxCompatSessionStateRepository.cs" />
     <Compile Include="SqlSessionStateRepository.cs" />
     <Compile Include="SqlSessionStateRepositoryUtil.cs" />
   </ItemGroup>

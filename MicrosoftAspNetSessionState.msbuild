@@ -10,6 +10,7 @@
     <TestProject Include="test\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.Test\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.Test.csproj" />
     <TestProject Include="test\Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync.Test\Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync.Test.csproj" />
   </ItemGroup>
+
   <ItemGroup>
     <PackageProject Include="src\Packages\Packages.csproj" />
   </ItemGroup>

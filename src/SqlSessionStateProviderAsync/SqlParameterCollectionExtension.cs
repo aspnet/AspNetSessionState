@@ -55,6 +55,16 @@ namespace Microsoft.AspNet.SessionState
             return pc;
         }
 
+        public static SqlParameterCollection AddLockDateParameter(this SqlParameterCollection pc)
+        {
+            var param = new SqlParameter(SqlParameterName.LockDate, SqlDbType.DateTime);
+            param.Direction = ParameterDirection.Output;
+            param.Value = Convert.DBNull;
+            pc.Add(param);
+
+            return pc;
+        }
+
         public static SqlParameterCollection AddActionFlagsParameter(this SqlParameterCollection pc)
         {
             var param = new SqlParameter(SqlParameterName.ActionFlags, SqlDbType.Int);
@@ -74,10 +84,39 @@ namespace Microsoft.AspNet.SessionState
             return pc;
         }
 
-        public static SqlParameterCollection AddSessionItemLongParameter(this SqlParameterCollection pc, int length, byte[] buf)
+        public static SqlParameterCollection AddSessionItemLongImageParameter(this SqlParameterCollection pc, int length, byte[] buf)
         {
             var param = new SqlParameter(SqlParameterName.SessionItemLong, SqlDbType.Image, length);
             param.Value = buf;
+            pc.Add(param);
+
+            return pc;
+        }
+
+        public static SqlParameterCollection AddSessionItemLongVarBinaryParameter(this SqlParameterCollection pc, int length, byte[] buf)
+        {
+            var param = new SqlParameter(SqlParameterName.SessionItemLong, SqlDbType.VarBinary, length);
+            param.Value = buf;
+            pc.Add(param);
+
+            return pc;
+        }
+
+        public static SqlParameterCollection AddSessionItemShortParameter(this SqlParameterCollection pc, int length = 0, byte[] buf = null)
+        {
+            SqlParameter param;
+
+            if (buf == null)
+            {
+                param = new SqlParameter(SqlParameterName.SessionItemShort, SqlDbType.VarBinary, SqlSessionStateRepositoryUtil.ITEM_SHORT_LENGTH);
+                param.Direction = ParameterDirection.Output;
+                param.Value = Convert.DBNull;
+            }
+            else
+            {
+                param = new SqlParameter(SqlParameterName.SessionItemShort, SqlDbType.VarBinary, length);
+                param.Value = buf;
+            }
             pc.Add(param);
 
             return pc;
