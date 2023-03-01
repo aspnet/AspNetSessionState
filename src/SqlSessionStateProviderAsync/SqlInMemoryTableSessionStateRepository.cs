@@ -84,12 +84,12 @@ namespace Microsoft.AspNet.SessionState
 
                     SELECT @LockedCheck = Locked, @Flags = Flags 
                         FROM [dbo].{0}
-                        WHERE SessionID = " + SqlParameterName.SessionId + @"
+                        WHERE SessionId = " + SqlParameterName.SessionId + @"
                     IF @Flags&1 <> 0
                     BEGIN
                         SET " + SqlParameterName.ActionFlags + @" = 1
                         UPDATE [dbo].{0}
-                            SET Flags = Flags & ~1 WHERE SessionID = " + SqlParameterName.SessionId + @"
+                            SET Flags = Flags & ~1 WHERE SessionId = " + SqlParameterName.SessionId + @"
                     END
                     ELSE
                         SET " + SqlParameterName.ActionFlags + @" = 0
