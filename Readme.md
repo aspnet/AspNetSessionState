@@ -16,7 +16,7 @@ Information on contributing to this repo is in the [Contributing Guide](CONTRIBU
     <modules>
       <!-- remove the existing Session state module -->
       <remove name="Session" />
-      <add name="Session" preCondition="integratedMode" type="Microsoft.AspNet.SessionState.SessionStateModuleAsync, Microsoft.AspNet.SessionState.SessionStateModule, Version=1.1.0.0, Culture=neutral" />
+      <add name="Session" preCondition="integratedMode,managedHandler" type="Microsoft.AspNet.SessionState.SessionStateModuleAsync, Microsoft.AspNet.SessionState.SessionStateModule, Version=1.1.0.0, Culture=neutral" />
     </modules>
   </system.webServer>
 ```
@@ -37,10 +37,11 @@ The specific settings available for the new session state module and providers a
 
 <a name="updates"></a>
 ## V2.0 Updates:
-  * :warning: ***Breaking Change*** - CosmosDB partition-related parameters are ignored. All containers use `/id` as the partition path now. Using an existing container with a different partition key path will result in exceptions.
+  * :warning: ***Breaking Change*** - CosmosDB partition-related parameters are ignored. All containers use `/id` as the partition path now. Using an existing container with a different partition key path will result in exceptions. `partitionKeyPath` and `partitionNumUsedByProvider` are now ignored.
     > The original design around partition use in the CosmosDB provider was influenced by experience with the older SQL partition paradigms. There was an effort to enable them for scalability, but keep them reasonable for managability. In reality, CosmosDB encourages the use of as many "logical" partitions as can be used so long as they make sense. The complexity of managing and scaling is all handled magically by CosmosDB.
     >
     > The most logical partition field for session state is the session ID. The CosmosDB provider has been updated to alway use `"/id"` as the partition key path with the full session ID as the partition value. Pre-existing containers that use a different partition key path (which is any that opted into using partitions previously) will need to migrate to a container that uses `"/id"` as the partition key path. The data is all still good - although, the old partition key path can be dropped when migrating. There is unfortunately no way to simply update the partition key path on an existing container right now. [This blog post](https://devblogs.microsoft.com/cosmosdb/how-to-change-your-partition-key/) is a guide for migrating to a new container with the correct partition key path.
+  * :warning: ***Potential Breaking Change*** - Added `managedHandler` precondition to module configuration. The old in-box session module used this and it is a reasonable default for avoiding traffic jams. It can be removed from web.config if session is required for non-managed handlers as well.
   * :warning: ***Action Required*** Sql provider `RepositoryType` - This new setting provides a little more flexibility for repository configuration beyond a single boolean for in-memory optimized tables. Possible values are `SqlServer|InMemory|InMemoryDurable|FrameworkCompat`. Read about what each configuration is at our [SqlSessionStateProviderAsync](docs/SqlSessionStateProviderAsync.md) doc page.
     
     > The mechanics of nuget package upgrade results in removing old elements and re-adding the boiler-plate elements in configuration. To restore In-Memory functionality, set 'RepositoryType' to `InMemory`. To continue using an existing non-memory-optimized table without stored procedures, set 'RespositoryType' to `FrameworkCompat`. The recommendation is to update to the new table schema and use stored procedures with `SqlServer`, but this will ignore existing sessions in previously existing tables.
@@ -48,5 +49,4 @@ The specific settings available for the new session state module and providers a
   * The Sql provider's `UseInMemoryTable` is deprecated. It will continue to be respected in the absence of `RepositoryType`, but is overridden by that setting if given.
   * Sql provider `SessionTableName` - A new setting that allows users to target a specific table in their database rather than being forced to use the default table names.
   * CosmosDB `collectionId` is now `containerId` in keeping with the updated terminology from the CosmosDB offering. Please use the updated parameter name when configuring your provider. (The old name will continue to work just the same.)
-  * CosmosDB `partitionKeyPath` and `partitionNumUsedByProvider` are now ignored. Logical partitions are free and encouraged to be as numerous as possible in CosmosDB. As such, we have eliminated the old way of limiting and (unevenly) distributing sessions to partitions and now simply use the full SessionID as the partition key.
   * CosmosDB `connectionProtocol` is obsolete. It will not cause errors to have it in configuration, but it is ignored. The current [CosmosDB SDK chooses the protocol based on connection mode](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/sdk-connection-modes).
