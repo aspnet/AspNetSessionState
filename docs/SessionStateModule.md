@@ -8,7 +8,7 @@ Before you can specify one of these custom providers. You need to remove the exi
     <modules>
       <!-- remove the existing Session state module -->
       <remove name="Session" />
-      <add name="Session" preCondition="integratedMode" type="Microsoft.AspNet.SessionState.SessionStateModuleAsync, Microsoft.AspNet.SessionState.SessionStateModule, Version=1.1.0.0, Culture=neutral" />
+      <add name="Session" preCondition="integratedMode,managedHandler" type="Microsoft.AspNet.SessionState.SessionStateModuleAsync, Microsoft.AspNet.SessionState.SessionStateModule, Version=1.1.0.0, Culture=neutral" />
     </modules>
   </system.webServer>
 ```
