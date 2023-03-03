@@ -49,4 +49,5 @@ The specific settings available for the new session state module and providers a
   * The Sql provider's `UseInMemoryTable` is deprecated. It will continue to be respected in the absence of `RepositoryType`, but is overridden by that setting if given.
   * Sql provider `SessionTableName` - A new setting that allows users to target a specific table in their database rather than being forced to use the default table names.
   * CosmosDB `collectionId` is now `containerId` in keeping with the updated terminology from the CosmosDB offering. Please use the updated parameter name when configuring your provider. (The old name will continue to work just the same.)
+  * Added CosmosDB `consistencyLevel` to allow using a different [Consistency Level](https://learn.microsoft.com/en-us/azure/cosmos-db/consistency-levels) with the CosmosClient.
   * CosmosDB `connectionProtocol` is obsolete. It will not cause errors to have it in configuration, but it is ignored. The current [CosmosDB SDK chooses the protocol based on connection mode](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/sdk-connection-modes).
