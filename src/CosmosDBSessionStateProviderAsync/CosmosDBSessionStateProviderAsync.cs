@@ -854,6 +854,11 @@ namespace Microsoft.AspNet.SessionState
                 MaxRetryWaitTimeOnRateLimitedRequests = TimeSpan.FromSeconds(maxRetryWaitTimeInSeconds)
             };
 
+            if (Enum.TryParse<ConsistencyLevel>(config["consistencyLevel"], out ConsistencyLevel consistencyLevel))
+            {
+                clientOptions.ConsistencyLevel = consistencyLevel;
+            }
+
             var preferredLocations = config["preferredLocations"];
             if (!string.IsNullOrEmpty(preferredLocations))
             {

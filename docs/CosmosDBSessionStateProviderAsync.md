@@ -9,7 +9,7 @@ Then, register your new provider like so:
     <providers>
       <add name="CosmosDBSessionStateProviderAsync" cosmosDBEndPointSettingKey="cosmosDBEndPointSetting" cosmosDBAuthKeySettingKey="cosmosDBAuthKeySetting"
           databaseId="[DataBaseId]" collectionId="[CollectionId]" offerThroughput="5000" connectionMode="Direct" requestTimeout="5"
-          maxConnectionLimit="50" maxRetryAttemptsOnThrottledRequests="10" maxRetryWaitTimeInSeconds="10" preferredLocations=""
+          maxConnectionLimit="50" maxRetryAttemptsOnThrottledRequests="10" maxRetryWaitTimeInSeconds="10" consistencyLevel="Session" preferredLocations=""
           type="Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync, Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"/>
     </providers>
   </sessionState>
@@ -34,4 +34,6 @@ Then, register your new provider like so:
 
 8. *maxRetryWaitTimeInSeconds* - The maximum retry time in seconds for the Azure DocumentDB database service.
 
-9. *preferredLocations* - Sets the preferred locations(regions) for geo-replicated database accounts in the Azure DocumentDB database service. Use ';' to split multiple locations. e.g. "East US;South Central US;North Europe"
+9. *consistencyLevel* - The [Consistency Level](https://learn.microsoft.com/en-us/azure/cosmos-db/consistency-levels) to use with the CosmosClient. Default is the Cosmos SDK default, which is currently 'Session'.
+
+10. *preferredLocations* - Sets the preferred locations(regions) for geo-replicated database accounts in the Azure DocumentDB database service. Use ';' to split multiple locations. e.g. "East US;South Central US;North Europe"
