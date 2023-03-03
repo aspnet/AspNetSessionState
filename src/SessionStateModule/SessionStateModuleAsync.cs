@@ -406,7 +406,7 @@ namespace Microsoft.AspNet.SessionState
             _rqId = _idManager.GetSessionID(context);
             if (!_rqRequiresState)
             {
-                if (_rqId != null)
+                if (_rqId != null && !_store.SkipKeepAliveWhenUnused)
                 {
                     // Still need to update the sliding timeout to keep session alive.
                     // There is a plan to skip this for perf reason.  But it was postponed to

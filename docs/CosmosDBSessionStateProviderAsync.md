@@ -8,7 +8,7 @@ Then, register your new provider like so:
   <sessionState cookieless="false" regenerateExpiredSessionId="true" mode="Custom" customProvider="CosmosDBSessionStateProviderAsync">
     <providers>
       <add name="CosmosDBSessionStateProviderAsync" cosmosDBEndPointSettingKey="cosmosDBEndPointSetting" cosmosDBAuthKeySettingKey="cosmosDBAuthKeySetting"
-          databaseId="[DataBaseId]" collectionId="[CollectionId]" offerThroughput="5000" connectionMode="Direct" requestTimeout="5"
+          databaseId="[DataBaseId]" collectionId="[CollectionId]" offerThroughput="5000" connectionMode="Direct" requestTimeout="5" skipKeepAliveWhenUnused="false"
           maxConnectionLimit="50" maxRetryAttemptsOnThrottledRequests="10" maxRetryWaitTimeInSeconds="10" consistencyLevel="Session" preferredLocations=""
           type="Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync, Microsoft.AspNet.SessionState.CosmosDBSessionStateProviderAsync, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"/>
     </providers>
@@ -28,12 +28,14 @@ Then, register your new provider like so:
 
 5. *requestTimeout* - The request timeout in seconds when connecting to the Azure DocumentDB database service.
 
-6. *maxConnectionLimit* - maximum number of concurrent connections allowed for the target service endpoint in the Azure DocumentDB database service.
+6. *skipKeepAliveWhenUnused* - This setting will skip the call to update expiration time on requests that did not read or write session state. The default is "false" to maintain compatibility with previous behavior. But certain applications (like MVC) where there can be an abundance of requests processed that never even look at session state could benefit from setting this to "true" to reduce the use of and contention within the session state store. Setting this to "true" does mean that a session needs to be used (not necessarily updated, but at least requested/queried) to stay alive.
 
-7. *maxRetryAttemptsOnThrottledRequests* - the maximum number of retries in the case where the request fails because the Azure DocumentDB database service has applied rate limiting on the client.
+7. *maxConnectionLimit* - maximum number of concurrent connections allowed for the target service endpoint in the Azure DocumentDB database service.
 
-8. *maxRetryWaitTimeInSeconds* - The maximum retry time in seconds for the Azure DocumentDB database service.
+8. *maxRetryAttemptsOnThrottledRequests* - the maximum number of retries in the case where the request fails because the Azure DocumentDB database service has applied rate limiting on the client.
 
-9. *consistencyLevel* - The [Consistency Level](https://learn.microsoft.com/en-us/azure/cosmos-db/consistency-levels) to use with the CosmosClient. Default is the Cosmos SDK default, which is currently 'Session'.
+9. *maxRetryWaitTimeInSeconds* - The maximum retry time in seconds for the Azure DocumentDB database service.
 
-10. *preferredLocations* - Sets the preferred locations(regions) for geo-replicated database accounts in the Azure DocumentDB database service. Use ';' to split multiple locations. e.g. "East US;South Central US;North Europe"
+10. *consistencyLevel* - The [Consistency Level](https://learn.microsoft.com/en-us/azure/cosmos-db/consistency-levels) to use with the CosmosClient. Default is the Cosmos SDK default, which is currently 'Session'.
+
+11. *preferredLocations* - Sets the preferred locations(regions) for geo-replicated database accounts in the Azure DocumentDB database service. Use ';' to split multiple locations. e.g. "East US;South Central US;North Europe"

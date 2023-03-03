@@ -3,7 +3,10 @@
 
 namespace Microsoft.AspNet.SessionState
 {
+    using Microsoft.AspNet.SessionState.Resources;
     using System;
+    using System.Collections.Specialized;
+    using System.Configuration;
     using System.Configuration.Provider;
     using System.Threading;
     using System.Threading.Tasks;
@@ -192,5 +195,24 @@ namespace Microsoft.AspNet.SessionState
         /// <param name="expireCallback"></param>
         /// <returns></returns>
         public abstract bool SetItemExpireCallback(SessionStateItemExpireCallback expireCallback);
+
+        /// <inheritdoc />
+        public override void Initialize(string name, NameValueCollection config)
+        {
+            base.Initialize(name, config);
+
+            // This is really a module-level setting, but it can't be specified within the rigid typed xml structure of the session-state module.
+            // So we have inserted this setting here and it will apply to all providers that this async module can use.
+
+            // skipKeepAliveWhenUnused
+            var skipKA = config["skipKeepAliveWhenUnused"];
+            if (skipKA != null && !bool.TryParse(skipKA, out _skipKeepAliveWhenUnused))
+            {
+                throw new ConfigurationErrorsException(string.Format(SR.Invalid_provider_option, "skipKeepAliveWhenUnused", name));
+            }
+        }
+
+        private bool _skipKeepAliveWhenUnused = false;
+        internal bool SkipKeepAliveWhenUnused { get { return _skipKeepAliveWhenUnused; } }
     }
 }

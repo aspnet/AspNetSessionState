@@ -120,6 +120,9 @@
   <data name="Error_Occured_Reading_Config_Secion" xml:space="preserve">
     <value>Error occured when reading config secion '{0}'.</value>
   </data>
+  <data name="Invalid_provider_option" xml:space="preserve">
+    <value>The value for the '{0}' option on provider name '{1}' is invalid.</value>
+  </data>
   <data name="Invalid_session_custom_provider" xml:space="preserve">
     <value>The custom session state store provider name '{0}' is invalid.</value>
   </data>

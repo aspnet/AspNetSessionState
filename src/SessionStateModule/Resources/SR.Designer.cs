@@ -19,7 +19,7 @@ namespace Microsoft.AspNet.SessionState.Resources {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class SR {
@@ -70,6 +70,15 @@ namespace Microsoft.AspNet.SessionState.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The value for the &apos;{0}&apos; option on provider name &apos;{1}&apos; is invalid..
+        /// </summary>
+        internal static string Invalid_provider_option {
+            get {
+                return ResourceManager.GetString("Invalid_provider_option", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The custom session state store provider name &apos;{0}&apos; is invalid..
         /// </summary>
         internal static string Invalid_session_custom_provider {
@@ -88,7 +97,7 @@ namespace Microsoft.AspNet.SessionState.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to SessionStateAsync module only supports InProce and Custom mode..
+        ///   Looks up a localized string similar to SessionStateAsync module only supports InProc and Custom mode..
         /// </summary>
         internal static string Not_Support_SessionState_Mode {
             get {
