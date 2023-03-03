@@ -9,7 +9,7 @@ Then, register your new provider like so:
     <providers>
       <add name="SqlSessionStateProviderAsync" connectionStringName="DefaultConnection" SessionTableName="[string]"
           RepositoryType="[SqlServer|InMemory|InMemoryDurable|FrameworkCompat]"
-          MaxRetryNumber="[int]" RetryInterval="[int]"
+          MaxRetryNumber="[int]" RetryInterval="[int]" skipKeepAliveWhenUnused="false"
           type="Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"/>
     </providers>
   </sessionState>
@@ -42,4 +42,6 @@ The old in-box SQL provider allowed for applications to choose between three dat
 
 4. *RetryInterval* - The interval between the retry of executing sql query. The default value is 0.001 sec for in-memorytable mode. Otherwise the default value is 1 sec.
 
-5. **[Deprecated]** *UseInMemoryTable* - In the absence of a value for `RepositoryType`, this setting will be used to determine whether to use Sql server 2016 In-Memory OLTP for sessionstate. However, if `RepositoryType` is specified, that setting takes priority. You can find more details about using In-memory table for sessionstate [on this blog](https://blogs.msdn.microsoft.com/sqlcat/2016/10/26/how-bwin-is-using-sql-server-2016-in-memory-oltp-to-achieve-unprecedented-performance-and-scale/).
+5. *skipKeepAliveWhenUnused* - This setting will skip the call to update expiration time on requests that did not read or write session state. The default is "false" to maintain compatibility with previous behavior. But certain applications (like MVC) where there can be an abundance of requests processed that never even look at session state could benefit from setting this to "true" to reduce the use of and contention within the session state store. Setting this to "true" does mean that a session needs to be used (not necessarily updated, but at least requested/queried) to stay alive.
+
+6. **[Deprecated]** *UseInMemoryTable* - In the absence of a value for `RepositoryType`, this setting will be used to determine whether to use Sql server 2016 In-Memory OLTP for sessionstate. However, if `RepositoryType` is specified, that setting takes priority. You can find more details about using In-memory table for sessionstate [on this blog](https://blogs.msdn.microsoft.com/sqlcat/2016/10/26/how-bwin-is-using-sql-server-2016-in-memory-oltp-to-achieve-unprecedented-performance-and-scale/).

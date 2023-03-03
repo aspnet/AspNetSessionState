@@ -24,7 +24,7 @@ Information on contributing to this repo is in the [Contributing Guide](CONTRIBU
 ```xml
   <sessionState cookieless="false" regenerateExpiredSessionId="true" mode="Custom" customProvider="YourProviderName">
     <providers>
-      <add name="YourProviderName" [providerOptions] type="Provider, ProviderAssembly, Version=, Culture=neutral, PublicKeyToken=" />
+      <add name="YourProviderName" skipKeepAliveWhenUnused="false" [providerOptions] type="Provider, ProviderAssembly, Version=, Culture=neutral, PublicKeyToken=" />
     </providers>
   </sessionState>
 ```
@@ -46,6 +46,7 @@ The specific settings available for the new session state module and providers a
     
     > The mechanics of nuget package upgrade results in removing old elements and re-adding the boiler-plate elements in configuration. To restore In-Memory functionality, set 'RepositoryType' to `InMemory`. To continue using an existing non-memory-optimized table without stored procedures, set 'RespositoryType' to `FrameworkCompat`. The recommendation is to update to the new table schema and use stored procedures with `SqlServer`, but this will ignore existing sessions in previously existing tables.
   * Moved to use `Microsoft.Data.SqlClient` instead of old `System.Data.SqlClient`. This allows for more modern features such as Token Authorization.
+  * Added `skipKeepAliveWhenUnused` to all providers. This setting will skip the call to update expiration time on requests that did not read or write session state. This is setting is used at the module level, and is thus exists on all providers. The default is "false" to maintain compatibility. But certain applications (like MVC) where there can be an abundance of requests processed that never even look at session state could benefit from setting this to "true" to reduce the use of and contention within the session state store. Setting this to "true" does mean that a session needs to be used (not necessarily updated, but at least requested/queried) to stay alive.
   * The Sql provider's `UseInMemoryTable` is deprecated. It will continue to be respected in the absence of `RepositoryType`, but is overridden by that setting if given.
   * Sql provider `SessionTableName` - A new setting that allows users to target a specific table in their database rather than being forced to use the default table names.
   * CosmosDB `collectionId` is now `containerId` in keeping with the updated terminology from the CosmosDB offering. Please use the updated parameter name when configuring your provider. (The old name will continue to work just the same.)
