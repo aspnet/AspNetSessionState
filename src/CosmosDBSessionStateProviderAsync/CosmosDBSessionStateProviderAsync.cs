@@ -46,7 +46,7 @@ namespace Microsoft.AspNet.SessionState
         };
 
         #region CosmosDB Stored Procedures            
-        private const string CreateSessionStateItemSPID = "CreateSessionStateItem";
+        private const string CreateSessionStateItemSPID = "CreateSessionStateItem2";
         private const string GetStateItemSPID = "GetStateItem2";
         private const string GetStateItemExclusiveSPID = "GetStateItemExclusive";
         private const string ReleaseItemExclusiveSPID = "ReleaseItemExclusive";
@@ -55,7 +55,7 @@ namespace Microsoft.AspNet.SessionState
         private const string UpdateSessionStateItemSPID = "UpdateSessionStateItem";
 
         private const string CreateSessionStateItemSP = @"
-            function CreateSessionStateItem(sessionId, timeout, lockCookie, sessionItem, uninitialized) {
+            function CreateSessionStateItem2(sessionId, timeout, lockCookie, sessionItem, uninitialized) {
                 var collection = getContext().getCollection();
                 var collectionLink = collection.getSelfLink();
                 var response = getContext().getResponse();
@@ -74,10 +74,22 @@ namespace Microsoft.AspNet.SessionState
                     ttl: timeout, locked: false, sessionItem: sessionItem, uninitialized: uninitialized };
                 collection.createDocument(collectionLink, sessionStateItem,
                     function (err, documentCreated) {
-                            if (err) {
+                            if (err)
+                            {
+                                // When creating an uninitialized item, we are doing so just to make sure it gets created.
+                                // If another request has done the same, it doesn't matter who won the race. Read/Write
+                                // locked/exclusive access is determined later via a separate GetStateItem call.
+                                if (uninitialized && err.number == 409) // message: 'Resource with specified id or name already exists.'
+                                {
+                                    response.setBody({message: 'Document already exists. No need to recreate uninitialized document.', error: err});
+                                }
+
                                 throw err;
                             }
-                            response.setBody({documentCreated: documentCreated});
+                            else
+                            {
+                                response.setBody({documentCreated: documentCreated});
+                            }
                 });
             }";
 
@@ -208,6 +220,7 @@ namespace Microsoft.AspNet.SessionState
                                     doc.lockAge = 0;
                                     doc.lockCookie += 1;
                                     doc.locked = true;
+                                    // CosmosDB sprocs are 'atomic' so no need to worry about a race in between the initial query and this update.
                                     var isAccepted = collection.replaceDocument(doc._self, doc,
                                         function(err, updatedDocument, responseOptions) {
                                         if (err)

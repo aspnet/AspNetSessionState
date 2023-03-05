@@ -20,7 +20,7 @@ namespace Microsoft.AspNet.SessionState.CosmosDBSessionStateAsyncProvider.Test
 
     public class CosmosDBSessionStateProviderAsyncTest
     {
-        private const string CreateSessionStateItemSPID = "CreateSessionStateItem";
+        private const string CreateSessionStateItemSPID = "CreateSessionStateItem2";
         private const string GetStateItemSPID = "GetStateItem2";
         private const string GetStateItemExclusiveSPID = "GetStateItemExclusive";
         private const string ReleaseItemExclusiveSPID = "ReleaseItemExclusive";
