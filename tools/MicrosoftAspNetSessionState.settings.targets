@@ -23,11 +23,11 @@
             Release:	Third for Info and Package.
          Update package and file without touching assembly, except for major releases.
 
-         Some of these are already set in each project's individual settings file.
+         Most of the interesting ones are already set in each project's individual settings file.
     -->
-    <BuildQuality Condition="'$(BuildQuality)' == ''">beta</BuildQuality>
+    <BuildQuality Condition="'$(BuildQuality)' == ''">rtm</BuildQuality>
     <VersionStartYear Condition="'$(VersionStartYear)' == ''">2023</VersionStartYear>
-    <VersionMajor Condition="'$(VersionMajor)' == ''">1</VersionMajor>
+    <VersionMajor Condition="'$(VersionMajor)' == ''">2</VersionMajor>
     <VersionMinor Condition="'$(VersionMinor)' == ''">0</VersionMinor>
     <VersionRevision Condition="'$(VersionRevision)' == ''">0</VersionRevision>
     <VersionRelease Condition="'$(VersionRelease)' == ''">0</VersionRelease>
@@ -86,7 +86,9 @@
           NuGetPackageVersion=$(NuGetPackageVersion);
           NuGetPackageId=$(NuGetPackageId);
           SessionStateModuleNuGetPackageVersion=$(SessionStateModuleNuGetPackageVersion);
-          DocumentDBNuGetPackageVersion=$(DocumentDBNuGetPackageVersion)
+          MicrosoftDataSqlClientPackageVersion=$(MicrosoftDataSqlClientPackageVersion);
+          DocumentDBNuGetPackageVersion=$(DocumentDBNuGetPackageVersion);
+          SystemTextJsonPackageVersion=$(SystemTextJsonPackageVersion)
       </NuSpecProperties>
     </PropertyGroup>
   </Target>

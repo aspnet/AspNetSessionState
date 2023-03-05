@@ -1,14 +1,15 @@
 <Project DefaultTargets="UnitTest" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <BuildQuality Condition="'$(BuildQuality)' == ''">rtm</BuildQuality>
-    <VersionMajor>1</VersionMajor>
-    <VersionMinor>1</VersionMinor>
+    <BuildQuality Condition="'$(BuildQuality)' == ''">preview1</BuildQuality>
+    <VersionMajor>2</VersionMajor>
+    <VersionMinor>0</VersionMinor>
     <VersionRelease>0</VersionRelease>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet package dependencies">
-    <SessionStateModuleNuGetPackageVersion>1.1.0</SessionStateModuleNuGetPackageVersion>
+    <SessionStateModuleNuGetPackageVersion>2.0.0</SessionStateModuleNuGetPackageVersion>
+    <MicrosoftDataSqlClientPackageVersion>5.0.0</MicrosoftDataSqlClientPackageVersion>
   </PropertyGroup>
 
   <Import Project="MicrosoftAspNetSessionState.settings.targets" />
