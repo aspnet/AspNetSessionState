@@ -21,6 +21,7 @@
     <dependencies>
       <dependency id="Microsoft.AspNet.SessionState.SessionStateModule" version="$SessionStateModuleNuGetPackageVersion$" />
       <dependency id="Microsoft.Azure.DocumentDB" version="$DocumentDBNuGetPackageVersion$" />
-    </dependencies>    
+      <dependency id="System.Text.Json" version="$SystemTextJsonPackageVersion$" />
+    </dependencies>
   </metadata>
 </package>
