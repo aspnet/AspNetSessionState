@@ -12,11 +12,12 @@
       <!--
             Please change the connection string named "DefaultConnection" to connect to an instance
             of SQL Server which you will use as the data store.
-	UseInMemoryTable = [True|False] whether to use InMemory table, default is faluse
-	MaxRetryNumber = [integer] the number of retry when DB operation fails
-	RetryInterval = [integer] intervel(milliseconds) between retries
+	repositoryType = [SqlServer|InMemory|InMemoryDurable|FrameworkCompat] what type of SQL repository to use
+                      - for compat reasons, default is 'FrameworkCompat'
+	maxRetryNumber = [integer] the number of retry when DB operation fails
+	retryInterval = [integer] intervel(milliseconds) between retries
       -->
-        <add name="SqlSessionStateProviderAsync" connectionStringName="DefaultConnection" RepositoryType="SqlServer"
+        <add name="SqlSessionStateProviderAsync" connectionStringName="DefaultConnection" repositoryType="SqlServer"
           type="Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
              xdt:Transform="InsertIfMissing" />
       </providers>

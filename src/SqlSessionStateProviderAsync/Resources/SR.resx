@@ -136,7 +136,7 @@
     <value>Attribute not recognized '{0}'</value>
   </data>
   <data name="SessionTable_current" xml:space="preserve">
-    <value>The table '{0}' is compatible with current repositories. Use the '{1}' repositoryType instead with the 'SessionTableName' attribute if applicable.</value>
+    <value>The table '{0}' is compatible with current repositories. Use the '{1}' repositoryType instead with the 'sessionTableName' attribute if applicable.</value>
   </data>
   <data name="SessionTable_not_found" xml:space="preserve">
     <value>The table '{0}' was not found in the database. The repositoryType '{1}' cannot create session state tables.</value>

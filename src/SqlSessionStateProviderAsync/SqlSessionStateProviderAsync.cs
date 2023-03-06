@@ -23,12 +23,12 @@ namespace Microsoft.AspNet.SessionState
     /// </summary>
     public class SqlSessionStateProviderAsync : SessionStateStoreProviderAsyncBase
     {
-        private const string REPOSITORY_TYPE_CONFIGURATION_NAME = "RepositoryType";
-        private const string INMEMORY_TABLE_CONFIGURATION_NAME = "UseInMemoryTable";
-        private const string MAX_RETRY_NUMBER_CONFIGURATION_NAME = "MaxRetryNumber";
-        private const string RETRY_INTERVAL_CONFIGURATION_NAME = "RetryInterval";
+        private const string REPOSITORY_TYPE_CONFIGURATION_NAME = "repositoryType";
+        private const string INMEMORY_TABLE_CONFIGURATION_NAME = "useInMemoryTable";
+        private const string MAX_RETRY_NUMBER_CONFIGURATION_NAME = "maxRetryNumber";
+        private const string RETRY_INTERVAL_CONFIGURATION_NAME = "retryInterval";
         private const string CONNECTIONSTRING_NAME_CONFIGURATION_NAME = "connectionStringName";
-        private const string SESSION_TABLE_CONFIGURATION_NAME = "SessionTableName";
+        private const string SESSION_TABLE_CONFIGURATION_NAME = "sessionTableName";
         private const string SESSIONSTATE_SECTION_PATH = "system.web/sessionState";
         private const double SessionExpiresFrequencyCheckIntervalTicks = 30 * TimeSpan.TicksPerSecond;
         private static long s_lastSessionPurgeTicks;
@@ -76,10 +76,10 @@ namespace Microsoft.AspNet.SessionState
                 {
                     if (!s_oneTimeInited)
                     {
-                        // CompressionEnabled
+                        // compressionEnabled
                         s_compressionEnabled = ssc.CompressionEnabled;
 
-                        // RepositoryType
+                        // repositoryType
                         var rType = config[REPOSITORY_TYPE_CONFIGURATION_NAME];
                         if (rType != null)
                         {
@@ -88,9 +88,9 @@ namespace Microsoft.AspNet.SessionState
                         }
                         else
                         {
-                            // 'RepositoryType' was not specified. Ideally we would default to 'SqlServer', but changing from
+                            // 'repositoryType' was not specified. Ideally we would default to 'SqlServer', but changing from
                             // 'image' to 'varbinary' for the SessionItemLong column is a compat issue. So not specifying
-                            // a repository type gets you the compat repository, unless 'UseInMemoryTable' indicates to use
+                            // a repository type gets you the compat repository, unless 'useInMemoryTable' indicates to use
                             // the in-memory optimized provider instead which is still compatible with the old one.
                             var val = config[INMEMORY_TABLE_CONFIGURATION_NAME];
                             if (val != null && bool.TryParse(val, out bool useInMemoryTable) && useInMemoryTable)
