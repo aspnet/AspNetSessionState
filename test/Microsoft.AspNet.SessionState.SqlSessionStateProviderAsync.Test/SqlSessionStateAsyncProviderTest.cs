@@ -19,11 +19,11 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
 
     public class SqlSessionStateAsyncProviderTest
     {
-        private const string RepositoryTypeConfigurationName = "RepositoryType";
-        private const string TableNameConfigurationName = "SessionTableName";
-        private const string InMemoryTableConfigurationName = "UseInMemoryTable";
-        private const string MaxRetryConfigurationName = "MaxRetryNumber";
-        private const string RetryIntervalConfigurationName = "RetryInterval";
+        private const string RepositoryTypeConfigurationName = "repositoryType";
+        private const string TableNameConfigurationName = "sessionTableName";
+        private const string InMemoryTableConfigurationName = "useInMemoryTable";
+        private const string MaxRetryConfigurationName = "maxRetryNumber";
+        private const string RetryIntervalConfigurationName = "retryInterval";
         private const string DefaultTestConnectionString = "Server=myServerAddress;Database=myDataBase;User Id=myUsername;Password=myPassword;";
         private const string DefaultProviderName = "testprovider";
         private const string TableName = "ASPStateTempSessions";
