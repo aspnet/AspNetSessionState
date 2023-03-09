@@ -87,7 +87,7 @@
           NuGetPackageId=$(NuGetPackageId);
           SessionStateModuleNuGetPackageVersion=$(SessionStateModuleNuGetPackageVersion);
           MicrosoftDataSqlClientPackageVersion=$(MicrosoftDataSqlClientPackageVersion);
-          DocumentDBNuGetPackageVersion=$(DocumentDBNuGetPackageVersion);
+          CosmosNuGetPackageVersion=$(CosmosNuGetPackageVersion);
           SystemTextJsonPackageVersion=$(SystemTextJsonPackageVersion)
       </NuSpecProperties>
     </PropertyGroup>
