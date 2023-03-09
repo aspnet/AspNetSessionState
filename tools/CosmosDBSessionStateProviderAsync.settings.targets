@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet package dependencies">
-    <SessionStateModuleNuGetPackageVersion>2.0.0</SessionStateModuleNuGetPackageVersion>
-    <DocumentDBNuGetPackageVersion>3.23.0</DocumentDBNuGetPackageVersion>
+    <SessionStateModuleNuGetPackageVersion>2.0.0-preview1</SessionStateModuleNuGetPackageVersion>
+    <CosmosNuGetPackageVersion>3.23.0</CosmosNuGetPackageVersion>
     <SystemTextJsonPackageVersion>7.0.0</SystemTextJsonPackageVersion>
   </PropertyGroup>
 

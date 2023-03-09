@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet package dependencies">
-    <SessionStateModuleNuGetPackageVersion>2.0.0</SessionStateModuleNuGetPackageVersion>
+    <SessionStateModuleNuGetPackageVersion>2.0.0-preview1</SessionStateModuleNuGetPackageVersion>
     <MicrosoftDataSqlClientPackageVersion>5.0.0</MicrosoftDataSqlClientPackageVersion>
   </PropertyGroup>
 
