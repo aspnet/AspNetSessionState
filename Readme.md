@@ -16,7 +16,7 @@ Information on contributing to this repo is in the [Contributing Guide](CONTRIBU
     <modules>
       <!-- remove the existing Session state module -->
       <remove name="Session" />
-      <add name="Session" preCondition="integratedMode,managedHandler" type="Microsoft.AspNet.SessionState.SessionStateModuleAsync, Microsoft.AspNet.SessionState.SessionStateModule, Version=1.1.0.0, Culture=neutral" />
+      <add name="Session" preCondition="integratedMode,managedHandler" type="Microsoft.AspNet.SessionState.SessionStateModuleAsync, Microsoft.AspNet.SessionState.SessionStateModule, Version=2.0.0.0, Culture=neutral" />
     </modules>
   </system.webServer>
 ```
