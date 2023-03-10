@@ -9,15 +9,15 @@ namespace Microsoft.AspNet.SessionState
 
     static class SqlParameterCollectionExtension
     {
-        public static SqlParameterCollection AddSessionIdParameter(this SqlParameterCollection pc, string id)
+        public static SqlParameterCollection AddSessionIdParameter(this SqlParameterCollection pc, string id, bool fxCompat = false)
         {
-            var param = new SqlParameter(SqlParameterName.SessionId, SqlDbType.NVarChar, SqlSessionStateRepositoryUtil.IdLength);
+            var param = new SqlParameter(fxCompat ? SqlParameterName.Compat_SessionId : SqlParameterName.SessionId, SqlDbType.NVarChar, SqlSessionStateRepositoryUtil.IdLength);
             param.Value = id;
             pc.Add(param);
 
             return pc;
         }
-        
+
         public static SqlParameterCollection AddLockedParameter(this SqlParameterCollection pc)
         {
             var param = new SqlParameter(SqlParameterName.Locked, SqlDbType.Bit);
@@ -84,9 +84,9 @@ namespace Microsoft.AspNet.SessionState
             return pc;
         }
 
-        public static SqlParameterCollection AddSessionItemLongImageParameter(this SqlParameterCollection pc, int length, byte[] buf)
+        public static SqlParameterCollection AddSessionItemLongImageParameter(this SqlParameterCollection pc, int length, byte[] buf, bool fxCompat = false)
         {
-            var param = new SqlParameter(SqlParameterName.SessionItemLong, SqlDbType.Image, length);
+            var param = new SqlParameter(fxCompat ? SqlParameterName.Compat_ItemLong : SqlParameterName.SessionItemLong, SqlDbType.Image, length);
             param.Value = buf;
             pc.Add(param);
 
@@ -95,26 +95,26 @@ namespace Microsoft.AspNet.SessionState
 
         public static SqlParameterCollection AddSessionItemLongVarBinaryParameter(this SqlParameterCollection pc, int length, byte[] buf)
         {
-            var param = new SqlParameter(SqlParameterName.SessionItemLong, SqlDbType.VarBinary, length);
+            SqlParameter param = new SqlParameter(SqlParameterName.SessionItemLong, SqlDbType.VarBinary, length);
             param.Value = buf;
             pc.Add(param);
 
             return pc;
         }
 
-        public static SqlParameterCollection AddSessionItemShortParameter(this SqlParameterCollection pc, int length = 0, byte[] buf = null)
+        public static SqlParameterCollection AddSessionItemShortParameter(this SqlParameterCollection pc, int length = 0, byte[] buf = null, bool fxCompat = false)
         {
             SqlParameter param;
 
             if (buf == null)
             {
-                param = new SqlParameter(SqlParameterName.SessionItemShort, SqlDbType.VarBinary, SqlSessionStateRepositoryUtil.ITEM_SHORT_LENGTH);
+                param = new SqlParameter(fxCompat ? SqlParameterName.Compat_ItemShort : SqlParameterName.SessionItemShort, SqlDbType.VarBinary, SqlSessionStateRepositoryUtil.ITEM_SHORT_LENGTH);
                 param.Direction = ParameterDirection.Output;
                 param.Value = Convert.DBNull;
             }
             else
             {
-                param = new SqlParameter(SqlParameterName.SessionItemShort, SqlDbType.VarBinary, length);
+                param = new SqlParameter(fxCompat ? SqlParameterName.Compat_ItemShort : SqlParameterName.SessionItemShort, SqlDbType.VarBinary, length);
                 param.Value = buf;
             }
             pc.Add(param);
