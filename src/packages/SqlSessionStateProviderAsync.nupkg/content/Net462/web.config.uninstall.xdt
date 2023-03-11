@@ -1,14 +1,22 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration xmlns:xdt="http://schemas.microsoft.com/XML-Document-Transform">
-
   <system.web>
-    <sessionState cookieless="false" regenerateExpiredSessionId="true"
-        mode="Custom" customProvider="SqlSessionStateAsyncProvider" xdt:Transform="Remove">
+    <!-- We don't want to touch attributes in <sessionState> that might not apply to us. -->
+    <!-- We also can't know what mode/provider to revert to when we uninstall ourselves, -->
+    <!-- or if we were even the currently selected custom provider to use. -->
+    <!-- Unfortunately, the best we can do is leave a broken state that requires obvious -->
+    <!-- intervention. We could clear 'customProvider' if it matches our default-given -->
+    <!-- name, but that isn't 100% accurate and doesn't really change the error anyway. -->
+    <sessionState>
+
       <providers>
-        <add name="SqlSessionStateAsyncProvider" connectionStringName="DefaultConnection"
+        <add name="SqlSessionStateAsyncProvider"
           type="Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider, Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
              xdt:Transform="Remove" xdt:Locator="Match(type)" />
       </providers>
+
+      <providers xdt:Transform="RemoveAll" xdt:Locator="Condition(count(*)=0)" />
+
     </sessionState>
   </system.web>
 </configuration>
