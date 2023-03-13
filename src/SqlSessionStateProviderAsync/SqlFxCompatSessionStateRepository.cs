@@ -602,7 +602,7 @@ namespace Microsoft.AspNet.SessionState
 
                 if (buf == null && (_tableType == SessionTableType.Fx7 || _tableType == SessionTableType.Fx8))
                 {
-                    buf = (byte[])cmd.GetOutPutParameterValue(SqlParameterName.SessionItemShort).Value;
+                    buf = (byte[])cmd.GetOutPutParameterValue(SqlParameterName.ItemShort).Value;
                 }
 
                 return new SessionItem(buf, true, lockAge, lockId, actions);
