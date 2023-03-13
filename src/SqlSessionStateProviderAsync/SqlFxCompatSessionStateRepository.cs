@@ -506,8 +506,8 @@ namespace Microsoft.AspNet.SessionState
                     // Use SProcs installed by aspnet_regsql
                     case SessionTableType.Fx7:
                         cmd = _commandHelper.CreateSqlCommandForSP("TempGetStateItemExclusive3");
-                        cmd.Parameters.AddSessionIdParameter(id, true)
-                                      .AddSessionItemShortParameter(fxCompat: true)
+                        cmd.Parameters.AddFxSessionIdParameter(id)
+                                      .AddItemShortParameter()
                                       .AddLockedParameter()
                                       .AddLockDateParameter()
                                       .AddLockCookieParameter()
@@ -515,8 +515,8 @@ namespace Microsoft.AspNet.SessionState
                         break;
                     case SessionTableType.Fx8:
                         cmd = _commandHelper.CreateSqlCommandForSP("TempGetStateItemExclusive3");
-                        cmd.Parameters.AddSessionIdParameter(id, true)
-                                      .AddSessionItemShortParameter(fxCompat: true)
+                        cmd.Parameters.AddFxSessionIdParameter(id)
+                                      .AddItemShortParameter()
                                       .AddLockedParameter()
                                       .AddLockAgeParameter()
                                       .AddLockCookieParameter()
@@ -541,8 +541,8 @@ namespace Microsoft.AspNet.SessionState
                     // Use SProcs installed by aspnet_regsql
                     case SessionTableType.Fx7:
                         cmd = _commandHelper.CreateSqlCommandForSP("TempGetStateItem3");
-                        cmd.Parameters.AddSessionIdParameter(id, true)
-                                      .AddSessionItemShortParameter(fxCompat: true)
+                        cmd.Parameters.AddFxSessionIdParameter(id)
+                                      .AddItemShortParameter()
                                       .AddLockedParameter()
                                       .AddLockDateParameter()
                                       .AddLockCookieParameter()
@@ -550,8 +550,8 @@ namespace Microsoft.AspNet.SessionState
                         break;
                     case SessionTableType.Fx8:
                         cmd = _commandHelper.CreateSqlCommandForSP("TempGetStateItem3");
-                        cmd.Parameters.AddSessionIdParameter(id, true)
-                                      .AddSessionItemShortParameter(fxCompat: true)
+                        cmd.Parameters.AddFxSessionIdParameter(id)
+                                      .AddItemShortParameter()
                                       .AddLockedParameter()
                                       .AddLockAgeParameter()
                                       .AddLockCookieParameter()
@@ -628,8 +628,8 @@ namespace Microsoft.AspNet.SessionState
                                 cmd = _commandHelper.CreateSqlCommandForSP("TempUpdateStateItemShort");
                             else
                                 cmd = _commandHelper.CreateSqlCommandForSP("TempUpdateStateItemShortNullLong");
-                            cmd.Parameters.AddSessionIdParameter(id, true)
-                                          .AddSessionItemShortParameter(length, buf, true)
+                            cmd.Parameters.AddFxSessionIdParameter(id)
+                                          .AddItemShortParameter(length, buf)
                                           .AddTimeoutParameter(timeout)
                                           .AddLockCookieParameter(lockCookie);
                         }
@@ -640,8 +640,8 @@ namespace Microsoft.AspNet.SessionState
                                 cmd = _commandHelper.CreateSqlCommandForSP("TempUpdateStateItemLong");
                             else
                                 cmd = _commandHelper.CreateSqlCommandForSP("TempUpdateStateItemLongNullShort");
-                            cmd.Parameters.AddSessionIdParameter(id, true)
-                                          .AddSessionItemLongImageParameter(length, buf, true)
+                            cmd.Parameters.AddFxSessionIdParameter(id)
+                                          .AddItemLongParameter(length, buf)
                                           .AddTimeoutParameter(timeout)
                                           .AddLockCookieParameter(lockCookie);
                         }
@@ -668,15 +668,15 @@ namespace Microsoft.AspNet.SessionState
                         if (length <= SqlSessionStateRepositoryUtil.ITEM_SHORT_LENGTH)
                         {
                             cmd = _commandHelper.CreateSqlCommandForSP("TempInsertStateItemShort");
-                            cmd.Parameters.AddSessionIdParameter(id, true)
-                                          .AddSessionItemShortParameter(length, buf, true)
+                            cmd.Parameters.AddFxSessionIdParameter(id)
+                                          .AddItemShortParameter(length, buf)
                                           .AddTimeoutParameter(timeout);
                         }
                         else
                         {
                             cmd = _commandHelper.CreateSqlCommandForSP("TempInsertStateItemLong");
-                            cmd.Parameters.AddSessionIdParameter(id, true)
-                                          .AddSessionItemLongImageParameter(length, buf, true)
+                            cmd.Parameters.AddFxSessionIdParameter(id)
+                                          .AddItemLongParameter(length, buf)
                                           .AddTimeoutParameter(timeout);
                         }
                         break;
@@ -707,13 +707,13 @@ namespace Microsoft.AspNet.SessionState
                 case SessionTableType.Fx7:
                 case SessionTableType.Fx8:
                     cmd = _commandHelper.CreateSqlCommandForSP("TempResetTimeout");
-                    cmd.Parameters.AddSessionIdParameter(id, true);
+                    cmd.Parameters.AddFxSessionIdParameter(id);
                     break;
 
                 // Use internal SQL statements
                 case SessionTableType.Async11:
                     cmd = _commandHelper.CreateSqlCommand(ResetItemTimeoutSql);
-                    cmd.Parameters.AddSessionIdParameter(id, true);
+                    cmd.Parameters.AddSessionIdParameter(id);
                     break;
             }
 
@@ -733,7 +733,7 @@ namespace Microsoft.AspNet.SessionState
                 case SessionTableType.Fx7:
                 case SessionTableType.Fx8:
                     cmd = _commandHelper.CreateSqlCommandForSP("TempRemoveStateItem");
-                    cmd.Parameters.AddSessionIdParameter(id, true)
+                    cmd.Parameters.AddFxSessionIdParameter(id)
                                   .AddLockCookieParameter(lockId);
                     break;
 
@@ -761,7 +761,7 @@ namespace Microsoft.AspNet.SessionState
                 case SessionTableType.Fx7:
                 case SessionTableType.Fx8:
                     cmd = _commandHelper.CreateSqlCommandForSP("TempReleaseStateItemExclusive");
-                    cmd.Parameters.AddSessionIdParameter(id, true)
+                    cmd.Parameters.AddFxSessionIdParameter(id)
                                   .AddLockCookieParameter(lockId);
                     break;
 
@@ -789,8 +789,8 @@ namespace Microsoft.AspNet.SessionState
                 case SessionTableType.Fx7:
                 case SessionTableType.Fx8:
                     cmd = _commandHelper.CreateSqlCommandForSP("TempInsertUninitializedItem");
-                    cmd.Parameters.AddSessionIdParameter(id, true)
-                                  .AddSessionItemShortParameter(length, buf, true) // TODO - Fx just assumed this was "short" - in code and SProc.
+                    cmd.Parameters.AddFxSessionIdParameter(id)
+                                  .AddItemShortParameter(length, buf) // TODO - Fx just assumed this was "short" - in code and SProc.
                                   .AddTimeoutParameter(timeout);
                     break;
 
@@ -798,7 +798,7 @@ namespace Microsoft.AspNet.SessionState
                 case SessionTableType.Async11:
                     cmd = _commandHelper.CreateSqlCommand(InsertUninitializedItemSql);
                     cmd.Parameters.AddSessionIdParameter(id)
-                                  .AddSessionItemLongImageParameter(length, buf, true)
+                                  .AddSessionItemLongImageParameter(length, buf)
                                   .AddTimeoutParameter(timeout);
                     break;
             }

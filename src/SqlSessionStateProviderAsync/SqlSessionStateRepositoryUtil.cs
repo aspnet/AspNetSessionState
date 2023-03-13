@@ -29,9 +29,9 @@ namespace Microsoft.AspNet.SessionState
         public const string LockAge = "@" + nameof(LockAge);
         public const string ActionFlags = "@" + nameof(ActionFlags);
         public const string Durablility = "@" + nameof(Durablility);
-        public const string Compat_SessionId = "@id";
-        public const string Compat_ItemShort = "@itemShort";
-        public const string Compat_ItemLong = "@itemLong";
+        public const string FxSessionId = "@id";
+        public const string ItemShort = "@" + nameof(ItemShort);
+        public const string ItemLong = "@" + nameof(ItemLong);
     }
 
     static class Sec
