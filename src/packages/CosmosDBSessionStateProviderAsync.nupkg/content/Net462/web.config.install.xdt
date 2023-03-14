@@ -31,6 +31,7 @@
             maxRetryWaitTimeInSeconds: the maximum retry time in seconds for the Azure DocumentDB database service.
             consistencyLevel: The 'ConsistencyLevel' to use with the CosmosClient. Default is not-specified, leaving the choice to Cosmos SDK. (The current SDK default is 'Session'.)
             preferredLocations: sets the preferred locations(regions) for geo-replicated database accounts in the Azure DocumentDB database service. Use ';' to split multiple locations. e.g. "East US;South Central US;North Europe"
+            skipKeepAliveWhenUnused: Determines whether requests that don't touch or look at session state take the time to update the sliding expiration or not.
       -->
         <add name="CosmosDBSessionStateProviderAsync" cosmosDBEndPointSettingKey="cosmosDBEndPointSetting" cosmosDBAuthKeySettingKey="cosmosDBAuthKeySetting" databaseId="[DataBaseId]" containerId="[ContainerId]" offerThroughput="5000"
           connectionMode="Direct" requestTimeout="5" maxConnectionLimit="50" maxRetryAttemptsOnThrottledRequests="10" maxRetryWaitTimeInSeconds="10" preferredLocations=""
