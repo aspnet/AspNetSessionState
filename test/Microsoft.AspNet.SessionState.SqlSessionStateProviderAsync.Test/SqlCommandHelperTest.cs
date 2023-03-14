@@ -37,21 +37,26 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
             Assert.Empty(cmd.Parameters);
         }
 
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        [InlineData(null)]
-        public void SqlCommand_AddSessionIdParameter(bool? fxCompat)
+        [Fact]
+        public void SqlCommand_AddSessionIdParameter()
         {
             var helper = new SqlCommandHelper(SqlCommandTimeout);
             var cmd = helper.CreateSqlCommand(SqlStatement);
 
-            if (fxCompat != null)
-                cmd.Parameters.AddSessionIdParameter(SessionId, fxCompat.Value);
-            else
-                cmd.Parameters.AddSessionIdParameter(SessionId);
+            cmd.Parameters.AddSessionIdParameter(SessionId);
             VerifyBasicsOfSqlCommand(cmd);
-            VerifySessionIdParameter(cmd, fxCompat);
+            VerifySessionIdParameter(cmd);
+        }
+
+        [Fact]
+        public void SqlCommand_AddFxSessionIdParameter()
+        {
+            var helper = new SqlCommandHelper(SqlCommandTimeout);
+            var cmd = helper.CreateSqlCommand(SqlStatement);
+
+            cmd.Parameters.AddFxSessionIdParameter(SessionId);
+            VerifyBasicsOfSqlCommand(cmd);
+            VerifyFxSessionIdParameter(cmd);
         }
 
         [Fact]
@@ -122,22 +127,26 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
             VerifyTimeoutParameter(cmd, SessionTimeout);
         }
 
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        [InlineData(null)]
-        public void SqlCommand_AddSessionItemLongImageParameter(bool? fxCompat)
+        [Fact]
+        public void SqlCommand_AddSessionItemLongImageParameter()
         {
             var helper = new SqlCommandHelper(SqlCommandTimeout);
             var cmd = helper.CreateSqlCommand(SqlStatement);
 
-            if (fxCompat != null)
-                cmd.Parameters.AddSessionItemLongImageParameter(BufferLength, Buffer, fxCompat.Value);
-            else
-                cmd.Parameters.AddSessionItemLongImageParameter(BufferLength, Buffer);
-
+            cmd.Parameters.AddSessionItemLongImageParameter(BufferLength, Buffer);
             VerifyBasicsOfSqlCommand(cmd);
-            VerifySessionItemLongParameter(cmd, SqlDbType.Image, BufferLength, Buffer, fxCompat);
+            VerifySessionItemLongParameter(cmd, SqlDbType.Image, BufferLength, Buffer);
+        }
+
+        [Fact]
+        public void SqlCommand_AddItemLongImageParameter()
+        {
+            var helper = new SqlCommandHelper(SqlCommandTimeout);
+            var cmd = helper.CreateSqlCommand(SqlStatement);
+
+            cmd.Parameters.AddItemLongParameter(BufferLength, Buffer);
+            VerifyBasicsOfSqlCommand(cmd);
+            VerifyItemLongParameter(cmd, SqlDbType.Image, BufferLength, Buffer);
         }
 
         [Fact]
@@ -148,41 +157,29 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
 
             cmd.Parameters.AddSessionItemLongVarBinaryParameter(BufferLength, Buffer);
             VerifyBasicsOfSqlCommand(cmd);
-            VerifySessionItemLongParameter(cmd, SqlDbType.VarBinary, BufferLength, Buffer, false);
+            VerifySessionItemLongParameter(cmd, SqlDbType.VarBinary, BufferLength, Buffer);
         }
 
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        [InlineData(null)]
-        public void SqlCommand_AddSessionItemShortParameter(bool? fxCompat)
+        [Fact]
+        public void SqlCommand_AddItemShortParameter()
         {
             var helper = new SqlCommandHelper(SqlCommandTimeout);
             var cmd = helper.CreateSqlCommand(SqlStatement);
 
-            if (fxCompat != null)
-                cmd.Parameters.AddSessionItemShortParameter(BufferLength, Buffer, fxCompat.Value);
-            else
-                cmd.Parameters.AddSessionItemShortParameter(BufferLength, Buffer);
+            cmd.Parameters.AddItemShortParameter(BufferLength, Buffer);
             VerifyBasicsOfSqlCommand(cmd);
-            VerifySessionItemShortParameter(cmd, BufferLength, Buffer, fxCompat);
+            VerifyItemShortParameter(cmd, BufferLength, Buffer);
         }
 
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        [InlineData(null)]
-        public void SqlCommand_AddSessionItemShortOutputParameter(bool? fxCompat)
+        [Fact]
+        public void SqlCommand_AddItemShortOutputParameter()
         {
             var helper = new SqlCommandHelper(SqlCommandTimeout);
             var cmd = helper.CreateSqlCommand(SqlStatement);
 
-            if (fxCompat != null)
-                cmd.Parameters.AddSessionItemShortParameter(fxCompat: fxCompat.Value);
-            else
-                cmd.Parameters.AddSessionItemShortParameter();
+            cmd.Parameters.AddItemShortParameter();
             VerifyBasicsOfSqlCommand(cmd);
-            VerifySessionItemShortParameter(cmd, fxCompat: fxCompat);
+            VerifyItemShortParameter(cmd);
         }
 
         private void VerifyBasicsOfSqlCommand(SqlCommand cmd)
@@ -192,9 +189,18 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
             Assert.Equal(SqlCommandTimeout, cmd.CommandTimeout);
         }
 
-        private void VerifySessionIdParameter(SqlCommand cmd, bool? fxCompat)
+        private void VerifySessionIdParameter(SqlCommand cmd)
         {
-            var param = cmd.Parameters[(fxCompat != null && fxCompat.Value) ? SqlParameterName.Compat_SessionId : SqlParameterName.SessionId];
+            var param = cmd.Parameters[SqlParameterName.SessionId];
+            Assert.NotNull(param);
+            Assert.Equal(SqlDbType.NVarChar, param.SqlDbType);
+            Assert.Equal(SessionId, param.Value);
+            Assert.Equal(SqlSessionStateRepositoryUtil.IdLength, param.Size);
+        }
+
+        private void VerifyFxSessionIdParameter(SqlCommand cmd)
+        {
+            var param = cmd.Parameters[SqlParameterName.FxSessionId];
             Assert.NotNull(param);
             Assert.Equal(SqlDbType.NVarChar, param.SqlDbType);
             Assert.Equal(SessionId, param.Value);
@@ -252,19 +258,28 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
             Assert.Equal(Convert.DBNull, param.Value);
             Assert.Equal(ParameterDirection.Output, param.Direction);
         }
-
-        private void VerifySessionItemLongParameter(SqlCommand cmd, SqlDbType sqlType, int length, byte[] buf, bool? fxCompat)
+        
+        private void VerifySessionItemLongParameter(SqlCommand cmd, SqlDbType sqlType, int length, byte[] buf)
         {
-            var param = cmd.Parameters[(fxCompat != null && fxCompat.Value) ? SqlParameterName.Compat_ItemLong : SqlParameterName.SessionItemLong];
+            var param = cmd.Parameters[SqlParameterName.SessionItemLong];
             Assert.NotNull(param);
             Assert.Equal(sqlType, param.SqlDbType);
             Assert.Equal(length, param.Size);
             Assert.Equal(buf, param.Value);            
         }
 
-        private void VerifySessionItemShortParameter(SqlCommand cmd, int length = 0, byte[] buf = null, bool? fxCompat = null)
+        private void VerifyItemLongParameter(SqlCommand cmd, SqlDbType sqlType, int length, byte[] buf)
         {
-            var param = cmd.Parameters[(fxCompat != null && fxCompat.Value) ? SqlParameterName.Compat_ItemShort : SqlParameterName.SessionItemShort];
+            var param = cmd.Parameters[SqlParameterName.ItemLong];
+            Assert.NotNull(param);
+            Assert.Equal(sqlType, param.SqlDbType);
+            Assert.Equal(length, param.Size);
+            Assert.Equal(buf, param.Value);
+        }
+
+        private void VerifyItemShortParameter(SqlCommand cmd, int length = 0, byte[] buf = null)
+        {
+            var param = cmd.Parameters[SqlParameterName.ItemShort];
             Assert.NotNull(param);
             Assert.Equal(SqlDbType.VarBinary, param.SqlDbType);
 

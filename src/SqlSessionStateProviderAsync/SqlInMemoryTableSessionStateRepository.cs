@@ -223,7 +223,7 @@ namespace Microsoft.AspNet.SessionState
             CREATE PROCEDURE {1} (
                     " + SqlParameterName.SessionId + @" nvarchar(" + SqlSessionStateRepositoryUtil.IdLength + @"),
                     " + SqlParameterName.Timeout + @" int,
-                    " + SqlParameterName.SessionItemLong + @" varbinary
+                    " + SqlParameterName.SessionItemLong + @" varbinary(max)
             ) WITH NATIVE_COMPILATION, SCHEMABINDING AS
                 BEGIN ATOMIC
                     WITH (TRANSACTION ISOLATION LEVEL = SNAPSHOT, LANGUAGE = N'us_english');
@@ -261,7 +261,7 @@ namespace Microsoft.AspNet.SessionState
             CREATE PROCEDURE {1} (
                     " + SqlParameterName.SessionId + @" nvarchar(" + SqlSessionStateRepositoryUtil.IdLength + @"),
                     " + SqlParameterName.Timeout + @" int,
-                    " + SqlParameterName.SessionItemLong + @" varbinary
+                    " + SqlParameterName.SessionItemLong + @" varbinary(max)
             ) WITH NATIVE_COMPILATION, SCHEMABINDING AS
                 BEGIN ATOMIC
                     WITH (TRANSACTION ISOLATION LEVEL = SNAPSHOT, LANGUAGE = N'us_english');
@@ -347,7 +347,7 @@ namespace Microsoft.AspNet.SessionState
                     " + SqlParameterName.SessionId + @" nvarchar(" + SqlSessionStateRepositoryUtil.IdLength + @"),
                     " + SqlParameterName.LockCookie + @" int,
                     " + SqlParameterName.Timeout + @" int,
-                    " + SqlParameterName.SessionItemLong + @" varbinary
+                    " + SqlParameterName.SessionItemLong + @" varbinary(max)
             ) WITH NATIVE_COMPILATION, SCHEMABINDING AS
                 BEGIN ATOMIC
                     WITH (TRANSACTION ISOLATION LEVEL = SNAPSHOT, LANGUAGE = N'us_english');
