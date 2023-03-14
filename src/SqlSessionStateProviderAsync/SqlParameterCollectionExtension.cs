@@ -120,26 +120,6 @@ namespace Microsoft.AspNet.SessionState
             return pc;
         }
 
-        public static SqlParameterCollection AddSessionItemShortParameter(this SqlParameterCollection pc, int length = 0, byte[] buf = null)
-        {
-            SqlParameter param;
-
-            if (buf == null)
-            {
-                param = new SqlParameter(SqlParameterName.SessionItemShort, SqlDbType.VarBinary, SqlSessionStateRepositoryUtil.ITEM_SHORT_LENGTH);
-                param.Direction = ParameterDirection.Output;
-                param.Value = Convert.DBNull;
-            }
-            else
-            {
-                param = new SqlParameter(SqlParameterName.SessionItemShort, SqlDbType.VarBinary, length);
-                param.Value = buf;
-            }
-            pc.Add(param);
-
-            return pc;
-        }
-
         public static SqlParameterCollection AddItemShortParameter(this SqlParameterCollection pc, int length = 0, byte[] buf = null)
         {
             SqlParameter param;

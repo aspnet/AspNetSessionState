@@ -211,7 +211,7 @@ namespace Microsoft.AspNet.SessionState
             CREATE PROCEDURE {1} (
                     " + SqlParameterName.SessionId + @" nvarchar(" + SqlSessionStateRepositoryUtil.IdLength + @"),
                     " + SqlParameterName.Timeout + @" int,
-                    " + SqlParameterName.SessionItemLong + @" varbinary
+                    " + SqlParameterName.SessionItemLong + @" varbinary(max)
             ) AS
                 DECLARE @now AS datetime
                 DECLARE @nowLocal AS datetime
@@ -246,7 +246,7 @@ namespace Microsoft.AspNet.SessionState
             CREATE PROCEDURE {1} (
                     " + SqlParameterName.SessionId + @" nvarchar(" + SqlSessionStateRepositoryUtil.IdLength + @"),
                     " + SqlParameterName.Timeout + @" int,
-                    " + SqlParameterName.SessionItemLong + @" varbinary
+                    " + SqlParameterName.SessionItemLong + @" varbinary(max)
             ) AS
                 DECLARE @now AS datetime
                 DECLARE @nowLocal AS datetime
@@ -324,7 +324,7 @@ namespace Microsoft.AspNet.SessionState
                     " + SqlParameterName.SessionId + @" nvarchar(" + SqlSessionStateRepositoryUtil.IdLength + @"),
                     " + SqlParameterName.LockCookie + @" int,
                     " + SqlParameterName.Timeout + @" int,
-                    " + SqlParameterName.SessionItemLong + @" varbinary
+                    " + SqlParameterName.SessionItemLong + @" varbinary(max)
             ) AS
                 UPDATE {0} WITH (ROWLOCK)
                 SET Expires = DATEADD(n, " + SqlParameterName.Timeout + @", GETUTCDATE()), 

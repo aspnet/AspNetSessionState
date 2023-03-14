@@ -133,7 +133,7 @@ namespace Microsoft.AspNet.SessionState.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The table &apos;{0}&apos; is compatible with current repositories. Use the &apos;{1}&apos; repositoryType instead with the &apos;sessionTableName&apos; attribute if applicable..
+        ///   Looks up a localized string similar to The table &apos;{0}&apos; is compatible with a more recent repository type. Use the &apos;{1}&apos; repository type instead..
         /// </summary>
         internal static string SessionTable_current {
             get {

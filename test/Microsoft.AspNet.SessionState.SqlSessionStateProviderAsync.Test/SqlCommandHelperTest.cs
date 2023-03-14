@@ -161,28 +161,6 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
         }
 
         [Fact]
-        public void SqlCommand_AddSessionItemShortParameter()
-        {
-            var helper = new SqlCommandHelper(SqlCommandTimeout);
-            var cmd = helper.CreateSqlCommand(SqlStatement);
-
-            cmd.Parameters.AddSessionItemShortParameter(BufferLength, Buffer);
-            VerifyBasicsOfSqlCommand(cmd);
-            VerifySessionItemShortParameter(cmd, BufferLength, Buffer);
-        }
-
-        [Fact]
-        public void SqlCommand_AddSessionItemShortOutputParameter()
-        {
-            var helper = new SqlCommandHelper(SqlCommandTimeout);
-            var cmd = helper.CreateSqlCommand(SqlStatement);
-
-            cmd.Parameters.AddSessionItemShortParameter();
-            VerifyBasicsOfSqlCommand(cmd);
-            VerifySessionItemShortParameter(cmd);
-        }
-
-        [Fact]
         public void SqlCommand_AddItemShortParameter()
         {
             var helper = new SqlCommandHelper(SqlCommandTimeout);
@@ -297,24 +275,6 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
             Assert.Equal(sqlType, param.SqlDbType);
             Assert.Equal(length, param.Size);
             Assert.Equal(buf, param.Value);
-        }
-
-        private void VerifySessionItemShortParameter(SqlCommand cmd, int length = 0, byte[] buf = null)
-        {
-            var param = cmd.Parameters[SqlParameterName.SessionItemShort];
-            Assert.NotNull(param);
-            Assert.Equal(SqlDbType.VarBinary, param.SqlDbType);
-
-            if (buf == null)
-            {
-                Assert.Equal(ParameterDirection.Output, param.Direction);
-                Assert.Equal(SqlSessionStateRepositoryUtil.ITEM_SHORT_LENGTH, param.Size);
-            }
-            else
-            {
-                Assert.Equal(length, param.Size);
-                Assert.Equal(buf, param.Value);
-            }
         }
 
         private void VerifyItemShortParameter(SqlCommand cmd, int length = 0, byte[] buf = null)
