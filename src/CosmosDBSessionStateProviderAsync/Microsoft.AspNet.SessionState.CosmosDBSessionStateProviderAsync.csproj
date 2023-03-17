@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="CosmosDBSessionStateProviderAsync.cs" />
     <Compile Include="SessionStateActionsConverter.cs" />
+    <Compile Include="SystemTextJsonSerializer.cs" />
     <Compile Include="TimeSpanConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources\SR.Designer.cs">
