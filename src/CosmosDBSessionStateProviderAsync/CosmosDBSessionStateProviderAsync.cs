@@ -13,6 +13,8 @@ namespace Microsoft.AspNet.SessionState
     using System.Globalization;
     using System.IO;
     using System.IO.Compression;
+    using System.Text.Json.Serialization;
+    using System.Text.Json;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Web;
@@ -859,6 +861,7 @@ namespace Microsoft.AspNet.SessionState
 
             var clientOptions = new CosmosClientOptions
             {
+                Serializer = new SystemTextJsonSerializer(null),
                 ConnectionMode = conMode,
                 RequestTimeout = new TimeSpan(0, 0, requestTimeout),
                 GatewayModeMaxConnectionLimit = maxConnectionLimit,
