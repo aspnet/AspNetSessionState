@@ -8,8 +8,11 @@
            type="Microsoft.AspNet.SessionState.SessionStateModuleAsync, Microsoft.AspNet.SessionState.SessionStateModule, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
            xdt:Transform="Remove" xdt:Locator="Match(type)" />
     </modules>
+  </system.webServer>
 
+  <system.webServer>
     <modules xdt:Transform="RemoveAll" xdt:Locator="Condition(count(*)=0)" />
   </system.webServer>
+
   <system.webServer xdt:Transform="RemoveAll" xdt:Locator="Condition(count(*)=0)" />
 </configuration>
