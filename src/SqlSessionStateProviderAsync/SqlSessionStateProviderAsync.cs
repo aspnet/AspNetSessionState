@@ -29,6 +29,7 @@ namespace Microsoft.AspNet.SessionState
         private const string RETRY_INTERVAL_CONFIGURATION_NAME = "retryInterval";
         private const string CONNECTIONSTRING_NAME_CONFIGURATION_NAME = "connectionStringName";
         private const string SESSION_TABLE_CONFIGURATION_NAME = "sessionTableName";
+        private const string APP_ID_CONFIGURATION_NAME = "appId";
         private const string SESSIONSTATE_SECTION_PATH = "system.web/sessionState";
         private const double SessionExpiresFrequencyCheckIntervalTicks = 30 * TimeSpan.TicksPerSecond;
         private static long s_lastSessionPurgeTicks;
@@ -41,7 +42,7 @@ namespace Microsoft.AspNet.SessionState
         private static RepositoryType s_repositoryType;
 
         private int _rqOrigStreamLen;
-                
+
         /// <summary>
         /// Initialize the provider through the configuration
         /// </summary>
@@ -65,7 +66,7 @@ namespace Microsoft.AspNet.SessionState
         }
 
         // for unit tests
-        internal void Initialize(string name, NameValueCollection config, SessionStateSection ssc, ConnectionStringSettings connectionString, 
+        internal void Initialize(string name, NameValueCollection config, SessionStateSection ssc, ConnectionStringSettings connectionString,
                                     bool shouldCreateTable = false)
         {
             base.Initialize(name, config);
@@ -105,25 +106,50 @@ namespace Microsoft.AspNet.SessionState
                         // Initialize the repository
                         if (s_repositoryType == RepositoryType.InMemory || s_repositoryType == RepositoryType.InMemoryDurable)
                         {
-                            s_sqlSessionStateRepository = new SqlInMemoryTableSessionStateRepository(connectionString.ConnectionString, tableName,
-                                (int)ssc.SqlCommandTimeout.TotalSeconds, GetRetryInterval(config), GetMaxRetryNum(config), (s_repositoryType == RepositoryType.InMemoryDurable));
+                            s_sqlSessionStateRepository = new SqlInMemoryTableSessionStateRepository(
+                                connectionString.ConnectionString,
+                                tableName,
+                                (int)ssc.SqlCommandTimeout.TotalSeconds,
+                                GetRetryInterval(config),
+                                GetMaxRetryNum(config),
+                                (s_repositoryType == RepositoryType.InMemoryDurable)
+                            );
                         }
                         else if (s_repositoryType == RepositoryType.FrameworkCompat)
                         {
-                            s_sqlSessionStateRepository = new SqlFxCompatSessionStateRepository(connectionString.ConnectionString, tableName,
-                                (int)ssc.SqlCommandTimeout.TotalSeconds, GetRetryInterval(config), GetMaxRetryNum(config));
+                            s_sqlSessionStateRepository = new SqlFxCompatSessionStateRepository(
+                                connectionString.ConnectionString,
+                                tableName,
+                                (int)ssc.SqlCommandTimeout.TotalSeconds,
+                                GetRetryInterval(config),
+                                GetMaxRetryNum(config)
+                            );
                         }
                         else
                         {
-                            s_sqlSessionStateRepository = new SqlSessionStateRepository(connectionString.ConnectionString, tableName,
-                                (int)ssc.SqlCommandTimeout.TotalSeconds, GetRetryInterval(config), GetMaxRetryNum(config));
+                            s_sqlSessionStateRepository = new SqlSessionStateRepository(
+                                connectionString.ConnectionString,
+                                tableName,
+                                (int)ssc.SqlCommandTimeout.TotalSeconds,
+                                GetRetryInterval(config),
+                                GetMaxRetryNum(config)
+                            );
                         }
                         if (shouldCreateTable)
                         {
                             s_sqlSessionStateRepository.CreateSessionStateTable();
                         }
 
-                        var appId = AppId ?? HttpRuntime.AppDomainAppId;
+                        //============================================================================ robs ==
+                        // Use AppId from config if specified, otherwise use AppDomainAppId
+                        //====================================================================== 2023-07-21 ==
+                        string configAppId = config[APP_ID_CONFIGURATION_NAME];
+                        if (string.IsNullOrEmpty(configAppId))
+                        {
+                            configAppId = HttpRuntime.AppDomainAppId;
+                        }
+
+                        string appId = AppId ?? configAppId;
                         Debug.Assert(appId != null);
                         s_appSuffix = appId.GetHashCode().ToString("X8", CultureInfo.InvariantCulture);
 
@@ -188,7 +214,7 @@ namespace Microsoft.AspNet.SessionState
         {
             int retryInterval;
             var val = config[RETRY_INTERVAL_CONFIGURATION_NAME];
-            if(val != null && int.TryParse(val, out retryInterval))
+            if (val != null && int.TryParse(val, out retryInterval))
             {
                 return retryInterval;
             }
@@ -214,9 +240,9 @@ namespace Microsoft.AspNet.SessionState
 
         /// <inheritdoc />
         public override async Task CreateUninitializedItemAsync(
-            HttpContextBase context, 
-            string id, 
-            int timeout, 
+            HttpContextBase context,
+            string id,
+            int timeout,
             CancellationToken cancellationToken)
         {
             if (id == null)
@@ -259,8 +285,8 @@ namespace Microsoft.AspNet.SessionState
 
         /// <inheritdoc />
         public override Task<GetItemResult> GetItemExclusiveAsync(
-            HttpContextBase context, 
-            string id, 
+            HttpContextBase context,
+            string id,
             CancellationToken cancellationToken)
         {
             return DoGet(context, id, true, cancellationToken);
@@ -274,9 +300,9 @@ namespace Microsoft.AspNet.SessionState
 
         /// <inheritdoc />
         public override async Task ReleaseItemExclusiveAsync(
-            HttpContextBase context, 
-            string id, 
-            object lockId, 
+            HttpContextBase context,
+            string id,
+            object lockId,
             CancellationToken cancellationToken)
         {
             if (id == null)
@@ -295,10 +321,10 @@ namespace Microsoft.AspNet.SessionState
 
         /// <inheritdoc />
         public override async Task RemoveItemAsync(
-            HttpContextBase context, 
-            string id, 
-            object lockId, 
-            SessionStateStoreData item, 
+            HttpContextBase context,
+            string id,
+            object lockId,
+            SessionStateStoreData item,
             CancellationToken cancellationToken)
         {
             if (id == null)
@@ -317,8 +343,8 @@ namespace Microsoft.AspNet.SessionState
 
         /// <inheritdoc />
         public override async Task ResetItemTimeoutAsync(
-            HttpContextBase context, 
-            string id, 
+            HttpContextBase context,
+            string id,
             CancellationToken cancellationToken)
         {
             if (id == null)
@@ -337,11 +363,11 @@ namespace Microsoft.AspNet.SessionState
 
         /// <inheritdoc />
         public override async Task SetAndReleaseItemExclusiveAsync(
-            HttpContextBase context, 
-            string id, 
-            SessionStateStoreData item, 
-            object lockId, 
-            bool newItem, 
+            HttpContextBase context,
+            string id,
+            SessionStateStoreData item,
+            object lockId,
+            bool newItem,
             CancellationToken cancellationToken)
         {
             byte[] buf;
@@ -368,7 +394,7 @@ namespace Microsoft.AspNet.SessionState
             }
             catch
             {
-                if(!newItem)
+                if (!newItem)
                 {
                     await ReleaseItemExclusiveAsync(context, id, lockId, cancellationToken);
                 }
@@ -393,15 +419,15 @@ namespace Microsoft.AspNet.SessionState
                 throw new ArgumentException(SR.Session_id_too_long);
             }
             id = AppendAppIdHash(id);
-            
+
             SessionStateStoreData data = null;
             var sessionItem = await s_sqlSessionStateRepository.GetSessionStateItemAsync(id, exclusive);
 
-            if(sessionItem == null)
+            if (sessionItem == null)
             {
                 return null;
             }
-            if(sessionItem.Item == null)
+            if (sessionItem.Item == null)
             {
                 return new GetItemResult(null, sessionItem.Locked, sessionItem.LockAge, sessionItem.LockId, sessionItem.Actions);
             }
@@ -423,14 +449,14 @@ namespace Microsoft.AspNet.SessionState
                 return id + s_appSuffix;
             }
             return id;
-        }        
+        }
 
         // Internal code copied from SessionStateUtility
         internal static void SerializeStoreData(
-            SessionStateStoreData item, 
-            int initialStreamSize, 
-            out byte[] buf, 
-            out int length, 
+            SessionStateStoreData item,
+            int initialStreamSize,
+            out byte[] buf,
+            out int length,
             bool compressionEnabled)
         {
             using (MemoryStream s = new MemoryStream(initialStreamSize))
@@ -518,7 +544,7 @@ namespace Microsoft.AspNet.SessionState
             try
             {
                 BinaryReader reader = new BinaryReader(stream);
-                
+
                 timeout = reader.ReadInt32();
                 hasItems = reader.ReadBoolean();
                 hasStaticObjects = reader.ReadBoolean();
@@ -527,7 +553,8 @@ namespace Microsoft.AspNet.SessionState
                 {
                     sessionItems = SessionStateItemCollection.Deserialize(reader);
                 }
-                else {
+                else
+                {
                     sessionItems = new SessionStateItemCollection();
                 }
 
@@ -535,7 +562,8 @@ namespace Microsoft.AspNet.SessionState
                 {
                     staticObjects = HttpStaticObjectsCollection.Deserialize(reader);
                 }
-                else {
+                else
+                {
                     staticObjects = GetSessionStaticObjects(context.ApplicationInstance.Context);
                 }
 
@@ -600,6 +628,6 @@ namespace Microsoft.AspNet.SessionState
                     String.Format(CultureInfo.CurrentCulture, SR.Connection_string_not_found, connectionstringName));
             }
             return conn;
-        }        
+        }
     }
 }
