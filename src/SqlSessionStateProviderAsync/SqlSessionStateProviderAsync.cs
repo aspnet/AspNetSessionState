@@ -151,7 +151,7 @@ namespace Microsoft.AspNet.SessionState
 
                         string appId = AppId ?? configAppId;
                         Debug.Assert(appId != null);
-                        s_appSuffix = appId.GetHashCode().ToString("X8", CultureInfo.InvariantCulture);
+                        s_appSuffix = appId.GetDeterministicHashCode().ToString("X8", CultureInfo.InvariantCulture);
 
                         s_oneTimeInited = true;
                     }
