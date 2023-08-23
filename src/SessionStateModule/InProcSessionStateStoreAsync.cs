@@ -437,7 +437,7 @@ namespace Microsoft.AspNet.SessionState
         {
             if (sessionItems == null)
             {
-                sessionItems = new SessionStateItemCollection();
+                sessionItems = new ThreadSafeSessionStateItemCollection();
             }
 
             if (staticObjects == null && context != null)
