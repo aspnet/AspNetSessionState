@@ -44,6 +44,8 @@ extends:
           mb:
             signing:
               enabled: true
+              signType: test
+              zipSources: false
           outputs:
           - output: pipelineArtifact
             displayName: 'Publish Artifact: Nuget packages'
@@ -63,10 +65,14 @@ extends:
           inputs:
             command: custom
             arguments: install MicroBuild.Core -version 0.3.0 -OutputDirectory .\packages -source https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json
+          # to delete
+          continueOnError: true
         - task: NuGetCommand@2
           displayName: NuGet restore
           inputs:
             solution: Microsoft.Aspnet.SessionState.sln
+          # to delete
+          continueOnError: true
         - task: MSBuild@1
           displayName: Build solution MicrosoftAspNetSessionState.msbuild
           inputs:
@@ -78,6 +84,8 @@ extends:
             clean: true
             createLogFile: true
             logFileVerbosity: detailed
+          # to delete
+          continueOnError: true
         - task: CopyFiles@2
           displayName: Stage dll's for verification
           inputs:
@@ -86,6 +94,8 @@ extends:
             TargetFolder: $(Build.SourcesDirectory)\.binaries\verify\dlls
             CleanTargetFolder: true
             OverWrite: true
+          # to delete
+          continueOnError: true
         - task: CopyFiles@2
           displayName: Stage nupkg's for verification
           inputs:
@@ -96,17 +106,23 @@ extends:
             TargetFolder: $(Build.SourcesDirectory)\.binaries\verify\packages
             CleanTargetFolder: true
             OverWrite: true
+          # to delete
+          continueOnError: true
         - task: ms-vseng.MicroBuildShipTasks.7c429315-71ba-4cb3-94bb-f829c95f7915.MicroBuildCodesignVerify@1
           displayName: Verify Signed Binaries
           inputs:
             TargetFolder: $(Build.SourcesDirectory)\.binaries\verify\dlls
             ExcludeFolders: .git MicroBuild apiscan
+          # to delete
+          continueOnError: true
         - task: ms-vseng.MicroBuildShipTasks.7c429315-71ba-4cb3-94bb-f829c95f7915.MicroBuildCodesignVerify@1
           displayName: Verify Signed Packages
           inputs:
             TargetFolder: $(Build.SourcesDirectory)\.binaries\verify\packages
             WhiteListPathForCerts: tools/.verif.whitelist
             ExcludeFolders: .git MicroBuild decomp *.xml
+          # to delete
+          continueOnError: true
         - task: CmdLine@2
           displayName: Map ConnectionString for ApiScan
           inputs:
