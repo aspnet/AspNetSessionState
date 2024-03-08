@@ -39,7 +39,7 @@ extends:
         displayName: Phase 1
         cancelTimeoutInMinutes: 1
         pool:
-          name: VSEngSS-MicroBuild2022-1ES
+          name: VSEngSS-MicroBuild2019-1ES
         templateContext:
           mb:
             signing:
