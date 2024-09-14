@@ -386,6 +386,27 @@ namespace Microsoft.AspNet.SessionState
             return false;
         }
 
+        /// <summary>
+        /// Retrieve the connection string based on the connectionstring name
+        /// </summary>
+        /// <param name="connectionstringName">string</param>
+        /// <returns></returns>
+        protected virtual ConnectionStringSettings GetConnectionString(string connectionstringName)
+        {
+            if (string.IsNullOrEmpty(connectionstringName))
+            {
+                throw new ProviderException(SR.Connection_name_not_specified);
+            }
+            ConnectionStringSettings conn = ConfigurationManager.ConnectionStrings[connectionstringName];
+
+            if (conn == null)
+            {
+                throw new ProviderException(
+                    String.Format(CultureInfo.CurrentCulture, SR.Connection_string_not_found, connectionstringName));
+            }
+            return conn;
+        }
+
         private async Task<GetItemResult> DoGet(HttpContextBase context, string id, bool exclusive, CancellationToken cancellationToken)
         {
             if (id.Length > SessionIDManager.SessionIDMaxLength)
@@ -585,21 +606,6 @@ namespace Microsoft.AspNet.SessionState
             {
                 Interlocked.CompareExchange(ref s_inPurge, 0, 1);
             }
-        }
-
-        private static ConnectionStringSettings GetConnectionString(string connectionstringName)
-        {
-            if (string.IsNullOrEmpty(connectionstringName))
-            {
-                throw new ProviderException(SR.Connection_name_not_specified);
-            }
-            ConnectionStringSettings conn = ConfigurationManager.ConnectionStrings[connectionstringName];
-            if (conn == null)
-            {
-                throw new ProviderException(
-                    String.Format(CultureInfo.CurrentCulture, SR.Connection_string_not_found, connectionstringName));
-            }
-            return conn;
-        }        
+        }       
     }
 }
