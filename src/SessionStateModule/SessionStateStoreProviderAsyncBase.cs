@@ -205,7 +205,7 @@ namespace Microsoft.AspNet.SessionState
             // So we have inserted this setting here and it will apply to all providers that this async module can use.
 
             // skipKeepAliveWhenUnused
-            var skipKA = config["skipKeepAliveWhenUnused"];
+            var skipKA = config?["skipKeepAliveWhenUnused"];
             if (skipKA != null && !bool.TryParse(skipKA, out _skipKeepAliveWhenUnused))
             {
                 throw new ConfigurationErrorsException(string.Format(SR.Invalid_provider_option, "skipKeepAliveWhenUnused", name));
