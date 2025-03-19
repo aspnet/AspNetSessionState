@@ -66,6 +66,7 @@
     </Compile>
     <Compile Include="SessionEventSource.cs" />
     <Compile Include="SessionOnEndTarget.cs" />
+    <Compile Include="SessionStateItemCollections.cs" />
     <Compile Include="SessionStateModuleAsync.cs" />
     <Compile Include="SessionStateStoreProviderAsyncBase.cs" />
     <Compile Include="TaskAsyncHelper.cs" />

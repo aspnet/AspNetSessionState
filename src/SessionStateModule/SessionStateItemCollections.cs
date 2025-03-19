@@ -9,7 +9,7 @@ using ISessionStateItemCollection = System.Web.SessionState.ISessionStateItemCol
 namespace Microsoft.AspNet.SessionState
 {
     /// <summary>A collection of objects stored in session state. This class cannot be inherited.</summary>
-    public sealed class ThreadSafeSessionStateItemCollection : NameObjectCollectionBase, ISessionStateItemCollection, ICollection, IEnumerable
+    public sealed class ConcurrentSessionStateItemCollection : NameObjectCollectionBase, ISessionStateItemCollection, ICollection, IEnumerable
     {
         private static Hashtable s_immutableTypes;
 
@@ -110,7 +110,7 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
-        static ThreadSafeSessionStateItemCollection()
+        static ConcurrentSessionStateItemCollection()
         {
             s_immutableTypes = new Hashtable(19);
             Type type = typeof(string);
@@ -154,7 +154,7 @@ namespace Microsoft.AspNet.SessionState
         }
 
         /// <summary>Creates a new, empty <see cref="T:System.Web.SessionState.SessionStateItemCollection" /> object.</summary>
-        public ThreadSafeSessionStateItemCollection() : base(Misc.CaseInsensitiveInvariantKeyComparer)
+        public ConcurrentSessionStateItemCollection() : base(Misc.CaseInsensitiveInvariantKeyComparer)
         {
         }
 
