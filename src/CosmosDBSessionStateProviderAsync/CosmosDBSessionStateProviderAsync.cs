@@ -611,7 +611,7 @@ namespace Microsoft.AspNet.SessionState
                 staticObjects = GetSessionStaticObjects(context.ApplicationInstance.Context);
             }
 
-            return new SessionStateStoreData(new SessionStateItemCollection(), staticObjects, timeout);
+            return new SessionStateStoreData(CreateItemCollection(), staticObjects, timeout);
         }
 
         /// <inheritdoc />
@@ -628,7 +628,7 @@ namespace Microsoft.AspNet.SessionState
 
             string encodedBuf;
 
-            var item = new SessionStateStoreData(new SessionStateItemCollection(),
+            var item = new SessionStateStoreData(CreateItemCollection(),
                         GetSessionStaticObjects(context.ApplicationInstance.Context),
                         timeout);
 
@@ -1038,6 +1038,28 @@ namespace Microsoft.AspNet.SessionState
             return Convert.ToBase64String(bytes.Array, bytes.Offset, bytes.Count);
         }
 
+        private static ISessionStateItemCollection CreateItemCollection()
+        {
+            return SessionStateModuleAsync.AllowConcurrentRequestsPerSession ?
+                new ConcurrentSessionStateItemCollection() as ISessionStateItemCollection :
+                new SessionStateItemCollection() as ISessionStateItemCollection;
+        }
+
+        private static void SerializeItemCollection(ISessionStateItemCollection items, BinaryWriter writer)
+        {
+            if (items is ConcurrentSessionStateItemCollection concurrentItems)
+                concurrentItems.Serialize(writer);
+            else if (items is SessionStateItemCollection defaultItems)
+                defaultItems.Serialize(writer);
+        }
+
+        private static ISessionStateItemCollection DeserializeItemCollection(BinaryReader reader)
+        {
+            return SessionStateModuleAsync.AllowConcurrentRequestsPerSession ?
+                ConcurrentSessionStateItemCollection.Deserialize(reader) as ISessionStateItemCollection :
+                SessionStateItemCollection.Deserialize(reader) as ISessionStateItemCollection;
+        }
+
         private static void Serialize(SessionStateStoreData item, Stream stream)
         {
             bool hasItems = true;
@@ -1060,7 +1082,7 @@ namespace Microsoft.AspNet.SessionState
 
             if (hasItems)
             {
-                ((SessionStateItemCollection)item.Items).Serialize(writer);
+                SerializeItemCollection(item.Items, writer);
             }
 
             if (hasStaticObjects)
@@ -1089,7 +1111,7 @@ namespace Microsoft.AspNet.SessionState
         private static SessionStateStoreData Deserialize(HttpContextBase context, Stream stream)
         {
             int timeout;
-            SessionStateItemCollection sessionItems;
+            ISessionStateItemCollection sessionItems;
             bool hasItems;
             bool hasStaticObjects;
             HttpStaticObjectsCollection staticObjects;
@@ -1106,11 +1128,11 @@ namespace Microsoft.AspNet.SessionState
 
                 if (hasItems)
                 {
-                    sessionItems = SessionStateItemCollection.Deserialize(reader);
+                    sessionItems = DeserializeItemCollection(reader);
                 }
                 else
                 {
-                    sessionItems = new SessionStateItemCollection();
+                    sessionItems = CreateItemCollection();
                 }
 
                 if (hasStaticObjects)

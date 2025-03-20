@@ -437,7 +437,14 @@ namespace Microsoft.AspNet.SessionState
         {
             if (sessionItems == null)
             {
-                sessionItems = new ConcurrentSessionStateItemCollection();
+                if (SessionStateModuleAsync.AllowConcurrentRequestsPerSession)
+                {
+                    sessionItems = new ConcurrentSessionStateItemCollection();
+                }
+                else
+                {
+                    sessionItems = new SessionStateItemCollection();
+                }
             }
 
             if (staticObjects == null && context != null)
