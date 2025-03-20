@@ -11,10 +11,140 @@ using ISessionStateItemCollection = System.Web.SessionState.ISessionStateItemCol
 
 namespace Microsoft.AspNet.SessionState
 {
-    /// <summary>A collection of objects stored in session state. This class cannot be inherited.</summary>
+    /// <summary>
+    /// A threadsafe collection of objects stored in session state. Does not serialize state. This class cannot be inherited.
+    /// </summary>
+    public sealed class ConcurrentNonSerializingSessionStateItemCollection : NameObjectCollectionBase, ISessionStateItemCollection, ICollection, IEnumerable
+    {
+        // It should be noted that the base NameObjectCollectionBase isn't really intrinsically threadsafe.
+        // We protect the basic operations with a lock here, but we don't protect GetEnumerator/Keys
+        // scenarios. It is incumbant upon the caller to ensure that they don't modify the collection while
+        // enumerating it. This is a limitation of the NameObjectCollectionBase class.
+        private object _collectionLock = new object();
+
+        /// <summary>Gets or sets a value indicating whether the collection has been marked as changed.</summary>
+        /// <returns>true if the <see cref="T:System.Web.SessionState.SessionStateItemCollection" /> contents have been changed; otherwise, false.</returns>
+        public bool Dirty { get; set; }
+
+        /// <summary>Gets or sets a value in the collection by name.</summary>
+        /// <returns>The value in the collection with the specified name. If the specified key is not found, attempting to get it returns null, and attempting to set it creates a new element using the specified key.</returns>
+        /// <param name="name">The key name of the value in the collection.</param>
+        public object this[string name]
+        {
+            get
+            {
+                lock (this._collectionLock)
+                {
+                    object obj = base.BaseGet(name);
+                    if (obj != null && !IsImmutable(obj))
+                    {
+                        this.Dirty = true;
+                    }
+                    return obj;
+                }
+            }
+            set
+            {
+                lock (this._collectionLock)
+                {
+                    base.BaseSet(name, value);
+                    this.Dirty = true;
+                }
+            }
+        }
+
+        /// <summary>Gets or sets a value in the collection by numerical index.</summary>
+        /// <returns>The value in the collection stored at the specified index. If the specified key is not found, attempting to get it returns null, and attempting to set it creates a new element using the specified key.</returns>
+        /// <param name="index">The numerical index of the value in the collection.</param>
+        public object this[int index]
+        {
+            get
+            {
+                lock (this._collectionLock)
+                {
+                    object obj = base.BaseGet(index);
+                    if (obj != null && !IsImmutable(obj))
+                    {
+                        this.Dirty = true;
+                    }
+                    return obj;
+                }
+            }
+            set
+            {
+                lock (this._collectionLock)
+                {
+                    base.BaseSet(index, value);
+                    this.Dirty = true;
+                }
+            }
+        }
+
+        /// <summary>Gets a collection of the variable names for all values stored in the collection.</summary>
+        /// <returns>The <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> collection that contains all the collection keys. </returns>
+        public override NameObjectCollectionBase.KeysCollection Keys
+        {
+            get
+            {
+                return base.Keys;
+            }
+        }
+
+        /// <summary>Creates a new, empty <see cref="T:System.Web.SessionState.SessionStateItemCollection" /> object.</summary>
+        public ConcurrentNonSerializingSessionStateItemCollection() : base(Misc.CaseInsensitiveInvariantKeyComparer)
+        {
+        }
+
+        /// <summary>Removes all values and keys from the session-state collection.</summary>
+        public void Clear()
+        {
+            lock (this._collectionLock)
+            {
+                base.BaseClear();
+                this.Dirty = true;
+            }
+        }
+
+        /// <summary>Returns an enumerator that can be used to read all the key names in the collection.</summary>
+        /// <returns>An <see cref="T:System.Collections.IEnumerator" /> that can iterate through the variable names in the session-state collection.</returns>
+        public override IEnumerator GetEnumerator()
+        {
+            return base.GetEnumerator();
+        }
+
+        internal static bool IsImmutable(object o)
+        {
+            return Misc.ImmutableTypes[o.GetType()] != null;
+        }
+
+        /// <summary>Deletes an item from the collection.</summary>
+        /// <param name="name">The name of the item to delete from the collection. </param>
+        public void Remove(string name)
+        {
+            lock (this._collectionLock)
+            {
+                base.BaseRemove(name);
+                this.Dirty = true;
+            }
+        }
+
+        /// <summary>Deletes an item at a specified index from the collection.</summary>
+        /// <param name="index">The index of the item to remove from the collection. </param>
+        /// <exception cref="T:System.ArgumentOutOfRangeException">
+        ///   <paramref name="index" /> is less than zero.- or -<paramref name="index" /> is equal to or greater than <see cref="P:System.Collections.ICollection.Count" />.</exception>
+        public void RemoveAt(int index)
+        {
+            lock (this._collectionLock)
+            {
+                base.BaseRemoveAt(index);
+                this.Dirty = true;
+            }
+        }
+    }
+
+    /// <summary>A thread-safe collection of objects stored in session state. This class cannot be inherited.</summary>
     public sealed class ConcurrentSessionStateItemCollection : NameObjectCollectionBase, ISessionStateItemCollection, ICollection, IEnumerable
     {
-        private static Hashtable s_immutableTypes;
         private const int NO_NULL_KEY = -1;
         private const int SIZE_OF_INT32 = 4;
 
@@ -110,49 +240,6 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
-        static ConcurrentSessionStateItemCollection()
-        {
-            s_immutableTypes = new Hashtable(19);
-            Type type = typeof(string);
-            s_immutableTypes.Add(type, type);
-            type = typeof(int);
-            s_immutableTypes.Add(type, type);
-            type = typeof(bool);
-            s_immutableTypes.Add(type, type);
-            type = typeof(DateTime);
-            s_immutableTypes.Add(type, type);
-            type = typeof(decimal);
-            s_immutableTypes.Add(type, type);
-            type = typeof(byte);
-            s_immutableTypes.Add(type, type);
-            type = typeof(char);
-            s_immutableTypes.Add(type, type);
-            type = typeof(float);
-            s_immutableTypes.Add(type, type);
-            type = typeof(double);
-            s_immutableTypes.Add(type, type);
-            type = typeof(sbyte);
-            s_immutableTypes.Add(type, type);
-            type = typeof(short);
-            s_immutableTypes.Add(type, type);
-            type = typeof(long);
-            s_immutableTypes.Add(type, type);
-            type = typeof(ushort);
-            s_immutableTypes.Add(type, type);
-            type = typeof(uint);
-            s_immutableTypes.Add(type, type);
-            type = typeof(ulong);
-            s_immutableTypes.Add(type, type);
-            type = typeof(TimeSpan);
-            s_immutableTypes.Add(type, type);
-            type = typeof(Guid);
-            s_immutableTypes.Add(type, type);
-            type = typeof(IntPtr);
-            s_immutableTypes.Add(type, type);
-            type = typeof(UIntPtr);
-            s_immutableTypes.Add(type, type);
-        }
-
         /// <summary>Creates a new, empty <see cref="T:System.Web.SessionState.SessionStateItemCollection" /> object.</summary>
         public ConcurrentSessionStateItemCollection() : base(Misc.CaseInsensitiveInvariantKeyComparer)
         {
@@ -185,7 +272,7 @@ namespace Microsoft.AspNet.SessionState
 
         internal static bool IsImmutable(object o)
         {
-            return s_immutableTypes[o.GetType()] != null;
+            return Misc.ImmutableTypes[o.GetType()] != null;
         }
 
         /// <summary>Deletes an item from the collection.</summary>
@@ -618,26 +705,70 @@ namespace Microsoft.AspNet.SessionState
                 get { return _offset < 0; }
             }
         }
+    }
 
-        private sealed class Misc
+    internal sealed class Misc
+    {
+        private static Hashtable s_immutableTypes;
+        internal static Hashtable ImmutableTypes => s_immutableTypes;
+
+        private static StringComparer s_caseInsensitiveInvariantKeyComparer;
+
+        internal static StringComparer CaseInsensitiveInvariantKeyComparer
         {
-            private static StringComparer s_caseInsensitiveInvariantKeyComparer;
-
-            internal static StringComparer CaseInsensitiveInvariantKeyComparer
+            get
             {
-                get
+                if (Misc.s_caseInsensitiveInvariantKeyComparer == null)
                 {
-                    if (Misc.s_caseInsensitiveInvariantKeyComparer == null)
-                    {
-                        Misc.s_caseInsensitiveInvariantKeyComparer = StringComparer.Create(CultureInfo.InvariantCulture, true);
-                    }
-                    return Misc.s_caseInsensitiveInvariantKeyComparer;
+                    Misc.s_caseInsensitiveInvariantKeyComparer = StringComparer.Create(CultureInfo.InvariantCulture, true);
                 }
-            }
-
-            public Misc()
-            {
+                return Misc.s_caseInsensitiveInvariantKeyComparer;
             }
         }
+
+        static Misc()
+        {
+            s_immutableTypes = new Hashtable(19);
+            Type type = typeof(string);
+            s_immutableTypes.Add(type, type);
+            type = typeof(int);
+            s_immutableTypes.Add(type, type);
+            type = typeof(bool);
+            s_immutableTypes.Add(type, type);
+            type = typeof(DateTime);
+            s_immutableTypes.Add(type, type);
+            type = typeof(decimal);
+            s_immutableTypes.Add(type, type);
+            type = typeof(byte);
+            s_immutableTypes.Add(type, type);
+            type = typeof(char);
+            s_immutableTypes.Add(type, type);
+            type = typeof(float);
+            s_immutableTypes.Add(type, type);
+            type = typeof(double);
+            s_immutableTypes.Add(type, type);
+            type = typeof(sbyte);
+            s_immutableTypes.Add(type, type);
+            type = typeof(short);
+            s_immutableTypes.Add(type, type);
+            type = typeof(long);
+            s_immutableTypes.Add(type, type);
+            type = typeof(ushort);
+            s_immutableTypes.Add(type, type);
+            type = typeof(uint);
+            s_immutableTypes.Add(type, type);
+            type = typeof(ulong);
+            s_immutableTypes.Add(type, type);
+            type = typeof(TimeSpan);
+            s_immutableTypes.Add(type, type);
+            type = typeof(Guid);
+            s_immutableTypes.Add(type, type);
+            type = typeof(IntPtr);
+            s_immutableTypes.Add(type, type);
+            type = typeof(UIntPtr);
+            s_immutableTypes.Add(type, type);
+        }
+
+        public Misc() { }
     }
 }

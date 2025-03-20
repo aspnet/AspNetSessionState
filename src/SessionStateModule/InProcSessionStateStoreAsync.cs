@@ -439,7 +439,7 @@ namespace Microsoft.AspNet.SessionState
             {
                 if (SessionStateModuleAsync.AllowConcurrentRequestsPerSession)
                 {
-                    sessionItems = new ConcurrentSessionStateItemCollection();
+                    sessionItems = new ConcurrentNonSerializingSessionStateItemCollection();
                 }
                 else
                 {
