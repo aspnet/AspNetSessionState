@@ -69,6 +69,7 @@
     <Compile Include="SessionStateItemCollections.cs" />
     <Compile Include="SessionStateModuleAsync.cs" />
     <Compile Include="SessionStateStoreProviderAsyncBase.cs" />
+    <Compile Include="StateSerializationUtil.cs" />
     <Compile Include="TaskAsyncHelper.cs" />
   </ItemGroup>
   <ItemGroup>

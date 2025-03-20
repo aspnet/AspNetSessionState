@@ -1,8 +1,11 @@
-﻿using System;
+﻿using Microsoft.AspNet.SessionState.Resources;
+using System;
 using System.Collections;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Web;
 using HttpRuntime = System.Web.HttpRuntime;
 using ISessionStateItemCollection = System.Web.SessionState.ISessionStateItemCollection;
 
@@ -12,19 +15,13 @@ namespace Microsoft.AspNet.SessionState
     public sealed class ConcurrentSessionStateItemCollection : NameObjectCollectionBase, ISessionStateItemCollection, ICollection, IEnumerable
     {
         private static Hashtable s_immutableTypes;
-
         private const int NO_NULL_KEY = -1;
-
         private const int SIZE_OF_INT32 = 4;
 
         private bool _dirty;
-
         private KeyedCollection _serializedItems;
-
         private Stream _stream;
-
         private int _iLastOffset;
-
         private object _serializedItemsLock = new object();
 
         /// <summary>Gets or sets a value indicating whether the collection has been marked as changed.</summary>
@@ -50,7 +47,7 @@ namespace Microsoft.AspNet.SessionState
             {
                 lock (this._serializedItemsLock)
                 {
-                    //this.DeserializeItem(name, true);
+                    this.DeserializeItem(name, true);
                     object obj = base.BaseGet(name);
                     if (obj != null && !IsImmutable(obj))
                     {
@@ -63,7 +60,7 @@ namespace Microsoft.AspNet.SessionState
             {
                 lock (this._serializedItemsLock)
                 {
-                    //this.MarkItemDeserialized(name);
+                    this.MarkItemDeserialized(name);
                     base.BaseSet(name, value);
                     this._dirty = true;
                 }
@@ -79,7 +76,7 @@ namespace Microsoft.AspNet.SessionState
             {
                 lock (this._serializedItemsLock)
                 {
-                    //this.DeserializeItem(index);
+                    this.DeserializeItem(index);
                     object obj = base.BaseGet(index);
                     if (obj != null && !IsImmutable(obj))
                     {
@@ -92,7 +89,7 @@ namespace Microsoft.AspNet.SessionState
             {
                 lock (this._serializedItemsLock)
                 {
-                    //this.MarkItemDeserialized(index);
+                    this.MarkItemDeserialized(index);
                     base.BaseSet(index, value);
                     this._dirty = true;
                 }
@@ -105,7 +102,10 @@ namespace Microsoft.AspNet.SessionState
         {
             get
             {
-                //this.DeserializeAllItems();
+                // Unfortunately, we have to deserialize all items first, because Keys.GetEnumerator might
+                // be called and we have the same problem as in GetEnumerator() below. Also, DeserializeAllItems
+                // take the lock to ensure consistency - which it does within.
+                this.DeserializeAllItems();
                 return base.Keys;
             }
         }
@@ -176,7 +176,10 @@ namespace Microsoft.AspNet.SessionState
         /// <returns>An <see cref="T:System.Collections.IEnumerator" /> that can iterate through the variable names in the session-state collection.</returns>
         public override IEnumerator GetEnumerator()
         {
-            //this.DeserializeAllItems();
+            // Have to deserialize all items; otherwise the enumerator won't work because we'll keep
+            // on changing the collection during individual item deserialization. Also, DeserializeAllItems
+            // take the lock to ensure consistency - which it does within.
+            this.DeserializeAllItems();
             return base.GetEnumerator();
         }
 
@@ -214,6 +217,123 @@ namespace Microsoft.AspNet.SessionState
                 }
                 base.BaseRemoveAt(index);
                 this._dirty = true;
+            }
+        }
+
+        private void DeserializeAllItems()
+        {
+            if (_serializedItems == null)
+            {
+                return;
+            }
+
+            lock (_serializedItemsLock)
+            {
+                for (int i = 0; i < _serializedItems.Count; i++)
+                {
+                    DeserializeItem(_serializedItems.GetKey(i), false);
+                }
+            }
+        }
+
+        private void DeserializeItem(int index)
+        {
+            // No-op if SessionStateItemCollection is not deserialized from a persistent storage.
+            if (_serializedItems == null)
+            {
+                return;
+            }
+
+            lock (_serializedItemsLock)
+            {
+                // No-op if the item isn't serialized.
+                if (index >= _serializedItems.Count)
+                {
+                    return;
+                }
+
+                DeserializeItem(_serializedItems.GetKey(index), false);
+            }
+        }
+
+        private void DeserializeItem(String name, bool check)
+        {
+            object val;
+
+            lock (_serializedItemsLock)
+            {
+                if (check)
+                {
+                    // No-op if SessionStateItemCollection is not deserialized from a persistent storage,
+                    if (_serializedItems == null)
+                    {
+                        return;
+                    }
+
+                    // User is asking for an item we don't have.
+                    if (!_serializedItems.ContainsKey(name))
+                    {
+                        return;
+                    }
+                }
+
+                Debug.Assert(_serializedItems != null);
+                Debug.Assert(_stream != null);
+
+                SerializedItemPosition position = (SerializedItemPosition)_serializedItems[name];
+                if (position.IsDeserialized)
+                {
+                    // It has been deserialized already.
+                    return;
+                }
+
+                // Position the stream to the place where the item is stored.
+                _stream.Seek(position.Offset, SeekOrigin.Begin);
+                val = StateSerializationUtil.ReadValueFromStream(new BinaryReader(_stream));
+
+                BaseSet(name, val);
+
+                // At the end, mark the item as deserialized by making the offset -1
+                position.MarkDeserializedOffsetAndCheck();
+            }
+        }
+
+        private void MarkItemDeserialized(String name)
+        {
+            // No-op if SessionStateItemCollection is not deserialized from a persistent storage,
+            if (_serializedItems == null)
+            {
+                return;
+            }
+
+            lock (_serializedItemsLock)
+            {
+                // If the serialized collection contains this key, mark it deserialized
+                if (_serializedItems.ContainsKey(name))
+                {
+                    // Mark the item as deserialized by making it -1.
+                    ((SerializedItemPosition)_serializedItems[name]).MarkDeserializedOffset();
+                }
+            }
+        }
+
+        private void MarkItemDeserialized(int index)
+        {
+            // No-op if SessionStateItemCollection is not deserialized from a persistent storage,
+            if (_serializedItems == null)
+            {
+                return;
+            }
+
+            lock (_serializedItemsLock)
+            {
+                // No-op if the item isn't serialized.
+                if (index >= _serializedItems.Count)
+                {
+                    return;
+                }
+
+               ((SerializedItemPosition)_serializedItems[index]).MarkDeserializedOffset();
             }
         }
 
@@ -273,7 +393,233 @@ namespace Microsoft.AspNet.SessionState
             }
         }
 
-        internal sealed class Misc
+        /// <summary>
+        /// Serializes the session state item collection to a stream.
+        /// </summary>
+        /// <param name="writer"></param>
+        public void Serialize(BinaryWriter writer)
+        {
+            int count;
+            int i;
+            long iOffsetStart;
+            long iValueStart;
+            string key;
+            object value;
+            long curPos;
+            byte[] buffer = null;
+            Stream baseStream = writer.BaseStream;
+
+            lock (_serializedItemsLock)
+            {
+                count = Count;
+                writer.Write(count);
+
+                if (count > 0)
+                {
+                    if (BaseGet(null) != null)
+                    {
+                        // We have a value with a null key.  Find its index.
+                        for (i = 0; i < count; i++)
+                        {
+                            key = BaseGetKey(i);
+                            if (key == null)
+                            {
+                                writer.Write(i);
+                                break;
+                            }
+                        }
+
+                        Debug.Assert(i != count);
+                    }
+                    else
+                    {
+                        writer.Write(NO_NULL_KEY);
+                    }
+
+                    // Write out all the keys.
+                    for (i = 0; i < count; i++)
+                    {
+                        key = BaseGetKey(i);
+                        if (key != null)
+                        {
+                            writer.Write(key);
+                        }
+                    }
+
+                    // Next, allocate space to store the offset:
+                    // - We won't store the offset of first item because it's always zero.
+                    // - The offset of an item is counted from the beginning of serialized values
+                    // - But we will store the offset of the first byte off the last item because
+                    //   we need that to calculate the size of the last item.
+                    iOffsetStart = baseStream.Position;
+                    baseStream.Seek(SIZE_OF_INT32 * count, SeekOrigin.Current);
+
+                    iValueStart = baseStream.Position;
+
+                    for (i = 0; i < count; i++)
+                    {
+                        // See if that item has not be deserialized yet.
+                        if (_serializedItems != null &&
+                            i < _serializedItems.Count &&
+                            !((SerializedItemPosition)_serializedItems[i]).IsDeserialized)
+                        {
+
+                            SerializedItemPosition position = (SerializedItemPosition)_serializedItems[i];
+
+                            Debug.Assert(_stream != null);
+
+                            // The item is read as serialized data from a store, and it's still
+                            // serialized, meaning no one has referenced it.  Just copy
+                            // the bytes over.
+
+                            // Move the stream to the serialized data and copy it over to writer
+                            _stream.Seek(position.Offset, SeekOrigin.Begin);
+
+                            if (buffer == null || buffer.Length < position.DataLength)
+                            {
+                                buffer = new Byte[position.DataLength];
+                            }
+
+                            _stream.Read(buffer, 0, position.DataLength);
+
+                            baseStream.Write(buffer, 0, position.DataLength);
+                        }
+                        else
+                        {
+                            value = BaseGet(i);
+                            StateSerializationUtil.WriteValueToStream(value, writer);
+                        }
+
+                        curPos = baseStream.Position;
+
+                        // Write the offset
+                        baseStream.Seek(i * SIZE_OF_INT32 + iOffsetStart, SeekOrigin.Begin);
+                        writer.Write((int)(curPos - iValueStart));
+
+                        // Move back to current position
+                        baseStream.Seek(curPos, SeekOrigin.Begin);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Deserializes the session state item collection from a stream.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <returns></returns>
+        /// <exception cref="HttpException"></exception>
+        public static ConcurrentSessionStateItemCollection Deserialize(BinaryReader reader)
+        {
+            ConcurrentSessionStateItemCollection d = new ConcurrentSessionStateItemCollection();
+            int count;
+            int nullKey;
+            String key;
+            int i;
+            byte[] buffer;
+
+            count = reader.ReadInt32();
+
+            if (count > 0)
+            {
+                nullKey = reader.ReadInt32();
+
+                d._serializedItems = new KeyedCollection(count);
+
+                // First, deserialize all the keys
+                for (i = 0; i < count; i++)
+                {
+                    if (i == nullKey)
+                    {
+                        key = null;
+                    }
+                    else
+                    {
+                        key = reader.ReadString();
+                    }
+
+                    // Need to set them with null value first, so that
+                    // the order of them items is correct.
+                    d.BaseSet(key, null);
+                }
+
+                // Next, deserialize all the offsets
+                // First offset will be 0, and the data length will be the first read offset
+                int offset0 = reader.ReadInt32();
+                d._serializedItems[d.BaseGetKey(0)] = new SerializedItemPosition(0, offset0);
+
+                int offset1 = 0;
+                for (i = 1; i < count; i++)
+                {
+                    offset1 = reader.ReadInt32();
+                    d._serializedItems[d.BaseGetKey(i)] = new SerializedItemPosition(offset0, offset1 - offset0);
+                    offset0 = offset1;
+                }
+
+                d._iLastOffset = offset0;
+
+                // _iLastOffset is the first byte past the last item, which equals
+                // the total length of all serialized data
+                buffer = new byte[d._iLastOffset];
+                int bytesRead = reader.BaseStream.Read(buffer, 0, d._iLastOffset);
+                if (bytesRead != d._iLastOffset)
+                {
+                    throw new HttpException(String.Format(CultureInfo.CurrentCulture, SR.Invalid_session_state));
+                }
+                d._stream = new MemoryStream(buffer);
+            }
+
+            d._dirty = false;
+
+            return d;
+        }
+
+        private sealed class SerializedItemPosition
+        {
+            int _offset;
+            int _dataLength;
+
+            internal SerializedItemPosition(int offset, int dataLength)
+            {
+                this._offset = offset;
+                this._dataLength = dataLength;
+            }
+
+            internal int Offset
+            {
+                get { return _offset; }
+            }
+
+            internal int DataLength
+            {
+                get { return _dataLength; }
+            }
+
+            // Mark the item as deserialized by making the offset -1.
+            internal void MarkDeserializedOffset()
+            {
+                _offset = -1;
+            }
+
+            internal void MarkDeserializedOffsetAndCheck()
+            {
+                if (_offset >= 0)
+                {
+                    MarkDeserializedOffset();
+                }
+                else
+                {
+                    Debug.Fail("Offset shouldn't be negative inside MarkDeserializedOffsetAndCheck.");
+                }
+            }
+
+            internal bool IsDeserialized
+            {
+                get { return _offset < 0; }
+            }
+        }
+
+        private sealed class Misc
         {
             private static StringComparer s_caseInsensitiveInvariantKeyComparer;
 
