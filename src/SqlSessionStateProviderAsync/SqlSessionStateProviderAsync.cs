@@ -125,7 +125,7 @@ namespace Microsoft.AspNet.SessionState
 
                         var appId = AppId ?? HttpRuntime.AppDomainAppId;
                         Debug.Assert(appId != null);
-                        s_appSuffix = appId.GetHashCode().ToString("X8", CultureInfo.InvariantCulture);
+                        s_appSuffix = appId.GetDeterministicHashCode().ToString("X8", CultureInfo.InvariantCulture);
 
                         s_oneTimeInited = true;
                     }
