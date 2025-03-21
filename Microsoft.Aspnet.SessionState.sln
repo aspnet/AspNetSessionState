@@ -41,6 +41,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{3626D7CE-E
 		docs\SqlSessionStateProviderAsync.md = docs\SqlSessionStateProviderAsync.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.AspNet.SessionState.SessionStateModuleAsync.Test", "test\Microsoft.AspNet.SessionState.SessionStateModuleAsync.Test\Microsoft.AspNet.SessionState.SessionStateModuleAsync.Test.csproj", "{AD91AAF5-3B57-4C8C-9A39-92FB578AF317}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +73,10 @@ Global
 		{7EC5863F-7FF1-41C7-A384-8FFF81531E7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7EC5863F-7FF1-41C7-A384-8FFF81531E7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7EC5863F-7FF1-41C7-A384-8FFF81531E7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD91AAF5-3B57-4C8C-9A39-92FB578AF317}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD91AAF5-3B57-4C8C-9A39-92FB578AF317}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD91AAF5-3B57-4C8C-9A39-92FB578AF317}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD91AAF5-3B57-4C8C-9A39-92FB578AF317}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -82,6 +88,7 @@ Global
 		{CBB00B6C-8A44-43F0-BE73-0B0E8565F8A2} = {93AD624B-85A6-4EE9-B40E-42914D40C0CF}
 		{2AF89ACA-3545-432D-8D99-C5230E8643A8} = {93AD624B-85A6-4EE9-B40E-42914D40C0CF}
 		{7EC5863F-7FF1-41C7-A384-8FFF81531E7A} = {58E8143E-86D8-4CA3-AAC3-1CF253D91207}
+		{AD91AAF5-3B57-4C8C-9A39-92FB578AF317} = {93AD624B-85A6-4EE9-B40E-42914D40C0CF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4853AD21-0DCE-40D8-A3B9-19081B71C364}
