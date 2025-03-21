@@ -1,15 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory),Microsoft.Aspnet.SessionState.sln))\tools\SqlSessionStateProviderAsync.settings.targets" />
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory),Microsoft.Aspnet.SessionState.sln))\tools\SessionStateModule.settings.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{CBB00B6C-8A44-43F0-BE73-0B0E8565F8A2}</ProjectGuid>
+    <ProjectGuid>{AD91AAF5-3B57-4C8C-9A39-92FB578AF317}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test</RootNamespace>
-    <AssemblyName>Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test</AssemblyName>
+    <RootNamespace>Microsoft.AspNet.SessionState.SessionStateModuleAsync.Test</RootNamespace>
+    <AssemblyName>Microsoft.AspNet.SessionState.SessionStateModuleAsync.Test</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -20,7 +20,8 @@
     <TestProjectType>UnitTest</TestProjectType>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
-    <NuGetPackageImportStamp></NuGetPackageImportStamp>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
     <IncludeAdvancedTests Condition="'$(SkipAdvancedTests)' == ''">;INCLUDE_ADVANCED_TESTS</IncludeAdvancedTests>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -62,18 +63,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SqlCommandHelperTest.cs" />
-    <Compile Include="SqlSessionStateAsyncProviderTest.cs" />
+    <Compile Include="InProcSessionStateStoreAsync.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\SessionStateModule\Microsoft.AspNet.SessionState.SessionStateModule.csproj">
       <Project>{7238f90d-3bce-4f40-a5ba-ea36ad484bd6}</Project>
       <Name>Microsoft.AspNet.SessionState.SessionStateModule</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\SqlSessionStateProviderAsync\Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync.csproj">
-      <Project>{493b0482-572a-4465-bd52-4094351c2647}</Project>
-      <Name>Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
