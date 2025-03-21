@@ -360,8 +360,9 @@ namespace Microsoft.AspNet.SessionState.Tests
             _collection[0] = newValue;
 
             // Assert
-            Assert.Empty(_collection);
+            Assert.Single(_collection);
             Assert.True(_collection.Dirty);
+            Assert.Equal(newValue, _collection[key]);
         }
 
         [Fact]
