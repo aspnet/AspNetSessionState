@@ -61,6 +61,15 @@ namespace Microsoft.AspNet.SessionState.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unable to serialize the session state. For out-of-proc session stores, ASP.NET will serialize the session state objects, and as a result non-serializable objects or MarshalByRef objects are not permitted..
+        /// </summary>
+        internal static string Cant_serialize_session_state {
+            get {
+                return ResourceManager.GetString("Cant_serialize_session_state", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Error occured when reading config secion &apos;{0}&apos;..
         /// </summary>
         internal static string Error_Occured_Reading_Config_Secion {
@@ -84,6 +93,15 @@ namespace Microsoft.AspNet.SessionState.Resources {
         internal static string Invalid_session_custom_provider {
             get {
                 return ResourceManager.GetString("Invalid_session_custom_provider", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The session state information is invalid and might be corrupted..
+        /// </summary>
+        internal static string Invalid_session_state {
+            get {
+                return ResourceManager.GetString("Invalid_session_state", resourceCulture);
             }
         }
         

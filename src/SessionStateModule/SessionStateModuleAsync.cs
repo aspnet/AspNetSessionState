@@ -102,6 +102,12 @@ namespace Microsoft.AspNet.SessionState
                 return s_configMode;
             }
         }
+
+        /// <summary>
+        /// Indicates whether the session state module is configured to optimistically allow concurrent requests
+        /// </summary>
+        public static bool AllowConcurrentRequestsPerSession => AppSettings.AllowConcurrentRequestsPerSession;
+
         /// <summary>
         /// Initialize the module
         /// </summary>

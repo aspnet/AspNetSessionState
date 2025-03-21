@@ -7,6 +7,7 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
     using Microsoft.Data.SqlClient;
     using Moq;
     using System;
+    using System.Collections.Generic;
     using System.Collections.Specialized;
     using System.Configuration;
     using System.IO;
@@ -228,12 +229,18 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
             Assert.Equal(TestTimeout, store.Timeout);
         }
 
-        [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void Serialize_And_Deserialized_SessionStateStoreData_RoundTrip_Should_Work(bool enableCompression)
+        public static IEnumerable<object[]> SerializeSessionData()
         {
-            var sessionCollection = new SessionStateItemCollection();
+            yield return new object[] { true, new SessionStateItemCollection() };
+            yield return new object[] { true, new SessionStateItemCollection() };
+            yield return new object[] { false, new ConcurrentSessionStateItemCollection() };
+            yield return new object[] { false, new ConcurrentSessionStateItemCollection() };
+        }
+
+        [Theory]
+        [MemberData(nameof(SerializeSessionData))]
+        public void Serialize_And_Deserialized_SessionStateStoreData_RoundTrip_Should_Work(bool enableCompression, ISessionStateItemCollection sessionCollection)
+        {
             var now = DateTime.UtcNow;
             sessionCollection["test1"] = "test1";
             sessionCollection["test2"] = now;
