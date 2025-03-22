@@ -605,6 +605,7 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
         //
         // Requires existing database & connection string.
         //   Disabled by default, but you can enable if you've got a DB ready for testing against.
+        //   Remember, the provider only creates tables. You must have a database already provisioned.
         //   When using Azure SQL, 'InMemory' is only supported by the 'Premium' DTU or 'Business Critical' vCore tiers.
         //
         //
@@ -762,7 +763,7 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
                         Assert.NotNull(ex);
                         Assert.IsType<HttpException>(ex);
                         Assert.NotNull(ex.InnerException);
-                        Assert.Equal($"The table '{expectedTableName}' is compatible with current repositories. Use the 'SqlServer' repositoryType instead.", ex.InnerException.Message);
+                        Assert.Equal($"The table '{expectedTableName}' is compatible with a more recent repository type. Use the 'SqlServer' repository type instead.", ex.InnerException.Message);
                     }
                 }
                 finally
