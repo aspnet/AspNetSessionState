@@ -3,12 +3,12 @@
   <PropertyGroup>
     <BuildQuality Condition="'$(BuildQuality)' == ''">rtm</BuildQuality>
     <VersionMajor>2</VersionMajor>
-    <VersionMinor>0</VersionMinor>
+    <VersionMinor>1</VersionMinor>
     <VersionRelease>0</VersionRelease>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet package dependencies">
-    <SessionStateModuleNuGetPackageVersion>2.0.0</SessionStateModuleNuGetPackageVersion>
+    <SessionStateModuleNuGetPackageVersion>2.1.0</SessionStateModuleNuGetPackageVersion>
     <CosmosNuGetPackageVersion>3.46.1</CosmosNuGetPackageVersion>
     <SystemTextJsonPackageVersion>8.0.5</SystemTextJsonPackageVersion>
   </PropertyGroup>

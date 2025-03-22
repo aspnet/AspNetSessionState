@@ -26,9 +26,9 @@
          Most of the interesting ones are already set in each project's individual settings file.
     -->
     <BuildQuality Condition="'$(BuildQuality)' == ''">rtm</BuildQuality>
-    <VersionStartYear Condition="'$(VersionStartYear)' == ''">2023</VersionStartYear>
+    <VersionStartYear Condition="'$(VersionStartYear)' == ''">2025</VersionStartYear>
     <VersionMajor Condition="'$(VersionMajor)' == ''">2</VersionMajor>
-    <VersionMinor Condition="'$(VersionMinor)' == ''">0</VersionMinor>
+    <VersionMinor Condition="'$(VersionMinor)' == ''">1</VersionMinor>
     <VersionRevision Condition="'$(VersionRevision)' == ''">0</VersionRevision>
     <VersionRelease Condition="'$(VersionRelease)' == ''">0</VersionRelease>
     <VersionBuild Condition="'$(VersionBuild)' == '' OR '$(VersionBuild)' == '0'">$([MSBuild]::Add(1, $([MSBuild]::Subtract($([System.DateTime]::Now.Year), $(VersionStartYear)))))$([System.DateTime]::Now.ToString("MMdd"))</VersionBuild>
