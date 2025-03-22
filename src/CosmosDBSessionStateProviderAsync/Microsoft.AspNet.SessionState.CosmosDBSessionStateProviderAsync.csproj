@@ -90,10 +90,28 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Cosmos">
-      <Version>3.23.0</Version>
+      <Version>3.46.1</Version>
+    </PackageReference>
+    <!--
+         We do NOT depend directly on JSON.Net - MS.Azure.Cosmos does.
+         Current versions still have not moved fully to Sys.Text.Json. :/
+         This direct reference forces a currently not-vulnerable JSON.Net,
+           since MS.Azure.Cosmos isn't doing this for us. :/
+         Also NOTE: We do not currently include JSON.Net as a dependency
+           in our own nuspec, since we don't directly depend on it. This
+           is the same confusing approach MS.Azure.Cosmos has taken. It
+           is left up to consumers to take a similar approach as we have
+           here - or to force an updated reference to a newwer MS.Azure.Cosmos
+           when a version of that package is released with no JSON.Net
+           dependency. (They currently have an msbuild error included in
+           their package to check for JSON.Net and make noise if missing.
+           https://github.com/Azure/azure-cosmos-dotnet-v3/issues/4900#issuecomment-2616909747)
+    -->
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>13.0.1</Version>
     </PackageReference>
     <PackageReference Include="System.Text.Json">
-      <Version>7.0.0</Version>
+      <Version>8.0.5</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
