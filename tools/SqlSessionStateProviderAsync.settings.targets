@@ -9,7 +9,7 @@
 
   <PropertyGroup Label="NuGet package dependencies">
     <SessionStateModuleNuGetPackageVersion>2.0.0</SessionStateModuleNuGetPackageVersion>
-    <MicrosoftDataSqlClientPackageVersion>5.0.0</MicrosoftDataSqlClientPackageVersion>
+    <MicrosoftDataSqlClientPackageVersion>5.1.6</MicrosoftDataSqlClientPackageVersion>
   </PropertyGroup>
 
   <Import Project="MicrosoftAspNetSessionState.settings.targets" />

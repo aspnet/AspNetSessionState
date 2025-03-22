@@ -9,8 +9,8 @@
 
   <PropertyGroup Label="NuGet package dependencies">
     <SessionStateModuleNuGetPackageVersion>2.0.0</SessionStateModuleNuGetPackageVersion>
-    <CosmosNuGetPackageVersion>3.23.0</CosmosNuGetPackageVersion>
-    <SystemTextJsonPackageVersion>7.0.0</SystemTextJsonPackageVersion>
+    <CosmosNuGetPackageVersion>3.46.1</CosmosNuGetPackageVersion>
+    <SystemTextJsonPackageVersion>8.0.5</SystemTextJsonPackageVersion>
   </PropertyGroup>
 
   <Import Project="MicrosoftAspNetSessionState.settings.targets" />
