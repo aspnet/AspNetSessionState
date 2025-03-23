@@ -25,7 +25,7 @@
 
          Most of the interesting ones are already set in each project's individual settings file.
     -->
-    <BuildQuality Condition="'$(BuildQuality)' == ''">rtm</BuildQuality>
+    <BuildQuality Condition="'$(BuildQuality)' == ''">preview1</BuildQuality>
     <VersionStartYear Condition="'$(VersionStartYear)' == ''">2025</VersionStartYear>
     <VersionMajor Condition="'$(VersionMajor)' == ''">2</VersionMajor>
     <VersionMinor Condition="'$(VersionMinor)' == ''">1</VersionMinor>
