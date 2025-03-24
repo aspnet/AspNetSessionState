@@ -63,8 +63,8 @@ extends:
             artifactName: Nuget packages
             targetPath: $(Build.SourcesDirectory)\.binaries\Packages\Release
             sbomEnabled: true
-            sbomBuildDropPath: $(Build.SourcesDirectory)\bin\Release\Packages
-            sbomBuildComponentPath: $(Build.SourcesDirectory)\bin\Release\Packages
+            sbomBuildDropPath: $(Build.SourcesDirectory)\.binaries\Packages\Release
+            sbomBuildComponentPath: $(Build.SourcesDirectory)\.binaries\Packages\Release
             sbomPackageName: Microsoft.AspNet.OutputCache
             # sbomPackageVersion: $(NugetPackageVersion)
             sbomValidate: true
