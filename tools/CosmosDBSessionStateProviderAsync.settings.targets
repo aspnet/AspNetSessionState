@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet package dependencies">
-    <SessionStateModuleNuGetPackageVersion>2.1.0</SessionStateModuleNuGetPackageVersion>
+    <SessionStateModuleNuGetPackageVersion>2.1.0-preview1</SessionStateModuleNuGetPackageVersion>
     <CosmosNuGetPackageVersion>3.46.1</CosmosNuGetPackageVersion>
     <SystemTextJsonPackageVersion>8.0.5</SystemTextJsonPackageVersion>
   </PropertyGroup>

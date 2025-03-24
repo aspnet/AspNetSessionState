@@ -37,7 +37,6 @@
 
   <!-- Add release type for non-RTM releases. -->
   <PropertyGroup Label="Prerelease version adjustments" Condition="'$(BuildQuality)' != 'rtm'">
-    <VersionRelease>$(VersionRelease)-$(BuildQuality)</VersionRelease>
     <NuGetPackageVersion>$(NuGetPackageVersion)-$(BuildQuality)</NuGetPackageVersion>
   </PropertyGroup>
 
