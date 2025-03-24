@@ -17,7 +17,7 @@ namespace Microsoft.AspNet.SessionState
     class SqlInMemoryTableSessionStateRepository : ISqlSessionStateRepository
     {
         private const int DEFAULT_RETRY_NUM = 10;
-        private const int DEFAULT_RETRY_INERVAL = 1;
+        private const int DEFAULT_RETRY_INERVAL = 200;
         private readonly string SessionTableName = "ASPNetSessionState_InMem";
 
         private int _retryIntervalMilSec;
