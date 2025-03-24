@@ -36,7 +36,7 @@ namespace Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider.Test
         private const int DefaultSqlCommandTimeout = 30;
         private const int DefaultRetryInterval = 1000;
         private const int DefaultRetryNum = 10;
-        private const int DefaultInMemoryTableRetryInterval = 1;
+        private const int DefaultInMemoryTableRetryInterval = 200;
 
         public SqlSessionStateAsyncProviderTest()
         {
