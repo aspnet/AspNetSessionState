@@ -22,12 +22,8 @@ resources:
     ref: refs/tags/release
 name: $(Date:yyyyMMdd).$(Rev:r)
 variables:
-- name: EnableNuGetPackageRestore
-  value: true
-- name: Packaging.EnableSBOMSigning
-  value: true
-- name: TeamName
-  value: Asp.Net
+  TeamName: Asp.Net
+  EnableNuGetPackageRestore: true
 extends:
   template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
   parameters:
@@ -51,9 +47,10 @@ extends:
       jobs:
       - job: Phase_1
         displayName: Phase 1
+        timeoutInMinutes: 120
         cancelTimeoutInMinutes: 1
         pool:
-          name: VSEngSS-MicroBuild2019-1ES
+          name: VSEngSS-MicroBuild2022-1ES
         templateContext:
           mb:
             signing:
@@ -63,12 +60,19 @@ extends:
           outputs:
           - output: pipelineArtifact
             displayName: 'Publish Artifact: Nuget packages'
-            targetPath: $(Build.SourcesDirectory)\.binaries\Packages\Release
             artifactName: Nuget packages
+            targetPath: $(Build.SourcesDirectory)\.binaries\Packages\Release
+            sbomEnabled: true
+            sbomBuildDropPath: $(Build.SourcesDirectory)\bin\Release\Packages
+            sbomBuildComponentPath: $(Build.SourcesDirectory)\bin\Release\Packages
+            sbomPackageName: Microsoft.AspNet.OutputCache
+            # sbomPackageVersion: $(NugetPackageVersion)
+            sbomValidate: true
         steps:
         - checkout: self
           clean: true
           fetchTags: true
+          persistCredentials: true
         - task: NuGetToolInstaller@0
           displayName: Use NuGet 5.4.0
           inputs:
@@ -90,10 +94,11 @@ extends:
             msbuildVersion: 17.0
             msbuildArchitecture: x64
             configuration: Release
-            msbuildArguments: /p:GitCommit=%BUILD_SOURCEVERSION% /p:GitCommitLink="https://github.com/aspnet/AspNetSessionState/commit/%BUILD_SOURCEVERSION%" /p:SignType=real /p:SignAssembly=true /verbosity:normal
+            msbuildArguments: /p:GitCommit=$(Build.SourceVersion) /p:GitCommitLink="https://github.com/aspnet/AspNetSessionState/commit/$(Build.SourceVersion)" /p:SignType=real /p:SignAssembly=true /verbosity:normal
             clean: true
             createLogFile: true
             logFileVerbosity: detailed
+          timeoutInMinutes: 120
         - task: CopyFiles@2
           displayName: Stage dll's for verification
           inputs:
@@ -121,7 +126,7 @@ extends:
           displayName: Verify Signed Packages
           inputs:
             TargetFolder: $(Build.SourcesDirectory)\.binaries\verify\packages
-            WhiteListPathForCerts: tools/.verif.whitelist
+            WhiteListPathForCerts: $(Build.SourcesDirectory)\tools\.verif.whitelist
             ExcludeFolders: .git MicroBuild decomp *.xml
         # Following article on https://dev.azure.com/devdiv/DevDiv/_wiki/wikis/DevDiv.wiki/25351/APIScan-step-by-step-guide-to-setting-up-a-Pipeline
         # No longer need the old format, and following guideline to use (ApiScanClientId)
@@ -129,7 +134,7 @@ extends:
           displayName: Run APIScan
           inputs:
             softwareFolder: '$(Build.SourcesDirectory)\.binaries\verify\dlls'
-            softwareName: 'Microsoft.AspNet.SessionState.*'
+            softwareName: 'Microsoft.AspNet.SessionState'
             softwareVersionNum: '*'
             softwareBuildNum: '$(Build.BuildId)'
             symbolsFolder: '$(Build.SourcesDirectory)\.binaries\bin\Release;SRV*http://symweb'
