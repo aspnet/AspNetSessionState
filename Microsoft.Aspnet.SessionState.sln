@@ -23,7 +23,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 		tools\MicrosoftAspNetSessionState.settings.targets = tools\MicrosoftAspNetSessionState.settings.targets
 		tools\SessionStateModule.settings.targets = tools\SessionStateModule.settings.targets
 		tools\SqlSessionStateProviderAsync.settings.targets = tools\SqlSessionStateProviderAsync.settings.targets
-		tools\version.targets = tools\version.targets
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Packages", "src\packages\Packages.csproj", "{7EC5863F-7FF1-41C7-A384-8FFF81531E7A}"

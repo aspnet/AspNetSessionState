@@ -15,7 +15,7 @@ echo Please build from VS 2015(or newer version) Developer Command Prompt
 
 :BUILD
 %MSBUILDEXE% "%~dp0\MicrosoftAspNetSessionState.msbuild" /t:Clean %logOptions% /maxcpucount /nodeReuse:false %cfgOption%%*
-del /F msbuild.log
+del /F msbuild.*
 del /F msbuild.wrn
 del /F msbuild.err
 

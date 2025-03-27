@@ -19,7 +19,7 @@
   skipKeepAliveWhenUnused = Determines whether requests that don't touch or look at session state take the time to update the sliding expiration or not.
       -->
         <add name="SqlSessionStateProviderAsync" connectionStringName="DefaultConnection" repositoryType="SqlServer"
-          type="Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
+          type="Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
              xdt:Transform="InsertIfMissing" />
       </providers>
     </sessionState>

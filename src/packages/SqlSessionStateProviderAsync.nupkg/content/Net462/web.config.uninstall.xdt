@@ -11,7 +11,7 @@
 
       <providers>
         <add name="SqlSessionStateAsyncProvider"
-          type="Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider, Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
+          type="Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider, Microsoft.AspNet.SessionState.SqlSessionStateAsyncProvider, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
              xdt:Transform="Remove" xdt:Locator="Match(type)" />
       </providers>
 

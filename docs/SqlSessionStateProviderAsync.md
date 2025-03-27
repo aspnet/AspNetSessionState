@@ -10,7 +10,7 @@ Then, register your new provider like so:
       <add name="SqlSessionStateProviderAsync" connectionStringName="DefaultConnection" sessionTableName="[string]"
           repositoryType="[SqlServer|InMemory|InMemoryDurable|FrameworkCompat]"
           maxRetryNumber="[int]" retryInterval="[int]" skipKeepAliveWhenUnused="false"
-          type="Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"/>
+          type="Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"/>
     </providers>
   </sessionState>
 ```
