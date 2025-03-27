@@ -1,7 +1,8 @@
 <Project DefaultTargets="UnitTest" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <BuildQuality Condition="'$(BuildQuality)' == ''">preview1</BuildQuality>
+    <!-- Update version in config.xdt's for major/minor changes. (Don't update for 'release' changes.) -->
+    <!-- See MicrosoftAspNetSessionState.settings.targets for default version settings. -->
     <VersionMajor>2</VersionMajor>
     <VersionMinor>1</VersionMinor>
     <VersionRelease>0</VersionRelease>
