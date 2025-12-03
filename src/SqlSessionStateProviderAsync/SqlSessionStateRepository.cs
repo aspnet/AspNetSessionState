@@ -492,11 +492,13 @@ namespace Microsoft.AspNet.SessionState
             {
                 using (var reader = await SqlSessionStateRepositoryUtil.SqlExecuteReaderWithRetryAsync(connection, cmd, CanRetryAsync))
                 {
-                    if (await reader.ReadAsync())
+                    // use the synchronous versions of Read and GetFieldValue because of performance issues with
+                    // large data described here: https://github.com/dotnet/SqlClient/issues/593
+                    if (reader.Read())
                     {
                         // Varbinary(max) should not be returned in an output parameter
                         // Read the returned dataset consisting of SessionItemLong if found
-                        buf = await reader.GetFieldValueAsync<byte[]>(0);
+                        buf = reader.GetFieldValue<byte[]>(0);
                     }
                 }
 
