@@ -63,7 +63,7 @@ stages:
         msbuildVersion: 17.0
         msbuildArchitecture: x64
         configuration: Release
-        msbuildArguments: /p:GitCommit=$(Build.SourceVersion) /p:GitCommitLink="https://github.com/aspnet/AspNetOutputCache/commit/$(Build.SourceVersion)" /p:SignType=${{ parameters.signType }} /p:SignAssembly=true /verbosity:normal
+        msbuildArguments: /p:GitCommit=$(Build.SourceVersion) /p:GitCommitLink="https://github.com/aspnet/AspNetSessionState/commit/$(Build.SourceVersion)" /p:SignType=${{ parameters.signType }} /p:SignAssembly=true /verbosity:normal
         clean: true
         createLogFile: true
         logFileVerbosity: detailed
