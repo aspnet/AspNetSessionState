@@ -30,7 +30,6 @@ stages:
         artifactName: Nuget packages
         targetPath: $(Build.SourcesDirectory)\.binaries\Packages\Release
         sbomEnabled: true
-        sbomBuildDropPath: $(Build.SourcesDirectory)\.binaries\Packages\Release
         sbomBuildComponentPath: $(Build.SourcesDirectory)\.binaries\Packages\Release
         sbomPackageName: Microsoft.Aspnet.SessionState
         sbomValidate: true
