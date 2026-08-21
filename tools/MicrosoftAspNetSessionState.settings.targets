@@ -35,7 +35,7 @@
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <OutputPath>$(RepositoryRoot).binaries\bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>$(RepositoryRoot).binaries\obj\$(Configuration)\$(MSBuildProjectName)\</IntermediateOutputPath>
-    <CompilerGeneratedFilesOutputPath Condition="'$(CompilerGeneratedFilesOutputPath) == ''">Generated</CompilerGeneratedFilesOutputPath>
+    <CompilerGeneratedFilesOutputPath Condition="'$(CompilerGeneratedFilesOutputPath)' == ''">Generated</CompilerGeneratedFilesOutputPath>
     <AssemblyPath Condition="'$(CodeSignEnabled)' == 'true'">$(CodeSignOutputPath)</AssemblyPath>
     <AssemblyPath Condition="'$(AssemblyPath)' == ''">$(OutputPath)</AssemblyPath>
     <TestOutputPath>$(OutputPath)test\</TestOutputPath>
