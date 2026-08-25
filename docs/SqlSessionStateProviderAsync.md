@@ -15,6 +15,23 @@ Then, register your new provider like so:
   </sessionState>
 ```
 
+## Performance of Large Async Session Reads
+Applications that store large session-state payloads should use `Microsoft.Data.SqlClient` 7.0 or later. Version 7.0 introduced an opt-in packet-multiplexing path that can substantially improve the performance of large async reads while allowing this provider to continue releasing ASP.NET worker threads during database I/O.
+
+Packet multiplexing is disabled by default for compatibility. On .NET Framework, it can be enabled early in application startup by adding both switches to the application's `web.config`:
+
+```xml
+<configuration>
+  <runtime>
+    <AppContextSwitchOverrides value="Switch.Microsoft.Data.SqlClient.UseCompatibilityAsyncBehaviour=false;Switch.Microsoft.Data.SqlClient.UseCompatibilityProcessSni=false" />
+  </runtime>
+</configuration>
+```
+
+If the application already has an `AppContextSwitchOverrides` element, add these semicolon-separated values to its existing `value` attribute rather than adding another element. The switches affect all SqlClient use in the application, so test the configuration with the application's workload before deploying it to production.
+
+See Microsoft's documentation for [packet multiplexing and the SqlClient AppContext switches](https://learn.microsoft.com/en-us/sql/connect/ado-net/appcontext-switches?view=sql-server-ver17#enable-packet-multiplexing-for-async-reads), the [.NET Framework `AppContextSwitchOverrides` configuration element](https://learn.microsoft.com/en-us/dotnet/framework/configure-apps/file-schema/runtime/appcontextswitchoverrides-element), and the [Microsoft.Data.SqlClient 7.0 release notes](https://github.com/dotnet/SqlClient/blob/main/release-notes/7.0/7.0.0.md#async-read-performance-packet-multiplexing-preview).
+
 ## A Note About Tables and Data Durability
 The old in-box SQL provider allowed for applications to choose between three data configurations by using the `-sstype` argument to `aspnet_regsql.exe`. Those types were <u>*p*</u>ermanent, <u>*t*</u>emporary, or <u>*c*</u>ustom. The difference between all three is simply the database and table name used by `aspnet_regsql.exe` and the application at runtime.
  * With the permanent option, session state would be stored in a hard-coded well-known table name in the database specified by the connection string. The table schema and data are "permanent" in this setup because they survive SQL server reboot.
