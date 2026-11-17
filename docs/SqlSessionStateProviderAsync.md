@@ -9,7 +9,7 @@ Then, register your new provider like so:
     <providers>
       <add name="SqlSessionStateProviderAsync" connectionStringName="DefaultConnection" sessionTableName="[string]"
           repositoryType="[SqlServer|InMemory|InMemoryDurable|FrameworkCompat]"
-          maxRetryNumber="[int]" retryInterval="[int]" skipKeepAliveWhenUnused="false"
+          maxRetryNumber="[int]" retryInterval="[int]" skipKeepAliveWhenUnused="false" purgeExpiredSessions="true"
           type="Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Microsoft.AspNet.SessionState.SqlSessionStateProviderAsync, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"/>
     </providers>
   </sessionState>
@@ -44,4 +44,8 @@ The old in-box SQL provider allowed for applications to choose between three dat
 
 5. *skipKeepAliveWhenUnused* - This setting will skip the call to update expiration time on requests that did not read or write session state. The default is "false" to maintain compatibility with previous behavior. But certain applications (like MVC) where there can be an abundance of requests processed that never even look at session state could benefit from setting this to "true" to reduce the use of and contention within the session state store. Setting this to "true" does mean that a session needs to be used (not necessarily updated, but at least requested/queried) to stay alive.
 
-6. **[Deprecated]** *useInMemoryTable* - In the absence of a value for `repositoryType`, this setting will be used to determine whether to use Sql server 2016 In-Memory OLTP for sessionstate. However, if `repositoryType` is specified, that setting takes priority. You can find more details about using In-memory table for sessionstate [on this blog](https://blogs.msdn.microsoft.com/sqlcat/2016/10/26/how-bwin-is-using-sql-server-2016-in-memory-oltp-to-achieve-unprecedented-performance-and-scale/).
+6. *purgeExpiredSessions* - Controls whether this provider periodically deletes expired sessions from the session table itself (roughly every 30 seconds, triggered opportunistically at the end of a request). The default is "true" to maintain compatibility with previous behavior.
+
+    Set this to "false" if you already have your own external process that finds and removes expired sessions - for example, a scheduled job maintained separately from this provider, which is a common setup when using `repositoryType=FrameworkCompat` against a database that was originally provisioned by `aspnet_regsql.exe` for the in-box SQL Session State provider. In that scenario, this provider's own internal purge runs uncoordinated alongside your existing process, competing to delete the same rows. Since that internal purge is a direct, server-side delete (it never routes the expired session ids back through .NET, so `SetItemExpireCallback`/`Session_OnEnd` cannot observe it either), any consumer that needs to react to a session actually expiring - closing out a related record in their own database, for instance - may have that session silently removed before their own process gets a chance to find it. Setting this to "false" leaves purging entirely to your own external process instead.
+
+7. **[Deprecated]** *useInMemoryTable* - In the absence of a value for `repositoryType`, this setting will be used to determine whether to use Sql server 2016 In-Memory OLTP for sessionstate. However, if `repositoryType` is specified, that setting takes priority. You can find more details about using In-memory table for sessionstate [on this blog](https://blogs.msdn.microsoft.com/sqlcat/2016/10/26/how-bwin-is-using-sql-server-2016-in-memory-oltp-to-achieve-unprecedented-performance-and-scale/).

@@ -29,12 +29,14 @@ namespace Microsoft.AspNet.SessionState
         private const string RETRY_INTERVAL_CONFIGURATION_NAME = "retryInterval";
         private const string CONNECTIONSTRING_NAME_CONFIGURATION_NAME = "connectionStringName";
         private const string SESSION_TABLE_CONFIGURATION_NAME = "sessionTableName";
+        private const string PURGE_EXPIRED_SESSIONS_CONFIGURATION_NAME = "purgeExpiredSessions";
         private const string SESSIONSTATE_SECTION_PATH = "system.web/sessionState";
         private const double SessionExpiresFrequencyCheckIntervalTicks = 30 * TimeSpan.TicksPerSecond;
         private static long s_lastSessionPurgeTicks;
         private static int s_inPurge;
         private static string s_appSuffix;
         private static bool s_compressionEnabled;
+        private static bool s_purgeExpiredSessions = true;
         private static bool s_oneTimeInited = false;
         private static object s_lock = new object();
         private static ISqlSessionStateRepository s_sqlSessionStateRepository;
@@ -78,6 +80,21 @@ namespace Microsoft.AspNet.SessionState
                     {
                         // compressionEnabled
                         s_compressionEnabled = ssc.CompressionEnabled;
+
+                        // purgeExpiredSessions - allows consumers that already run their own
+                        // external process for finding/deleting expired sessions (e.g. a
+                        // scheduled job against a database provisioned by aspnet_regsql.exe,
+                        // which this repositoryType=FrameworkCompat option is designed to
+                        // work against) to opt out of this provider's own internal purge.
+                        // Without this, the two cleanup mechanisms run uncoordinated against
+                        // the same table, and the internal purge gives external consumers no
+                        // way to know which sessions it removed. Defaults to true to preserve
+                        // existing behavior.
+                        var purgeVal = config[PURGE_EXPIRED_SESSIONS_CONFIGURATION_NAME];
+                        if (purgeVal != null && bool.TryParse(purgeVal, out bool purgeExpiredSessions))
+                        {
+                            s_purgeExpiredSessions = purgeExpiredSessions;
+                        }
 
                         // repositoryType
                         var rType = config[REPOSITORY_TYPE_CONFIGURATION_NAME];
@@ -584,6 +601,11 @@ namespace Microsoft.AspNet.SessionState
 
         private void PurgeIfNeeded()
         {
+            if (!s_purgeExpiredSessions)
+            {
+                return;
+            }
+
             // Only check for expired sessions every 30 seconds.
             if (CanPurge())
             {
